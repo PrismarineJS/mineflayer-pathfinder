@@ -1,0 +1,18 @@
+{
+  "name": "mineflayer-pathfinder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run lint",
+    "lint": "standard",
+    "fix": "standard --fix"
+  },
+  "author": "Karang",
+  "license": "MIT",
+  "dependencies": {
+    "minecraft-data": "^2.46.0",
+    "mineflayer": "^2.12.0",
+    "standard": "^14.3.3"
+  }
+}
