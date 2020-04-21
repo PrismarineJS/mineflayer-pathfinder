@@ -12,10 +12,42 @@ function inject (bot) {
   const mcData = require('minecraft-data')(bot.version)
   const movements = require('./lib/movements')(bot, mcData)
 
+  const scafoldingBlocks = []
+  scafoldingBlocks.push(mcData.blocksByName.dirt.id)
+  scafoldingBlocks.push(mcData.blocksByName.cobblestone.id)
+
+  bot.pathfinder.scafoldingBlocks = scafoldingBlocks
+
+  function countScaffoldingItems () {
+    let count = 0
+    const items = bot.inventory.items()
+    for (const i in scafoldingBlocks) {
+      const id = scafoldingBlocks[i]
+      for (const j in items) {
+        const item = items[j]
+        if (item.type === id) count += item.count
+      }
+    }
+    return count
+  }
+
+  function getScaffoldingItem () {
+    const items = bot.inventory.items()
+    for (const i in scafoldingBlocks) {
+      const id = scafoldingBlocks[i]
+      for (const j in items) {
+        const item = items[j]
+        if (item.type === id) return item
+      }
+    }
+    return null
+  }
+
   bot.pathfinder.getPathTo = function (goal, done) {
+    const maxBlockPlace = countScaffoldingItems()
     const p = bot.entity.position
     const timeout = 2 * 1000 // 2 seconds
-    astar({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z) }, movements, goal, timeout, done)
+    astar({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }, movements, goal, timeout, done)
   }
 
   bot.pathfinder.stop = function () {}
@@ -62,7 +94,12 @@ function inject (bot) {
           const b = nextPoint.toPlace.shift()
           const refBlock = bot.blockAt(new Vec3(b.x, b.y, b.z))
           bot.clearControlStates()
-          bot.equip(mcData.blocksByName.dirt.id, 'hand', function () { // TODO: select block
+          const block = getScaffoldingItem()
+          if (!block) {
+            bot.pathfinder.stop('no block to place')
+            return
+          }
+          bot.equip(block, 'hand', function () {
             bot.placeBlock(refBlock, new Vec3(b.dx, b.dy, b.dz), function (err) {
               placing = false
               lastNodeTime = performance.now()
