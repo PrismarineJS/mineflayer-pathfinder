@@ -10,7 +10,6 @@ function inject (bot) {
   bot.pathfinder = {}
 
   const mcData = require('minecraft-data')(bot.version)
-  const movements = require('./lib/movements')(bot, mcData)
 
   const scafoldingBlocks = []
   scafoldingBlocks.push(mcData.blocksByName.dirt.id)
@@ -43,10 +42,22 @@ function inject (bot) {
     return null
   }
 
-  bot.pathfinder.getPathTo = function (goal, done) {
+  bot.pathfinder.bestHarvestTool = function (block) {
+    const items = bot.inventory.items()
+    for (const i in block.harvestTools) {
+      const id = parseInt(i, 10)
+      for (const j in items) {
+        const item = items[j]
+        if (item.type === id) return item
+      }
+    }
+    return null
+  }
+
+  bot.pathfinder.getPathTo = function (movements, goal, done) {
     const maxBlockPlace = countScaffoldingItems()
     const p = bot.entity.position
-    const timeout = 2 * 1000 // 2 seconds
+    const timeout = 10 * 1000 // 10 seconds
     astar({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }, movements, goal, timeout, done)
   }
 
@@ -76,11 +87,14 @@ function inject (bot) {
         if (!digging) {
           const b = nextPoint.toBreak.shift()
           const block = bot.blockAt(new Vec3(b.x, b.y, b.z))
+          const tool = bot.pathfinder.bestHarvestTool(block)
           bot.clearControlStates()
-          bot.dig(block, function (err) {
-            digging = false
-            lastNodeTime = performance.now()
-            if (err) bot.pathfinder.stop('cannot dig')
+          bot.equip(tool, 'hand', function () {
+            bot.dig(block, function (err) {
+              digging = false
+              lastNodeTime = performance.now()
+              if (err) bot.pathfinder.stop('cannot dig')
+            })
           })
           digging = true
         }
@@ -117,7 +131,7 @@ function inject (bot) {
       const dx = nextPoint.x - p.x
       const dy = nextPoint.y - p.y
       const dz = nextPoint.z - p.z
-      if ((dx * dx + dy * dy + dz * dz) <= 0.2 * 0.2) {
+      if ((dx * dx + dz * dz) <= 0.15 * 0.15 && Math.abs(dy) < 0.002) {
         // arrived at next point
         lastNodeTime = performance.now()
         path.shift()
@@ -127,6 +141,10 @@ function inject (bot) {
         }
         // not done yet
         nextPoint = path[0]
+        if (nextPoint.toBreak.length > 0 || nextPoint.toPlace.length > 0) {
+          bot.clearControlStates()
+          return
+        }
       }
       let gottaJump = false
       const horizontalDelta = Math.abs(dx + dz)
@@ -142,7 +160,16 @@ function inject (bot) {
 
       // run toward next point
       bot.look(Math.atan2(-dx, -dz), 0)
-      bot.setControlState('forward', true)
+
+      const lx = -Math.sin(bot.entity.yaw)
+      const lz = -Math.cos(bot.entity.yaw)
+
+      const frontBackProj = lx * dx + lz * dz
+      bot.setControlState('forward', frontBackProj > 0)
+      bot.setControlState('back', frontBackProj < 0)
+
+      // const leftRightProj = lx * dz - lz * dx
+      // TODO: left/right adjustements
 
       // check for futility
       if (performance.now() - lastNodeTime > 1500) {
