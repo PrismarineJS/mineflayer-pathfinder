@@ -8,8 +8,13 @@ Pathfinding plugin. This is still a work in progress, feel free to contribute by
  * Customizable movements generator
  * Each movement can have a different cost
  * Can break/place blocks as part of its deplacement
+ * Automatically update path when environment change
+ * Long distance paths
 
 ## TODO
 * Make a modular api to configure the movements
-* Select correct tool for breaking blocks
 * Harvest paths
+* Swim in water (need support by mineflayer's physic)
+* Sprint
+* Consider enchantements in dig time
+* Dynamic goals (follow / avoid entities)
