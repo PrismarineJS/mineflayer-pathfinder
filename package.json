@@ -11,8 +11,8 @@
   "author": "Karang",
   "license": "MIT",
   "dependencies": {
-    "minecraft-data": "^2.46.0",
-    "mineflayer": "^2.12.0",
-    "standard": "^14.3.3"
+    "minecraft-data": "^2.51.0",
+    "mineflayer": "^2.15.0",
+    "standard": "^14.3.4"
   }
 }
