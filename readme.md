@@ -17,4 +17,3 @@ Pathfinding plugin. This is still a work in progress, feel free to contribute by
 * Swim in water (need support by mineflayer's physic)
 * Sprint
 * Consider enchantements in dig time
-* Dynamic goals (follow / avoid entities)

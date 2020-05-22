@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer')
 const pathfinder = require('../')
 const Movements = require('../lib/movements')
-const { GoalNear, GoalBlock, GoalXZ, GoalY } = require('../lib/goals')
+const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow } = require('../lib/goals')
 
 const bot = mineflayer.createBot({
   username: 'Bot'
@@ -20,11 +20,11 @@ bot.once('spawn', () => {
   miningMove.digCost = 0
 
   bot.on('path_update', (results) => {
-    bot.chat('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
+    console.log('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
   })
 
   bot.on('goal_reached', (goal) => {
-    bot.chat('Here I am !')
+    console.log('Here I am !')
   })
 
   bot.on('chat', (username, message) => {
@@ -62,6 +62,17 @@ bot.once('spawn', () => {
         bot.pathfinder.setMovements(miningMove)
         bot.pathfinder.setGoal(new GoalY(y))
       }
+    } else if (message === 'follow') {
+      bot.pathfinder.setMovements(defaultMove)
+      bot.pathfinder.setGoal(new GoalFollow(target, 3), true)
+      // follow is a dynamic goal: setGoal(goal, dynamic=true)
+      // when reached, the goal will stay active and will not
+      // emit an event
+    } else if (message === 'avoid') {
+      bot.pathfinder.setMovements(defaultMove)
+      bot.pathfinder.setGoal(new GoalInvert(new GoalFollow(target, 5)), true)
+    } else if (message === 'stop') {
+      bot.pathfinder.setGoal(null)
     }
   })
 })

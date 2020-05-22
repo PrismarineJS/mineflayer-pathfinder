@@ -63,14 +63,16 @@ function inject (bot) {
 
   let stateMovements = null
   let stateGoal = null
+  let dynamicGoal = false
   let path = []
   let digging = false
   let placing = false
   let thinking = false
   let lastNodeTime = performance.now()
 
-  bot.pathfinder.setGoal = function (goal) {
+  bot.pathfinder.setGoal = function (goal, dynamic = false) {
     stateGoal = goal
+    dynamicGoal = dynamic
     path = []
   }
 
@@ -103,9 +105,13 @@ function inject (bot) {
   })
 
   function monitorMovement () {
+    if (stateGoal && stateGoal.hasChanged()) {
+      path = []
+    }
+
     if (path.length === 0) {
       lastNodeTime = performance.now()
-      if (stateGoal && stateMovements && !thinking) {
+      if (stateGoal && stateMovements && !stateGoal.isEnd(bot.entity.position.floored()) && !thinking) {
         thinking = true
         bot.pathfinder.getPathTo(stateMovements, stateGoal, (results) => {
           bot.emit('path_update', results)
@@ -170,7 +176,7 @@ function inject (bot) {
       lastNodeTime = performance.now()
       path.shift()
       if (path.length === 0) { // done
-        if (stateGoal.isEnd(p.floored())) {
+        if (!dynamicGoal && stateGoal.isEnd(p.floored())) {
           bot.emit('goal_reached', stateGoal)
           stateGoal = null
         }
