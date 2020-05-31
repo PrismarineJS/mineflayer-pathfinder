@@ -12,7 +12,9 @@
   "license": "MIT",
   "dependencies": {
     "minecraft-data": "^2.52.0",
-    "mineflayer": "Karang/mineflayer#karang_physics",
+    "mineflayer": "Karang/mineflayer#karang_physics"
+  },
+  "devDependencies": {
     "standard": "^14.3.4"
   }
 }
