@@ -11,8 +11,8 @@
   "author": "Karang",
   "license": "MIT",
   "dependencies": {
-    "minecraft-data": "^2.51.0",
-    "mineflayer": "^2.15.0",
+    "minecraft-data": "^2.52.0",
+    "mineflayer": "Karang/mineflayer#karang_physics",
     "standard": "^14.3.4"
   }
 }

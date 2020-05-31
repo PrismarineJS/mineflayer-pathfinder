@@ -4,7 +4,6 @@ const astar = require('./lib/astar')
 
 var Vec3 = require('vec3').Vec3
 
-const MONITOR_INTERVAL = 40 // ms
 const THINK_TIMEOUT = 100 // ms
 
 function inject (bot) {
@@ -70,22 +69,25 @@ function inject (bot) {
   let thinking = false
   let lastNodeTime = performance.now()
 
+  function resetPath () {
+    path = []
+    digging = false
+    if (digging) bot.stopDigging()
+    placing = false
+  }
+
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
     stateGoal = goal
     dynamicGoal = dynamic
-    path = []
+    resetPath()
   }
 
   bot.pathfinder.setMovements = function (movements) {
     stateMovements = movements
-    path = []
+    resetPath()
   }
 
-  let monitorInterval = setInterval(monitorMovement, MONITOR_INTERVAL)
-  bot.on('end', () => {
-    clearInterval(monitorInterval)
-    monitorInterval = null
-  })
+  bot.on('physicTick', monitorMovement)
 
   function isPositionNearPath (pos, path) {
     for (const i in path) {
@@ -100,13 +102,13 @@ function inject (bot) {
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path)) {
-      path = []
+      resetPath()
     }
   })
 
   function monitorMovement () {
     if (stateGoal && stateGoal.hasChanged()) {
-      path = []
+      resetPath()
     }
 
     if (path.length === 0) {
@@ -123,6 +125,7 @@ function inject (bot) {
     }
 
     let nextPoint = path[0]
+    bot.physics.adjustPositionHeight(nextPoint)
     const p = bot.entity.position
 
     // Handle digging
@@ -136,7 +139,7 @@ function inject (bot) {
           bot.dig(block, function (err) {
             digging = false
             lastNodeTime = performance.now()
-            if (err) path = []
+            if (err) resetPath()
           })
         })
         digging = true
@@ -153,14 +156,14 @@ function inject (bot) {
         bot.clearControlStates()
         const block = bot.pathfinder.getScaffoldingItem()
         if (!block) {
-          path = []
+          resetPath()
           return
         }
         bot.equip(block, 'hand', function () {
           bot.placeBlock(refBlock, new Vec3(b.dx, b.dy, b.dz), function (err) {
             placing = false
             lastNodeTime = performance.now()
-            if (err) path = []
+            if (err) resetPath()
           })
         })
         placing = true
@@ -171,7 +174,7 @@ function inject (bot) {
     const dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
     const dz = nextPoint.z - p.z
-    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && Math.abs(dy) < 0.002) {
+    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && Math.abs(dy) < 1 && bot.entity.onGround) {
       // arrived at next point
       lastNodeTime = performance.now()
       path.shift()
@@ -193,7 +196,7 @@ function inject (bot) {
     let gottaJump = false
     const horizontalDelta = Math.abs(dx + dz)
 
-    if (dy > 0.1) {
+    if (dy > 0.6) {
       // gotta jump up when we're close enough
       gottaJump = horizontalDelta < 1.75
     } else if (dy < -0.1) {
@@ -215,7 +218,7 @@ function inject (bot) {
     // check for futility
     if (performance.now() - lastNodeTime > 1500) {
       // should never take this long to go to the next node
-      path = []
+      resetPath()
     }
   }
 }
