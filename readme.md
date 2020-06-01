@@ -1,5 +1,7 @@
 # Mineflayer-pathfinder
 
+[![npm version](https://badge.fury.io/js/mineflayer-pathfinder.svg)](https://badge.fury.io/js/mineflayer-pathfinder)
+
 Pathfinding plugin. This is still a work in progress, feel free to contribute by making suggestions.
 
 ## Features
