@@ -2,7 +2,7 @@ const { performance } = require('perf_hooks')
 
 const astar = require('./lib/astar')
 
-var Vec3 = require('vec3').Vec3
+const Vec3 = require('vec3').Vec3
 
 const THINK_TIMEOUT = 100 // ms
 
@@ -100,6 +100,23 @@ function inject (bot) {
     return false
   }
 
+  function fullStop () {
+    bot.clearControlStates()
+
+    // Force horizontal velocity to 0 (otherwise inertia can move us too far)
+    // Kind of cheaty, but the server will not tell the difference
+    bot.entity.velocity.x = 0
+    bot.entity.velocity.z = 0
+
+    const blockX = Math.floor(bot.entity.position.x) + 0.5
+    const blockZ = Math.floor(bot.entity.position.z) + 0.5
+
+    // Make sure our bounding box don't collide with neighboring blocks
+    // otherwise recenter the position
+    if (Math.abs(bot.entity.position.x - blockX) > 0.2) { bot.entity.position.x = blockX }
+    if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
+  }
+
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path)) {
       resetPath()
@@ -134,7 +151,7 @@ function inject (bot) {
         const b = nextPoint.toBreak.shift()
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
-        bot.clearControlStates()
+        fullStop()
         bot.equip(tool, 'hand', function () {
           bot.dig(block, function (err) {
             digging = false
@@ -147,13 +164,12 @@ function inject (bot) {
       return
     }
     // Handle block placement
-    // TODO: better bot placement before trying to place block
     // TODO: sneak when placing or make sure the block is not interactive
     if (placing || nextPoint.toPlace.length > 0) {
       if (!placing) {
         const b = nextPoint.toPlace.shift()
         const refBlock = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
-        bot.clearControlStates()
+        fullStop()
         const block = bot.pathfinder.getScaffoldingItem()
         if (!block) {
           resetPath()
@@ -174,7 +190,7 @@ function inject (bot) {
     const dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
     const dz = nextPoint.z - p.z
-    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && Math.abs(dy) < 1 && bot.entity.onGround) {
+    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && bot.entity.onGround) {
       // arrived at next point
       lastNodeTime = performance.now()
       path.shift()
@@ -183,13 +199,13 @@ function inject (bot) {
           bot.emit('goal_reached', stateGoal)
           stateGoal = null
         }
-        bot.clearControlStates()
+        fullStop()
         return
       }
       // not done yet
       nextPoint = path[0]
       if (nextPoint.toBreak.length > 0 || nextPoint.toPlace.length > 0) {
-        bot.clearControlStates()
+        fullStop()
         return
       }
     }
@@ -223,4 +239,8 @@ function inject (bot) {
   }
 }
 
-module.exports = inject
+module.exports = {
+  pathfinder: inject,
+  Movements: require('./lib/movements'),
+  goals: require('./lib/goals')
+}

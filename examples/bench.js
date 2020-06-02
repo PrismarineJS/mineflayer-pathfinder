@@ -1,9 +1,8 @@
 // Simple test to evaluate how much time it takes to find a path of 100 blocks
 
 const mineflayer = require('mineflayer')
-const pathfinder = require('../')
-const Movements = require('../lib/movements')
-const { GoalXZ } = require('../lib/goals')
+const { pathfinder, Movements } = require('../')
+const { GoalXZ } = require('../').goals
 const { performance } = require('perf_hooks')
 
 const bot = mineflayer.createBot({
