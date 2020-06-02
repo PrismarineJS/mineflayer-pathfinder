@@ -4,6 +4,46 @@
 
 Pathfinding plugin. This is still a work in progress, feel free to contribute by making suggestions.
 
+## Install
+
+```bash
+npm install mineflayer-pathfinder
+```
+
+## Example
+
+```js
+const mineflayer = require('mineflayer')
+const pathfinder = require('mineflayer-pathfinder')
+const bot = mineflayer.createBot({ username: 'Player' })
+
+bot.loadPlugin(pathfinder)
+
+bot.once('spawn', () => {
+
+  const mcData = require('minecraft-data')(bot.version)
+
+  const defaultMove = new Movements(bot, mcData)
+  const goal = new GoalXZ(bot.entity.position.x + 100, bot.entity.position.z)
+  
+  bot.on('chat', function(username, message) {
+  
+    if (username === bot.username) return
+
+    const target = bot.players[username].entity
+    if (message === 'come') {
+      if (!target) {
+        bot.chat('I don\'t see you !')
+        return
+      }
+      const p = target.position
+
+      bot.pathfinder.setMovements(defaultMove)
+      bot.pathfinder.setGoal(new GoalNear(p.x, p.y, p.z, 1))
+    } 
+})
+```
+
 ## Features
  * Optimized and modernized A* pathfinding
  * Complexe goals can be specified (inspired by [baritone goals](https://github.com/cabaletta/baritone/blob/master/FEATURES.md#goals) )
