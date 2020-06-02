@@ -64,6 +64,7 @@ function inject (bot) {
   let stateGoal = null
   let dynamicGoal = false
   let path = []
+  let pathUpdated = false
   let digging = false
   let placing = false
   let thinking = false
@@ -74,6 +75,7 @@ function inject (bot) {
     digging = false
     if (digging) bot.stopDigging()
     placing = false
+    pathUpdated = false
   }
 
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
@@ -130,12 +132,13 @@ function inject (bot) {
 
     if (path.length === 0) {
       lastNodeTime = performance.now()
-      if (stateGoal && stateMovements && !stateGoal.isEnd(bot.entity.position.floored()) && !thinking) {
+      if (stateGoal && stateMovements && !stateGoal.isEnd(bot.entity.position.floored()) && !thinking && !pathUpdated) {
         thinking = true
         bot.pathfinder.getPathTo(stateMovements, stateGoal, (results) => {
           bot.emit('path_update', results)
           path = results.path
           thinking = false
+          pathUpdated = true
         })
       }
       return
@@ -190,7 +193,7 @@ function inject (bot) {
     const dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
     const dz = nextPoint.z - p.z
-    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && bot.entity.onGround) {
+    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && (bot.entity.onGround || bot.entity.isInWater)) {
       // arrived at next point
       lastNodeTime = performance.now()
       path.shift()
@@ -210,7 +213,7 @@ function inject (bot) {
       }
     }
     let gottaJump = false
-    const horizontalDelta = Math.abs(dx + dz)
+    const horizontalDelta = Math.sqrt(dx * dx + dz * dz)
 
     if (dy > 0.6) {
       // gotta jump up when we're close enough
@@ -219,6 +222,7 @@ function inject (bot) {
       // possibly jump over a hole
       gottaJump = horizontalDelta > 1.5 && horizontalDelta < 2.5
     }
+    gottaJump = gottaJump || bot.entity.isInWater
     bot.setControlState('jump', gottaJump)
 
     // run toward next point

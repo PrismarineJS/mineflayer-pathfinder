@@ -12,10 +12,10 @@ Pathfinding plugin. This is still a work in progress, feel free to contribute by
  * Can break/place blocks as part of its deplacement
  * Automatically update path when environment change
  * Long distance paths
+ * Can swim
 
 ## TODO
 * Make a modular api to configure the movements
 * Harvest paths
-* Swim in water (need support by mineflayer's physic)
 * Sprint
 * Consider enchantements in dig time
