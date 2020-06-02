@@ -54,10 +54,10 @@ function inject (bot) {
     return null
   }
 
-  bot.pathfinder.getPathTo = function (movements, goal, done) {
+  bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
     const maxBlockPlace = bot.pathfinder.countScaffoldingItems()
     const p = bot.entity.position
-    astar({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }, movements, goal, THINK_TIMEOUT, done)
+    astar({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }, movements, goal, timeout || THINK_TIMEOUT, done)
   }
 
   let stateMovements = null
@@ -132,7 +132,7 @@ function inject (bot) {
     if (digging || nextPoint.toBreak.length > 0) {
       if (!digging) {
         const b = nextPoint.toBreak.shift()
-        const block = bot.blockAt(new Vec3(b.x, b.y, b.z))
+        const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
         bot.clearControlStates()
         bot.equip(tool, 'hand', function () {
@@ -152,7 +152,7 @@ function inject (bot) {
     if (placing || nextPoint.toPlace.length > 0) {
       if (!placing) {
         const b = nextPoint.toPlace.shift()
-        const refBlock = bot.blockAt(new Vec3(b.x, b.y, b.z))
+        const refBlock = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         bot.clearControlStates()
         const block = bot.pathfinder.getScaffoldingItem()
         if (!block) {
