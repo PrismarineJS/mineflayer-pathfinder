@@ -133,14 +133,21 @@ function inject (bot) {
 
     if (path.length === 0) {
       lastNodeTime = performance.now()
-      if (stateGoal && stateMovements && !stateGoal.isEnd(bot.entity.position.floored()) && !thinking && !pathUpdated) {
-        thinking = true
-        bot.pathfinder.getPathTo(stateMovements, stateGoal, (results) => {
-          bot.emit('path_update', results)
-          path = results.path
-          thinking = false
-          pathUpdated = true
-        })
+      if (stateGoal && stateMovements && !thinking) {
+        if (stateGoal.isEnd(bot.entity.position.floored())) {
+          if (!dynamicGoal) {
+            bot.emit('goal_reached', stateGoal)
+            stateGoal = null
+          }
+        } else if (!pathUpdated) {
+          thinking = true
+          bot.pathfinder.getPathTo(stateMovements, stateGoal, (results) => {
+            bot.emit('path_update', results)
+            path = results.path
+            thinking = false
+            pathUpdated = true
+          })
+        }
       }
       return
     }
