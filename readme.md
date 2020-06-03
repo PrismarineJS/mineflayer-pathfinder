@@ -24,7 +24,6 @@ bot.once('spawn', () => {
   const mcData = require('minecraft-data')(bot.version)
 
   const defaultMove = new Movements(bot, mcData)
-  const goal = new GoalXZ(bot.entity.position.x + 100, bot.entity.position.z)
   
   bot.on('chat', function(username, message) {
   
