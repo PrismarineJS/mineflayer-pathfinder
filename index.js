@@ -72,8 +72,8 @@ function inject (bot) {
 
   function resetPath () {
     path = []
-    digging = false
     if (digging) bot.stopDigging()
+    digging = false
     placing = false
     pathUpdated = false
   }
@@ -120,7 +120,7 @@ function inject (bot) {
   }
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
-    if (isPositionNearPath(oldBlock.position, path)) {
+    if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
       resetPath()
     }
   })
@@ -151,18 +151,18 @@ function inject (bot) {
     // Handle digging
     if (digging || nextPoint.toBreak.length > 0) {
       if (!digging) {
+        digging = true
         const b = nextPoint.toBreak.shift()
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
         fullStop()
         bot.equip(tool, 'hand', function () {
           bot.dig(block, function (err) {
-            digging = false
             lastNodeTime = performance.now()
             if (err) resetPath()
+            digging = false
           })
         })
-        digging = true
       }
       return
     }
@@ -170,6 +170,7 @@ function inject (bot) {
     // TODO: sneak when placing or make sure the block is not interactive
     if (placing || nextPoint.toPlace.length > 0) {
       if (!placing) {
+        placing = true
         const b = nextPoint.toPlace.shift()
         const refBlock = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         fullStop()
@@ -185,7 +186,6 @@ function inject (bot) {
             if (err) resetPath()
           })
         })
-        placing = true
       }
       return
     }
