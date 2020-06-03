@@ -76,6 +76,7 @@ function inject (bot) {
     digging = false
     placing = false
     pathUpdated = false
+    bot.clearControlStates()
   }
 
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
