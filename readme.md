@@ -15,7 +15,7 @@ npm install mineflayer-pathfinder
 ```js
 const mineflayer = require('mineflayer')
 const pathfinder = require('mineflayer-pathfinder').pathfinder
-const Movements = require('mineflayer-pathfinder').movements
+const Movements = require('mineflayer-pathfinder').Movements
 const bot = mineflayer.createBot({ username: 'Player' })
 
 bot.loadPlugin(pathfinder)
