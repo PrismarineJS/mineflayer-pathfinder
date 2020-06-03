@@ -16,6 +16,7 @@ npm install mineflayer-pathfinder
 const mineflayer = require('mineflayer')
 const pathfinder = require('mineflayer-pathfinder').pathfinder
 const Movements = require('mineflayer-pathfinder').Movements
+const { GoalNear } = require('mineflayer-pathfinder').goals
 const bot = mineflayer.createBot({ username: 'Player' })
 
 bot.loadPlugin(pathfinder)
@@ -52,10 +53,10 @@ bot.once('spawn', () => {
  * Can break/place blocks as part of its deplacement
  * Automatically update path when environment change
  * Long distance paths
+ * Can swim
 
 ## TODO
 * Make a modular api to configure the movements
 * Harvest paths
-* Swim in water (need support by mineflayer's physic)
 * Sprint
 * Consider enchantements in dig time

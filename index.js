@@ -2,7 +2,7 @@ const { performance } = require('perf_hooks')
 
 const astar = require('./lib/astar')
 
-var Vec3 = require('vec3').Vec3
+const Vec3 = require('vec3').Vec3
 
 const THINK_TIMEOUT = 100 // ms
 
@@ -64,6 +64,7 @@ function inject (bot) {
   let stateGoal = null
   let dynamicGoal = false
   let path = []
+  let pathUpdated = false
   let digging = false
   let placing = false
   let thinking = false
@@ -71,9 +72,10 @@ function inject (bot) {
 
   function resetPath () {
     path = []
-    digging = false
     if (digging) bot.stopDigging()
+    digging = false
     placing = false
+    pathUpdated = false
   }
 
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
@@ -100,8 +102,25 @@ function inject (bot) {
     return false
   }
 
+  function fullStop () {
+    bot.clearControlStates()
+
+    // Force horizontal velocity to 0 (otherwise inertia can move us too far)
+    // Kind of cheaty, but the server will not tell the difference
+    bot.entity.velocity.x = 0
+    bot.entity.velocity.z = 0
+
+    const blockX = Math.floor(bot.entity.position.x) + 0.5
+    const blockZ = Math.floor(bot.entity.position.z) + 0.5
+
+    // Make sure our bounding box don't collide with neighboring blocks
+    // otherwise recenter the position
+    if (Math.abs(bot.entity.position.x - blockX) > 0.2) { bot.entity.position.x = blockX }
+    if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
+  }
+
   bot.on('blockUpdate', (oldBlock, newBlock) => {
-    if (isPositionNearPath(oldBlock.position, path)) {
+    if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
       resetPath()
     }
   })
@@ -113,12 +132,13 @@ function inject (bot) {
 
     if (path.length === 0) {
       lastNodeTime = performance.now()
-      if (stateGoal && stateMovements && !stateGoal.isEnd(bot.entity.position.floored()) && !thinking) {
+      if (stateGoal && stateMovements && !stateGoal.isEnd(bot.entity.position.floored()) && !thinking && !pathUpdated) {
         thinking = true
         bot.pathfinder.getPathTo(stateMovements, stateGoal, (results) => {
           bot.emit('path_update', results)
           path = results.path
           thinking = false
+          pathUpdated = true
         })
       }
       return
@@ -131,29 +151,29 @@ function inject (bot) {
     // Handle digging
     if (digging || nextPoint.toBreak.length > 0) {
       if (!digging) {
+        digging = true
         const b = nextPoint.toBreak.shift()
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
-        bot.clearControlStates()
+        fullStop()
         bot.equip(tool, 'hand', function () {
           bot.dig(block, function (err) {
-            digging = false
             lastNodeTime = performance.now()
             if (err) resetPath()
+            digging = false
           })
         })
-        digging = true
       }
       return
     }
     // Handle block placement
-    // TODO: better bot placement before trying to place block
     // TODO: sneak when placing or make sure the block is not interactive
     if (placing || nextPoint.toPlace.length > 0) {
       if (!placing) {
+        placing = true
         const b = nextPoint.toPlace.shift()
         const refBlock = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
-        bot.clearControlStates()
+        fullStop()
         const block = bot.pathfinder.getScaffoldingItem()
         if (!block) {
           resetPath()
@@ -166,7 +186,6 @@ function inject (bot) {
             if (err) resetPath()
           })
         })
-        placing = true
       }
       return
     }
@@ -174,7 +193,7 @@ function inject (bot) {
     const dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
     const dz = nextPoint.z - p.z
-    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && Math.abs(dy) < 1 && bot.entity.onGround) {
+    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && (bot.entity.onGround || bot.entity.isInWater)) {
       // arrived at next point
       lastNodeTime = performance.now()
       path.shift()
@@ -183,18 +202,18 @@ function inject (bot) {
           bot.emit('goal_reached', stateGoal)
           stateGoal = null
         }
-        bot.clearControlStates()
+        fullStop()
         return
       }
       // not done yet
       nextPoint = path[0]
       if (nextPoint.toBreak.length > 0 || nextPoint.toPlace.length > 0) {
-        bot.clearControlStates()
+        fullStop()
         return
       }
     }
     let gottaJump = false
-    const horizontalDelta = Math.abs(dx + dz)
+    const horizontalDelta = Math.sqrt(dx * dx + dz * dz)
 
     if (dy > 0.6) {
       // gotta jump up when we're close enough
@@ -203,6 +222,7 @@ function inject (bot) {
       // possibly jump over a hole
       gottaJump = horizontalDelta > 1.5 && horizontalDelta < 2.5
     }
+    gottaJump = gottaJump || bot.entity.isInWater
     bot.setControlState('jump', gottaJump)
 
     // run toward next point
@@ -223,4 +243,8 @@ function inject (bot) {
   }
 }
 
-module.exports = inject
+module.exports = {
+  pathfinder: inject,
+  Movements: require('./lib/movements'),
+  goals: require('./lib/goals')
+}

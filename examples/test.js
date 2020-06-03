@@ -1,7 +1,6 @@
 const mineflayer = require('mineflayer')
-const pathfinder = require('../')
-const Movements = require('../lib/movements')
-const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow } = require('../lib/goals')
+const { pathfinder, Movements } = require('../')
+const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow } = require('../').goals
 
 const bot = mineflayer.createBot({
   username: 'Bot'
