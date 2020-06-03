@@ -67,6 +67,7 @@ function inject (bot) {
   let pathUpdated = false
   let digging = false
   let placing = false
+  let placingBlock = null
   let thinking = false
   let lastNodeTime = performance.now()
 
@@ -158,7 +159,7 @@ function inject (bot) {
 
     // Handle digging
     if (digging || nextPoint.toBreak.length > 0) {
-      if (!digging) {
+      if (!digging && bot.entity.onGround) {
         digging = true
         const b = nextPoint.toBreak.shift()
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
@@ -179,16 +180,23 @@ function inject (bot) {
     if (placing || nextPoint.toPlace.length > 0) {
       if (!placing) {
         placing = true
-        const b = nextPoint.toPlace.shift()
-        const refBlock = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
+        placingBlock = nextPoint.toPlace.shift()
         fullStop()
-        const block = bot.pathfinder.getScaffoldingItem()
-        if (!block) {
-          resetPath()
-          return
-        }
+      }
+      const block = bot.pathfinder.getScaffoldingItem()
+      if (!block) {
+        resetPath()
+        return
+      }
+      let canPlace = true
+      if (placingBlock.jump) {
+        bot.setControlState('jump', true)
+        canPlace = placingBlock.y + 1 < bot.entity.position.y
+      }
+      if (canPlace) {
         bot.equip(block, 'hand', function () {
-          bot.placeBlock(refBlock, new Vec3(b.dx, b.dy, b.dz), function (err) {
+          const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
+          bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
             placing = false
             lastNodeTime = performance.now()
             if (err) resetPath()
