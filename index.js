@@ -94,6 +94,10 @@ function inject (bot) {
     }
   })
 
+  bot.on('chunkColumnLoad', (chunk) => {
+    resetPath()
+  })
+
   function monitorMovement () {
     if (stateGoal && stateGoal.hasChanged()) {
       resetPath()

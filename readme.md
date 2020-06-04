@@ -56,7 +56,6 @@ bot.once('spawn', () => {
  * Can swim
 
 ## TODO
-* Update path when new chunks are received
 * Make computations span multiple ticks
 * Ladders and vines
 * Parkour jumps
