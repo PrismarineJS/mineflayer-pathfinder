@@ -56,7 +56,14 @@ bot.once('spawn', () => {
  * Can swim
 
 ## TODO
+* Update path when new chunks are received
+* Make computations span multiple ticks
+* Ladders and vines
+* Parkour jumps
+* Limit search range
 * Make a modular api to configure the movements
-* Harvest paths
+* Dynamic enemies avoidance
+* Dynamic harvest/mining paths
 * Sprint
+* Actual move speed per block
 * Consider enchantements in dig time
