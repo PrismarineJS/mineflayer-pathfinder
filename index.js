@@ -9,39 +9,6 @@ const THINK_TIMEOUT = 100 // ms
 function inject (bot) {
   bot.pathfinder = {}
 
-  const mcData = require('minecraft-data')(bot.version)
-
-  const scafoldingBlocks = []
-  scafoldingBlocks.push(mcData.blocksByName.dirt.id)
-  scafoldingBlocks.push(mcData.blocksByName.cobblestone.id)
-
-  bot.pathfinder.scafoldingBlocks = scafoldingBlocks
-
-  bot.pathfinder.countScaffoldingItems = function () {
-    let count = 0
-    const items = bot.inventory.items()
-    for (const i in scafoldingBlocks) {
-      const id = scafoldingBlocks[i]
-      for (const j in items) {
-        const item = items[j]
-        if (item.type === id) count += item.count
-      }
-    }
-    return count
-  }
-
-  bot.pathfinder.getScaffoldingItem = function () {
-    const items = bot.inventory.items()
-    for (const i in scafoldingBlocks) {
-      const id = scafoldingBlocks[i]
-      for (const j in items) {
-        const item = items[j]
-        if (item.type === id) return item
-      }
-    }
-    return null
-  }
-
   bot.pathfinder.bestHarvestTool = function (block) {
     const items = bot.inventory.items()
     for (const i in block.harvestTools) {
@@ -55,7 +22,7 @@ function inject (bot) {
   }
 
   bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
-    const maxBlockPlace = bot.pathfinder.countScaffoldingItems()
+    const maxBlockPlace = movements.countScaffoldingItems()
     const p = bot.entity.position
     astar({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }, movements, goal, timeout || THINK_TIMEOUT, done)
   }
@@ -183,7 +150,7 @@ function inject (bot) {
         placingBlock = nextPoint.toPlace.shift()
         fullStop()
       }
-      const block = bot.pathfinder.getScaffoldingItem()
+      const block = stateMovements.getScaffoldingItem()
       if (!block) {
         resetPath()
         return
