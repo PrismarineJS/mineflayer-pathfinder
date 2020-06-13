@@ -37,7 +37,7 @@ function inject (bot) {
   let placingBlock = null
   let thinking = false
   let lastNodeTime = performance.now()
-
+  
   function resetPath () {
     path = []
     if (digging) bot.stopDigging()
@@ -56,6 +56,22 @@ function inject (bot) {
   bot.pathfinder.setMovements = function (movements) {
     stateMovements = movements
     resetPath()
+  }
+
+  bot.pathfinder.isMoving = function () {
+    return path.length > 0 || thinking;
+  }
+  
+  bot.pathfinder.isMining = function () {
+    return digging;
+  }
+  
+  bot.pathfinder.isBuilding = function () {
+    return placing;
+  }
+  
+  bot.pathfinder.isThinking = function() {
+    return thinking;
   }
 
   bot.on('physicTick', monitorMovement)
