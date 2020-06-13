@@ -58,6 +58,22 @@ function inject (bot) {
     resetPath()
   }
 
+  bot.pathfinder.isMoving = function () {
+    return path.length > 0 || thinking
+  }
+
+  bot.pathfinder.isMining = function () {
+    return digging
+  }
+
+  bot.pathfinder.isBuilding = function () {
+    return placing
+  }
+
+  bot.pathfinder.isThinking = function () {
+    return thinking
+  }
+
   bot.on('physicTick', monitorMovement)
 
   function isPositionNearPath (pos, path) {
