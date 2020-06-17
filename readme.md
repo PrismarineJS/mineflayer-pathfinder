@@ -31,7 +31,7 @@ bot.once('spawn', () => {
   
     if (username === bot.username) return
 
-    const target = bot.players[username].entity
+    const target = bot.players[username]?.entity
     if (message === 'come') {
       if (!target) {
         bot.chat('I don\'t see you !')
