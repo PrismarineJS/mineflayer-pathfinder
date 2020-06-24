@@ -12,7 +12,9 @@
   "license": "MIT",
   "dependencies": {
     "minecraft-data": "^2.54.0",
-    "mineflayer": "^2.19.0"
+    "vec3": "^0.1.5",
+    "prismarine-nbt": "^1.3.0",
+    "mineflayer": "^2.22.0"
   },
   "devDependencies": {
     "standard": "^14.3.4"

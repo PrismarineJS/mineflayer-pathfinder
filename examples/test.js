@@ -15,9 +15,6 @@ bot.once('spawn', () => {
   // We create different movement generators for different type of activity
   const defaultMove = new Movements(bot, mcData)
 
-  const miningMove = new Movements(bot, mcData)
-  miningMove.digCost = 0
-
   bot.on('path_update', (results) => {
     console.log('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
   })
@@ -29,7 +26,7 @@ bot.once('spawn', () => {
   bot.on('chat', (username, message) => {
     if (username === bot.username) return
 
-    const target = bot.players[username].entity
+    const target = bot.players[username] ? bot.players[username].entity : null
     if (message === 'come') {
       if (!target) {
         bot.chat('I don\'t see you !')
@@ -58,7 +55,7 @@ bot.once('spawn', () => {
       } else if (cmd.length === 2) { // goto y
         const y = parseInt(cmd[1], 10)
 
-        bot.pathfinder.setMovements(miningMove)
+        bot.pathfinder.setMovements(defaultMove)
         bot.pathfinder.setGoal(new GoalY(y))
       }
     } else if (message === 'follow') {
