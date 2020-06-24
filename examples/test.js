@@ -15,8 +15,9 @@ bot.once('spawn', () => {
   // We create different movement generators for different type of activity
   const defaultMove = new Movements(bot, mcData)
 
-  bot.on('path_update', (results) => {
-    console.log('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
+  bot.on('path_update', (r) => {
+    const nodesPerTick = (r.visitedNodes * 50 / r.time).toFixed(2)
+    console.log(`I can get there in ${r.path.length} moves. Computation took ${r.time.toFixed(2)} ms (${nodesPerTick} nodes/tick).`)
   })
 
   bot.on('goal_reached', (goal) => {

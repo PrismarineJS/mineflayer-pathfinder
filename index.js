@@ -1,6 +1,6 @@
 const { performance } = require('perf_hooks')
 
-const astar = require('./lib/astar')
+const AStar = require('./lib/astar')
 
 const Vec3 = require('vec3').Vec3
 
@@ -24,7 +24,8 @@ function inject (bot) {
   bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
     const maxBlockPlace = movements.countScaffoldingItems()
     const p = bot.entity.position
-    astar({ x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }, movements, goal, timeout || THINK_TIMEOUT, done)
+    const start = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }
+    new AStar(start, movements, goal, timeout || THINK_TIMEOUT, done).compute()
   }
 
   let stateMovements = null
@@ -211,6 +212,8 @@ function inject (bot) {
     }
 
     let nextPoint = path[0]
+    nextPoint.x = Math.floor(nextPoint.x) + 0.5
+    nextPoint.z = Math.floor(nextPoint.z) + 0.5
     bot.physics.adjustPositionHeight(nextPoint)
     const p = bot.entity.position
 
@@ -282,8 +285,8 @@ function inject (bot) {
       nextPoint = path[0]
       if (nextPoint.toBreak.length > 0 || nextPoint.toPlace.length > 0) {
         fullStop()
-        return
       }
+      return
     }
     let gottaJump = false
     const horizontalDelta = Math.sqrt(dx * dx + dz * dz)
