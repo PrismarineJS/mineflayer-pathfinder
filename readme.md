@@ -65,4 +65,3 @@ bot.once('spawn', () => {
 * Dynamic harvest/mining paths
 * Sprint
 * Actual move speed per block
-* Consider enchantements in dig time
