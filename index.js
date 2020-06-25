@@ -1,6 +1,7 @@
 const { performance } = require('perf_hooks')
 
 const AStar = require('./lib/astar')
+const Move = require('./lib/move')
 
 const Vec3 = require('vec3').Vec3
 
@@ -22,10 +23,9 @@ function inject (bot) {
   }
 
   bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
-    const maxBlockPlace = movements.countScaffoldingItems()
     const p = bot.entity.position
-    const start = { x: Math.floor(p.x), y: Math.floor(p.y), z: Math.floor(p.z), remainingBlocks: maxBlockPlace }
-    new AStar(start, movements, goal, timeout || THINK_TIMEOUT, done).compute()
+    const start = new Move(p.x, p.y, p.z, movements.countScaffoldingItems(), 0)
+    done(new AStar(start, movements, goal, timeout || THINK_TIMEOUT).compute())
   }
 
   let stateMovements = null
