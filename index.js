@@ -83,7 +83,7 @@ function inject (bot) {
       const dx = Math.abs(node.x - pos.x)
       const dy = Math.abs(node.y - pos.y)
       const dz = Math.abs(node.z - pos.z)
-      if (dx <= 3 && dy <= 3 && dz <= 3) return true
+      if (dx <= 1 && dy <= 2 && dz <= 1) return true
     }
     return false
   }
