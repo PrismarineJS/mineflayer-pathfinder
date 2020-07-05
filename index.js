@@ -5,7 +5,7 @@ const Move = require('./lib/move')
 
 const Vec3 = require('vec3').Vec3
 
-const THINK_TIMEOUT = 100 // ms
+const THINK_TIMEOUT = 40 // ms
 
 function inject (bot) {
   bot.pathfinder = {}
@@ -294,7 +294,7 @@ function inject (bot) {
     if (dy > 0.6) {
       // gotta jump up when we're close enough
       gottaJump = horizontalDelta < 1.75
-    } else if (dy < -0.1) {
+    } else if (dy > -0.1 && nextPoint.parkour) {
       // possibly jump over a hole
       gottaJump = horizontalDelta > 1.5 && horizontalDelta < 2.5
     }
