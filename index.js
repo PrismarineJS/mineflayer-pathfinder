@@ -39,13 +39,13 @@ function inject (bot) {
   let thinking = false
   let lastNodeTime = performance.now()
 
-  function resetPath () {
+  function resetPath (clearStates = true) {
     path = []
     if (digging) bot.stopDigging()
     digging = false
     placing = false
     pathUpdated = false
-    bot.clearControlStates()
+    if (clearStates) { bot.clearControlStates() }
   }
 
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
@@ -107,7 +107,7 @@ function inject (bot) {
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
-      resetPath()
+      resetPath(false)
     }
   })
 
