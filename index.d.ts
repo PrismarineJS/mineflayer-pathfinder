@@ -90,4 +90,16 @@ declare module 'mineflayer-pathfinder'
         generatedNodes: number;
         path: PathNodeData[];
     }
+
+    export class Pathfinder
+    {
+        bestHarvestTool(block: Block): Item | null;
+        getPathTo(movements: Movements, goal: Goal, done: (Result) => void, timeout: number);
+        setGoal(goal: Goal): void;
+        setMovements(movements: Movements): void;
+        isMoving(): boolean;
+        isMining(): boolean;
+        isBuilding(): boolean;
+        isThinking(): boolean;
+    }
 }
