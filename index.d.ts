@@ -10,27 +10,42 @@ declare module 'mineflayer-pathfinder'
 
     export class PathNode
     {
-        data: PathNodeData;
+        data: Move;
         g: number;
         h: number;
         f: number;
         parent?: PathNode;
 
-        set(data: PathNodeData, g: number, h: number, parent?): void;
+        set(data: Move, g: number, h: number, parent?): void;
+    }
+    
+    export interface MoveBlockChange
+    {
+        x: number;
+        y: number;
+        z: number;
+        dx: number;
+        dy: number;
+        dz: number;
     }
 
-    export class PathNodeData
+    export class Move
     {
         x: number;
         y: number;
         z: number;
         remainingBlocks: number;
+        cost: number;
+        toBreak: MoveBlockChange[];
+        toPlace: MoveBlockChange[];
+        parkour: boolean;
+        hash: string;
     }
 
     export class Goal
     {
-        heuristic(node: PathNodeData): number;
-        isEnd(node: PathNodeData): boolean;
+        heuristic(node: Move): number;
+        isEnd(node: Move): boolean;
         hasChanged(): boolean;
     }
 
@@ -88,7 +103,7 @@ declare module 'mineflayer-pathfinder'
         time: number;
         visitedNodes: number;
         generatedNodes: number;
-        path: PathNodeData[];
+        path: Move[];
     }
 
     export class Pathfinder
