@@ -111,9 +111,9 @@ declare module 'mineflayer-pathfinder'
         x: number;
         y: number;
         z: number;
-        dx: number;
-        dy: number;
-        dz: number;
+        dx?: number;
+        dy?: number;
+        dz?: number;
     }
 
     export class Move
