@@ -121,12 +121,12 @@ declare module 'mineflayer-pathfinder'
         x: number;
         y: number;
         z: number;
-        remainingBlocks: number;
-        cost: number;
-        toBreak: MoveBlockChange[];
-        toPlace: MoveBlockChange[];
-        parkour: boolean;
-        hash: string;
+        remainingBlocks?: number;
+        cost?: number;
+        toBreak?: MoveBlockChange[];
+        toPlace?: MoveBlockChange[];
+        parkour?: boolean;
+        hash?: string;
     }
 
     export class Result
