@@ -18,7 +18,7 @@ declare module 'mineflayer-pathfinder'
 
         set(data: Move, g: number, h: number, parent?): void;
     }
-    
+
     export interface MoveBlockChange
     {
         x: number;
@@ -51,48 +51,77 @@ declare module 'mineflayer-pathfinder'
 
     export class GoalBlock extends Goal
     {
+        x: number;
+        y: number;
+        z: number;
+
         constructor(x: number, y: number, z: number);
     }
 
     export class GoalNear extends Goal
     {
+        x: number;
+        y: number;
+        z: number;
+        range: number;
+
         constructor(x: number, y: number, z: number, range: number);
     }
 
     export class GoalXZ extends Goal
     {
+        x: number;
+        z: number;
+
         constructor(x: number, z: number);
     }
 
     export class GoalY extends Goal
     {
+        y: number;
+
         constructor(y: number);
     }
 
     export class GoalGetToBlock extends Goal
     {
+        x: number;
+        y: number;
+        z: number;
+
         constructor(x: number, y: number, z: number);
     }
 
     export class GoalCompositeAny extends Goal
     {
+        goals: Goal[];
+
         constructor();
+
         push(goal: Goal): void;
     }
 
     export class GoalCompositeAll extends Goal
     {
+        goals: Goal[];
+
         constructor();
+
         push(goal: Goal): void;
     }
 
     export class GoalInvert extends Goal
     {
+        goal: Goal;
+
         constructor(goal: Goal);
     }
 
     export class GoalFollow extends Goal
     {
+        entity: Entity;
+        range: number;
+
         constructor(entity: Entity, range: number);
     }
 
