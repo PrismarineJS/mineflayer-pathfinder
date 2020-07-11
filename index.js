@@ -10,16 +10,41 @@ const THINK_TIMEOUT = 40 // ms
 function inject (bot) {
   bot.pathfinder = {}
 
-  bot.pathfinder.bestHarvestTool = function (block) {
-    const items = bot.inventory.items()
-    for (const i in block.harvestTools) {
-      const id = parseInt(i, 10)
-      for (const j in items) {
-        const item = items[j]
-        if (item.type === id) return item
-      }
+  function bestToolOfTypeInInventory (bot, toolname, materials) {
+    const tools = materials.map(x => x + '_' + toolname);
+    for(let i = tools.length - 1; i >= 0; i--) {
+        const tool = tools[i];
+        let matches = bot.inventory.items().filter(item => item.name === tool);
+        if(matches.length > 0) return matches[0];
     }
-    return null
+    return null;
+  }
+
+  bot.pathfinder.bestHarvestTool = function (block) {
+    if(block.name == 'air') return null
+
+    const items = bot.inventory.items()
+    let harvestTools = block.harvestTools ? Object.keys(block.harvestTools).map(id => parseInt(id, 10)) : []
+    // sort by id, roughly equal to using the best available tool
+    const usableItems = items.filter(item => harvestTools.includes(item.type)).sort((a, b) => b.type - a.type)
+    if(usableItems.length > 0) return usableItems[0]
+
+    // Some blocks list no harvest tool, but can be mined quicker with a specific tool
+    // Available materials for tools, best to worst for speed according to https://minecraft.gamepedia.com/Tool#Best_tools
+    const materials = ['wooden', 'stone', 'iron', 'diamond', 'netherite', 'golden']
+    switch(block.material) {
+        case 'dirt':
+            return bestToolOfTypeInInventory(bot, "shovel", materials)
+        case 'wood':
+            return bestToolOfTypeInInventory(bot, "axe", materials)
+        case 'plant':
+            return bestToolOfTypeInInventory(bot, "sword", materials)
+        case 'rock':
+            return bestToolOfTypeInInventory(bot, "pickaxe", materials)
+        case undefined:
+        default:
+            return null
+    }
   }
 
   bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
@@ -39,13 +64,13 @@ function inject (bot) {
   let thinking = false
   let lastNodeTime = performance.now()
 
-  function resetPath (clearStates = true) {
+  function resetPath () {
     path = []
     if (digging) bot.stopDigging()
     digging = false
     placing = false
     pathUpdated = false
-    if (clearStates) { bot.clearControlStates() }
+    bot.clearControlStates()
   }
 
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
@@ -83,7 +108,7 @@ function inject (bot) {
       const dx = Math.abs(node.x - pos.x)
       const dy = Math.abs(node.y - pos.y)
       const dz = Math.abs(node.z - pos.z)
-      if (dx <= 1 && dy <= 2 && dz <= 1) return true
+      if (dx <= 3 && dy <= 3 && dz <= 3) return true
     }
     return false
   }
@@ -107,7 +132,7 @@ function inject (bot) {
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
-      resetPath(false)
+      resetPath()
     }
   })
 
