@@ -6,47 +6,42 @@ const Move = require('./lib/move')
 const Vec3 = require('vec3').Vec3
 
 const { PlayerState } = require('prismarine-physics')
+const nbt = require('prismarine-nbt')
 
 const THINK_TIMEOUT = 40 // ms
 
 function inject (bot) {
   bot.pathfinder = {}
 
-  function bestToolOfTypeInInventory (bot, toolname, materials) {
-    const tools = materials.map(x => x + '_' + toolname)
-    for (let i = tools.length - 1; i >= 0; i--) {
-      const tool = tools[i]
-      const matches = bot.inventory.items().filter(item => item.name === tool)
-      if (matches.length > 0) return matches[0]
+  function itemIsTool(item) {
+    // tools are named material_toolname eg wooden_pickaxe
+    let itemNameSplit = item.name.split('_')
+    if(itemNameSplit.length === 2) {
+      const toolNames = ['sword', 'axe', 'pickaxe', 'shovel']
+      return toolNames.includes(itemNameSplit[1]);
     }
-    return null
+    return false
   }
 
   bot.pathfinder.bestHarvestTool = function (block) {
     if (block.name === 'air') return null
 
-    const items = bot.inventory.items()
-    const harvestTools = block.harvestTools ? Object.keys(block.harvestTools).map(id => parseInt(id, 10)) : []
-    // sort by id, roughly equal to using the best available tool
-    const usableItems = items.filter(item => harvestTools.includes(item.type)).sort((a, b) => b.type - a.type)
-    if (usableItems.length > 0) return usableItems[0]
+    const availableTools = bot.inventory.items().filter(itemIsTool);
+    const effects = bot.entity.effects
 
-    // Some blocks list no harvest tool, but can be mined quicker with a specific tool
-    // Available materials for tools, best to worst for speed according to https://minecraft.gamepedia.com/Tool#Best_tools
-    const materials = ['wooden', 'stone', 'iron', 'diamond', 'netherite', 'golden']
-    switch (block.material) {
-      case 'dirt':
-        return bestToolOfTypeInInventory(bot, 'shovel', materials)
-      case 'wood':
-        return bestToolOfTypeInInventory(bot, 'axe', materials)
-      case 'plant':
-        return bestToolOfTypeInInventory(bot, 'sword', materials)
-      case 'rock':
-        return bestToolOfTypeInInventory(bot, 'pickaxe', materials)
-      case undefined:
-      default:
-        return null
-    }
+    let fastest = Number.MAX_VALUE
+    let bestTool = null
+    availableTools.forEach(tool => {
+      const enchants = (tool && tool.nbt) ? nbt.simplify(tool.nbt).Enchantments : []
+      const digTime = block.digTime(tool ? tool.type : null, false, false, false, enchants, effects)
+      if(digTime < fastest) {
+        fastest = digTime
+        bestTool = tool
+      }
+    })
+    
+    console.log(block.name, bestTool.name);
+    return bestTool
   }
 
   bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
