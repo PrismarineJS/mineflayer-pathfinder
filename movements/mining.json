@@ -1,0 +1,94 @@
+{
+	name: 'miningMovements',
+	movements: [
+		{
+			// mind forward (1 at feet)
+			symetry: 'radial',
+			requires: [
+				{ blockAt: [0, 0, -1], boundingBox: 'solid' },
+				{ blockAt: [0, 1, -1], boundingBox: 'empty', liquid: false },
+				{ blockAt: [0, -1, -1], boundingBox: 'block' },
+			],
+			actions: [
+				{
+					type: 'mine',
+					delta: [0, 0, -1],
+				},
+				{
+					type: 'walk',
+					delta: [0, 0, -1],
+				}
+			]
+		},
+		{
+			// mind forward (1 at head)
+			symetry: 'radial',
+			requires: [
+				{ blockAt: [0, 0, -1], boundingBox: 'empty', liquid: false },
+				{ blockAt: [0, 1, -1], boundingBox: 'block' },
+				{ blockAt: [0, -1, -1], boundingBox: 'block' },
+			],
+			actions: [
+				{
+					type: 'mine',
+					delta: [0, 1, -1],
+				},
+				{
+					type: 'walk',
+					delta: [0, 0, -1],
+				}
+			]
+		},
+		{
+			// mind forward (1x2 path)
+			symetry: 'radial',
+			requires: [
+				{ blockAt: [0, 0, -1], boundingBox: 'block' },
+				{ blockAt: [0, 1, -1], boundingBox: 'block' },
+				{ blockAt: [0, -1, -1], boundingBox: 'block' },
+			],
+			actions: [
+				{
+					type: 'mine',
+					delta: [0, 1, -1],
+				},
+				{
+					type: 'mine',
+					delta: [0, 0, -1],
+				},
+				{
+					type: 'walk',
+					delta: [0, 0, -1],
+				}
+			]
+		},
+		{
+			// mind forward (1x2 path over air)
+			symetry: 'radial',
+			requires: [
+				{ blockAt: [0, 0, -1], boundingBox: 'block' },
+				{ blockAt: [0, 1, -1], boundingBox: 'block' },
+				{ blockAt: [0, -1, -1], boundingBox: 'empty' },
+			],
+			actions: [
+				{
+					type: 'mine',
+					delta: [0, 1, -1],
+				},
+				{
+					type: 'mine',
+					delta: [0, 0, -1],
+				},
+				{
+					type: 'build',
+					delta: [0, -1, -1],
+					against: [0, -1, 0]
+				},
+				{
+					type: 'walk',
+					delta: [0, 0, -1],
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,21 @@
+{
+	name: 'basicMovements',
+	movements: [
+		{
+			// move forward
+			cost: 1,
+			symetry: 'radial',
+			requires: [
+				{ blockAt: [0, 0, -1], boundingBox: 'empty', liquid: false },
+				{ blockAt: [0, 1, -1], boundingBox: 'empty', liquid: false },
+				{ blockAt: [0, -1, -1], boundingBox: 'block' },
+			],
+			actions: [
+				{
+					type: 'walk',
+					delta: [0, 0, -1],
+				}
+			]
+		},
+	]
+}
