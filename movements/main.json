@@ -1,0 +1,16 @@
+{
+  "costs": {
+    "walk": 1,
+    "mine": 2,
+    "build": 2,
+    "fall": 1,
+    "jump": 1
+  },
+  "maxFallDistance": {
+    "standard": 3,
+    "withWaterBucket": 64,
+    "overSlimeBlock": 128
+  },
+  "avoid": ["lava", "wheat"],
+  "timeout": 500
+}
