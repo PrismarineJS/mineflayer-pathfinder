@@ -3,23 +3,28 @@
   "movements": [
     {
       "symmetry": "radial",
-      "requires": [
-        {
-          "blockAt": [0, 0, -1],
-          "boundingBox": "empty",
-          "liquid": false
-        },
-        {
-          "blockAt": [0, 1, -1],
-          "boundingBox": "empty",
-          "liquid": false
-        },
-        {
-          "blockAt": [0, -1, -1],
-          "boundingBox": "block"
-        }
-      ],
       "actions": [
+        {
+          "type": "mine",
+          "delta": [0, 1, -1],
+          "requires": {
+            "boundingBox": "block"
+          }
+        },
+        {
+          "type": "mine",
+          "delta": [0, 0, -1],
+          "requires": {
+            "boundingBox": "block"
+          }
+        },
+        {
+          "type": "build",
+          "delta": [0, -1, -1],
+          "requires": {
+            "boundingBox": "empty"
+          }
+        },
         {
           "type": "walk",
           "delta": [0, 0, -1]
