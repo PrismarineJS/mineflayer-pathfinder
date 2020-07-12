@@ -22,7 +22,8 @@
           "type": "build",
           "delta": [0, -1, -1],
           "requires": {
-            "boundingBox": "empty"
+            "boundingBox": "empty",
+            "against": [0, -1, 0]
           }
         },
         {
