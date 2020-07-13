@@ -6,6 +6,7 @@ const Move = require('./lib/move')
 const Vec3 = require('vec3').Vec3
 
 const { PlayerState } = require('prismarine-physics')
+const nbt = require('prismarine-nbt')
 
 const THINK_TIMEOUT = 40 // ms
 
@@ -13,15 +14,21 @@ function inject (bot) {
   bot.pathfinder = {}
 
   bot.pathfinder.bestHarvestTool = function (block) {
-    const items = bot.inventory.items()
-    for (const i in block.harvestTools) {
-      const id = parseInt(i, 10)
-      for (const j in items) {
-        const item = items[j]
-        if (item.type === id) return item
+    const availableTools = bot.inventory.items()
+    const effects = bot.entity.effects
+
+    let fastest = Number.MAX_VALUE
+    let bestTool = null
+    for (const tool of availableTools) {
+      const enchants = (tool && tool.nbt) ? nbt.simplify(tool.nbt).Enchantments : []
+      const digTime = block.digTime(tool ? tool.type : null, false, false, false, enchants, effects)
+      if (digTime < fastest) {
+        fastest = digTime
+        bestTool = tool
       }
     }
-    return null
+
+    return bestTool
   }
 
   bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
