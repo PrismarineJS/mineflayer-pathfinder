@@ -13,32 +13,20 @@ const THINK_TIMEOUT = 40 // ms
 function inject (bot) {
   bot.pathfinder = {}
 
-  function itemIsTool (item) {
-    // tools are named material_toolname eg wooden_pickaxe
-    const itemNameSplit = item.name.split('_')
-    if (itemNameSplit.length === 2) {
-      const toolNames = ['sword', 'axe', 'pickaxe', 'shovel']
-      return toolNames.includes(itemNameSplit[1])
-    }
-    return false
-  }
-
   bot.pathfinder.bestHarvestTool = function (block) {
-    if (block.name === 'air') return null
-
-    const availableTools = bot.inventory.items().filter(itemIsTool)
+    const availableTools = bot.inventory.items()
     const effects = bot.entity.effects
 
     let fastest = Number.MAX_VALUE
     let bestTool = null
-    availableTools.forEach(tool => {
+    for (const tool of availableTools) {
       const enchants = (tool && tool.nbt) ? nbt.simplify(tool.nbt).Enchantments : []
       const digTime = block.digTime(tool ? tool.type : null, false, false, false, enchants, effects)
       if (digTime < fastest) {
         fastest = digTime
         bestTool = tool
       }
-    })
+    }
 
     return bestTool
   }
