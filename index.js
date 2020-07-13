@@ -97,6 +97,30 @@ function inject (bot) {
     return false
   }
 
+  // Return the average x/z position of the highest standing positions
+  // in the block.
+  function getPositionOnTopOf (block) {
+    if (block.shapes.length === 0) return null
+    const p = new Vec3(0.5, 0, 0.5)
+    let n = 1
+    for (const shape of block.shapes) {
+      const h = shape[4]
+      if (h === p.y) {
+        p.x += (shape[0] + shape[3]) / 2
+        p.z += (shape[2] + shape[5]) / 2
+        n++
+      } else if (h > p.y) {
+        n = 2
+        p.x = 0.5 + (shape[0] + shape[3]) / 2
+        p.y = h
+        p.z = 0.5 + (shape[2] + shape[5]) / 2
+      }
+    }
+    p.x /= n
+    p.z /= n
+    return block.position.plus(p)
+  }
+
   function fullStop () {
     bot.clearControlStates()
 
@@ -188,9 +212,11 @@ function inject (bot) {
     }
 
     let nextPoint = path[0]
-    nextPoint.x = Math.floor(nextPoint.x) + 0.5
-    nextPoint.z = Math.floor(nextPoint.z) + 0.5
-    bot.physics.adjustPositionHeight(nextPoint)
+    let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
+    if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
+    nextPoint.x = np.x
+    nextPoint.y = np.y
+    nextPoint.z = np.z
     const p = bot.entity.position
 
     // Handle digging
