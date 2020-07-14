@@ -212,11 +212,6 @@ function inject (bot) {
     }
 
     let nextPoint = path[0]
-    let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
-    if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
-    nextPoint.x = np.x
-    nextPoint.y = np.y
-    nextPoint.z = np.z
     const p = bot.entity.position
 
     // Handle digging
@@ -267,6 +262,12 @@ function inject (bot) {
       }
       return
     }
+
+    let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
+    if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
+    nextPoint.x = np.x
+    nextPoint.y = np.y
+    nextPoint.z = np.z
 
     const dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
