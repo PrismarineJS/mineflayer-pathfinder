@@ -265,9 +265,14 @@ function inject (bot) {
 
     let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
     if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
-    nextPoint.x = np.x
-    nextPoint.y = np.y
-    nextPoint.z = np.z
+    if (np) {
+      nextPoint.x = np.x
+      nextPoint.y = np.y
+      nextPoint.z = np.z
+    } else {
+      nextPoint.x = Math.floor(nextPoint.x) + 0.5
+      nextPoint.z = Math.floor(nextPoint.z) + 0.5
+    }
 
     const dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
