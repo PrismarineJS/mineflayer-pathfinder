@@ -188,7 +188,7 @@
       ]
     },
     {
-      "name": "jump up forward and up 1 block",
+      "name": "jump forward and up 1 block",
       "symmetry": "radial",
       "hash": "%X, %Y, %Z",
       "actions": [
@@ -290,6 +290,129 @@
             {
               "delta": [0, 2, -1],
               "boundingBox": "empty"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump forward and down 1 block",
+      "symmetry": "radial",
+      "hash": "%X, %Y, %Z",
+      "actions": [
+        {
+          "description": "mine block in front of bot's face",
+          "type": "mine",
+          "delta": [0, 1, -1],
+          "requires": [
+            {
+              "delta": [0, 1, -1],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "mine block at target head",
+          "type": "mine",
+          "delta": [0, 0, -1],
+          "requires": [
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "mine block at target feet",
+          "type": "mine",
+          "delta": [0, -1, -1],
+          "requires": [
+            {
+              "delta": [0, -1, -1],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "place block under feet against block bot is standing on",
+          "type": "build",
+          "delta": [0, -2, -1],
+          "requires": [
+            {
+              "delta": [0, -2, 0],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, -2, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        },
+        {
+          "description": "place block under target feet against block across from bot",
+          "type": "build",
+          "delta": [0, -2, -1],
+          "requires": [
+            {
+              "delta": [0, -2, -2],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, -2, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        },
+        {
+          "description": "place block under target feet against right wall",
+          "type": "build",
+          "delta": [0, -2, -1],
+          "requires": [
+            {
+              "delta": [1, -2, -1],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, -2, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        },
+        {
+          "description": "place block under target feet against left wall",
+          "type": "build",
+          "delta": [0, -2, -1],
+          "requires": [
+            {
+              "delta": [-1, -2, -1],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, -2, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        },
+        {
+          "description": "fall forward and down 1 block",
+          "type": "fall",
+          "delta": [0, -1, -1],
+          "requires": [
+            {
+              "delta": [0, 1, -1],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, -1, -1],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, -2, -1],
+              "boundingBox": "block"
             }
           ]
         }
