@@ -186,6 +186,114 @@
           ]
         }
       ]
+    },
+    {
+      "name": "jump up forward and up 1 block",
+      "symmetry": "radial",
+      "hash": "%X, %Y, %Z",
+      "actions": [
+        {
+          "description": "mine block directly above",
+          "type": "mine",
+          "delta": [0, 2, 0],
+          "requires": [
+            {
+              "delta": [0, 2, 0],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "mine block at target feet",
+          "type": "mine",
+          "delta": [0, 1, -1],
+          "requires": [
+            {
+              "delta": [0, 1, -1],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "mine block at target head",
+          "type": "mine",
+          "delta": [0, 2, -1],
+          "requires": [
+            {
+              "delta": [0, 2, -1],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "place block under target feet against block across from bot",
+          "type": "build",
+          "delta": [0, 0, -1],
+          "requires": [
+            {
+              "delta": [0, 0, -2],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        },
+        {
+          "description": "place block under target feet against right wall",
+          "type": "build",
+          "delta": [0, 0, -1],
+          "requires": [
+            {
+              "delta": [1, 0, -1],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        },
+        {
+          "description": "place block under target feet against left wall",
+          "type": "build",
+          "delta": [0, 0, -1],
+          "requires": [
+            {
+              "delta": [-1, 0, -1],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        },
+        {
+          "description": "jump forward and up 1 block",
+          "type": "jump",
+          "delta": [0, 1, -1],
+          "requires": [
+            {
+              "delta": [0, 2, 0],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, 1, -1],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, 2, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
