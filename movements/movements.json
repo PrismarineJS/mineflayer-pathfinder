@@ -96,6 +96,92 @@
             {
               "delta": [0, -1, -1],
               "boundingBox": "block"
+            },
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, 1, -1],
+              "boundingBox": "empty"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump forward 1 block",
+      "symmetry": "radial",
+      "hash": "%X, %Y, %Z",
+      "actions": [
+        {
+          "description": "mine block at head 1 block forward",
+          "type": "mine",
+          "delta": [0, 1, -1],
+          "requires": [
+            {
+              "delta": [0, 1, -1],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "mine block at feet 1 block forward",
+          "type": "mine",
+          "delta": [0, 0, -1],
+          "requires": [
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "mine block at head 2 blocks forward",
+          "type": "mine",
+          "delta": [0, 1, -2],
+          "requires": [
+            {
+              "delta": [0, 1, -2],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "mine block at feet 2 blocks forward",
+          "type": "mine",
+          "delta": [0, 0, -2],
+          "requires": [
+            {
+              "delta": [0, 0, -2],
+              "boundingBox": "block"
+            }
+          ]
+        },
+        {
+          "description": "jump forward 1 block",
+          "type": "jump",
+          "delta": [0, 0, -2],
+          "requires": [
+            {
+              "delta": [0, -1, -2],
+              "boundingBox": "block"
+            },
+            {
+              "delta": [0, 0, -2],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, 1, -2],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, 0, -1],
+              "boundingBox": "empty"
+            },
+            {
+              "delta": [0, 1, -1],
+              "boundingBox": "empty"
             }
           ]
         }
