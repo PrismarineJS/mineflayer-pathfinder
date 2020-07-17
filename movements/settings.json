@@ -11,6 +11,17 @@
     "withWaterBucket": 64,
     "overSlimeBlock": 128
   },
+  "scaffoldingBlocks": [
+    {
+      "block": "dirt",
+      "costMultiplier": 1
+    },
+    {
+      "block": "cobblestone",
+      "costMultiplier": 1
+    }
+  ],
+  "liquids": ["water", "lava"],
   "avoid": [
     {
       "block": "lava",
@@ -18,9 +29,15 @@
       "unless": "hasFireResistance"
     },
     {
+      "block": "fire",
+      "cost": 50,
+      "unless": "hasFireResistance"
+    },
+    {
       "block": "wheat",
       "cost": 10
     }
   ],
+  "cantBreak": ["bedrock", "chest"],
   "timeout": 500
 }
