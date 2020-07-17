@@ -39,5 +39,7 @@
     }
   ],
   "cantBreak": ["bedrock", "chest"],
-  "timeout": 500
+  "timeout": 500,
+  "canMine": true,
+  "canPlace": true
 }
