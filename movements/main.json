@@ -11,6 +11,16 @@
     "withWaterBucket": 64,
     "overSlimeBlock": 128
   },
-  "avoid": ["lava", "wheat"],
+  "avoid": [
+    {
+      "block": "lava",
+      "cost": 100,
+      "unless": "hasFireResistance"
+    },
+    {
+      "block": "wheat",
+      "cost": 10
+    }
+  ],
   "timeout": 500
 }
