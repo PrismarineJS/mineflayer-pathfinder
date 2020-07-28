@@ -5,8 +5,16 @@ const { pathfinder, Movements } = require('mineflayer-pathfinder')
 const { GoalXZ } = require('mineflayer-pathfinder').goals
 const { performance } = require('perf_hooks')
 
+if (process.argv.length > 6) {
+  console.log('Usage : node bench.js [<host>] [<port>] [<name>] [<password>]')
+  process.exit(1)
+}
+
 const bot = mineflayer.createBot({
-  username: 'Bot'
+  host: process.argv[2] || 'localhost',
+  port: parseInt(process.argv[3]) || 25565,
+  username: process.argv[4] || 'bench',
+  password: process.argv[5]
 })
 
 bot.loadPlugin(pathfinder)
