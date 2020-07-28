@@ -2,8 +2,16 @@ const mineflayer = require('mineflayer')
 const { pathfinder, Movements } = require('mineflayer-pathfinder')
 const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow } = require('mineflayer-pathfinder').goals
 
+if (process.argv.length > 6) {
+  console.log('Usage : node test.js [<host>] [<port>] [<name>] [<password>]')
+  process.exit(1)
+}
+
 const bot = mineflayer.createBot({
-  username: 'Bot'
+  host: process.argv[2] || 'localhost',
+  port: parseInt(process.argv[3]) || 25565,
+  username: process.argv[4] || 'pathfinder',
+  password: process.argv[5]
 })
 
 bot.loadPlugin(pathfinder)
