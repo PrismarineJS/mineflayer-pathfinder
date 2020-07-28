@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint",
+    "test": "npm run lint && require-self",
     "lint": "standard",
+    "prepare": "npm install require-self && require-self",
     "fix": "standard --fix"
   },
   "author": "Karang",
@@ -18,6 +19,7 @@
     "mineflayer": "^2.23.0"
   },
   "devDependencies": {
+    "require-self": "^0.2.3",
     "standard": "^14.3.4"
   }
 }

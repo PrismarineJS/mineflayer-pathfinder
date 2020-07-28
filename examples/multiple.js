@@ -1,6 +1,6 @@
 const mineflayer = require('mineflayer')
-const { pathfinder, Movements } = require('../')
-const { GoalInvert, GoalFollow } = require('../').goals
+const { pathfinder, Movements } = require('mineflayer-pathfinder')
+const { GoalInvert, GoalFollow } = require('mineflayer-pathfinder').goals
 
 mineflayer.multiple = (bots, constructor) => {
   const { Worker, isMainThread, workerData } = require('worker_threads')
