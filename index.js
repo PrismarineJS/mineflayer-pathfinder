@@ -8,10 +8,10 @@ const Vec3 = require('vec3').Vec3
 const { PlayerState } = require('prismarine-physics')
 const nbt = require('prismarine-nbt')
 
-const THINK_TIMEOUT = 40 // ms
-
 function inject (bot) {
   bot.pathfinder = {}
+  
+  bot.pathfinder.thinkTimeout = 40 // ms
 
   bot.pathfinder.bestHarvestTool = function (block) {
     const availableTools = bot.inventory.items()
@@ -34,7 +34,7 @@ function inject (bot) {
   bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
     const p = bot.entity.position
     const start = new Move(p.x, p.y, p.z, movements.countScaffoldingItems(), 0)
-    done(new AStar(start, movements, goal, timeout || THINK_TIMEOUT).compute())
+    done(new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout).compute())
   }
 
   let stateMovements = null
