@@ -10,7 +10,7 @@ const nbt = require('prismarine-nbt')
 
 function inject (bot) {
   bot.pathfinder = {}
-  
+
   bot.pathfinder.thinkTimeout = 40 // ms
 
   bot.pathfinder.bestHarvestTool = function (block) {
