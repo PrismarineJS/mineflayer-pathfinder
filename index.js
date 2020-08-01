@@ -100,7 +100,7 @@ function inject (bot) {
   // Return the average x/z position of the highest standing positions
   // in the block.
   function getPositionOnTopOf (block) {
-    if (block.shapes.length === 0) return null
+    if (!block || block.shapes.length === 0) return null
     const p = new Vec3(0.5, 0, 0.5)
     let n = 1
     for (const shape of block.shapes) {
