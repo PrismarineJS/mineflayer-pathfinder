@@ -1,6 +1,6 @@
 {
   "name": "mineflayer-pathfinder",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,11 +12,11 @@
   "author": "Karang",
   "license": "MIT",
   "dependencies": {
-    "minecraft-data": "^2.62.1",
-    "vec3": "^0.1.5",
+    "minecraft-data": "^2.63.0",
+    "vec3": "^0.1.6",
     "prismarine-nbt": "^1.3.0",
-    "prismarine-physics": "^1.0.1",
-    "mineflayer": "^2.23.0"
+    "prismarine-physics": "^1.0.2",
+    "mineflayer": "^2.25.0"
   },
   "devDependencies": {
     "require-self": "^0.2.3",
