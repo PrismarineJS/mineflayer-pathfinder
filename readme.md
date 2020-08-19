@@ -10,6 +10,14 @@ Pathfinding plugin. This is still a work in progress, feel free to contribute by
 npm install mineflayer-pathfinder
 ```
 
+## Video Tutorial
+
+For a video tutorial explaining the usage of mineflayer-pathfinder, you can watch the following Youtube videos:
+
+[part 1](https://www.youtube.com/watch?v=UWGSf08wQSc)
+
+[part 2](https://www.youtube.com/watch?v=ssWE0kXDGJE)
+
 ## Example
 
 ```js
