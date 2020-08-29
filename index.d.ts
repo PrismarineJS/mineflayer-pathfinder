@@ -150,7 +150,7 @@ declare module 'mineflayer-pathfinder'
     {
         bestHarvestTool(block: Block): Item | null;
         getPathTo(movements: Movements, goal: goals.Goal, done: (result: Result) => void, timeout: number): void;
-        setGoal(goal: goals.Goal): void;
+        setGoal(goal: goals.Goal, dynamic?: boolean): void;
         setMovements(movements: Movements): void;
         isMoving(): boolean;
         isMining(): boolean;
