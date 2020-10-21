@@ -60,6 +60,7 @@ function inject (bot) {
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
     stateGoal = goal
     dynamicGoal = dynamic
+    bot.emit('goal_updated', goal, dynamic)
     resetPath()
   }
 
