@@ -2,6 +2,7 @@ const { performance } = require('perf_hooks')
 
 const AStar = require('./lib/astar')
 const Move = require('./lib/move')
+const Movements = require('./lib/movements')
 
 const Vec3 = require('vec3').Vec3
 
@@ -37,7 +38,7 @@ function inject (bot) {
     done(new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout).compute())
   }
 
-  let stateMovements = null
+  let stateMovements = new Movements(bot, require('minecraft-data')(bot.version))
   let stateGoal = null
   let dynamicGoal = false
   let path = []
