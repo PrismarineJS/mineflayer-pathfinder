@@ -1,7 +1,14 @@
 /// <reference types="prismarine-entity" />
 
+import { Entity } from "prismarine-entity";
+import { Bot } from "mineflayer";
+import { Item } from "prismarine-item";
+import { Block } from "prismarine-block";
+
 declare module 'mineflayer-pathfinder'
 {
+
+    export function pathfinder(bot: Bot): void;
     export namespace goals
     {
         export class Goal
@@ -103,7 +110,7 @@ declare module 'mineflayer-pathfinder'
         f: number;
         parent?: PathNode;
 
-        set(data: Move, g: number, h: number, parent?): void;
+        set(data: Move, g: number, h: number, parent?: PathNode): void;
     }
 
     export interface MoveBlockChange
@@ -142,8 +149,8 @@ declare module 'mineflayer-pathfinder'
     export class Pathfinder
     {
         bestHarvestTool(block: Block): Item | null;
-        getPathTo(movements: Movements, goal: Goal, done: (Result) => void, timeout: number);
-        setGoal(goal: Goal): void;
+        getPathTo(movements: Movements, goal: goals.Goal, done: (result: Result) => void, timeout: number): void;
+        setGoal(goal: goals.Goal, dynamic?: boolean): void;
         setMovements(movements: Movements): void;
         isMoving(): boolean;
         isMining(): boolean;
