@@ -73,3 +73,36 @@ bot.once('spawn', () => {
 * Dynamic harvest/mining paths
 * Sprint
 * Actual move speed per block
+
+## Wiki(WIP)
+Considering there are a lot of deep changes that are being worked on, it could take some time before it's done
+
+Also, **for now**, there is only the `pathfinder` module, `movements` and `goals` still need to be done
+
+
+# Apis:
+
+`bot.pathfinder.bestHarvestTool(block)`
+
+`bot.pathfinder.getPathTo(movements, goal, done, timeout)`
+
+`bot.pathfinder.setGoal(goal, dynamic)`
+
+`bot.pathfinder.setMovements(movements)`
+
+`bot.pathfinder.isMoving()`
+
+`bot.pathfinder.isMining()`
+
+`bot.pathfinder.isBuilding()`
+
+`bot.pathfinder.isThinking()`
+
+
+# Variables(?):
+`bot.pathfinder.thinkTimeout`
+Default: 40 (ms)
+
+# Events:
+TBD
+
