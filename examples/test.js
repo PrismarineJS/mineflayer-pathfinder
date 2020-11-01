@@ -1,5 +1,5 @@
 const mineflayer = require('mineflayer')
-const { goals, inject, Movements } = require('mineflayer-pathfinder')
+const { goals, pathfinder, Movements } = require('mineflayer-pathfinder')
 
 if (process.argv.length > 6) {
   console.log('Usage : node test.js [<host>] [<port>] [<name>] [<password>]')
@@ -13,7 +13,7 @@ const bot = mineflayer.createBot({
   password: process.argv[5]
 })
 
-bot.loadPlugin(inject)
+bot.loadPlugin(pathfinder)
 
 bot.once('spawn', () => {
   // Once we've spawn, it is safe to access mcData because we know the version

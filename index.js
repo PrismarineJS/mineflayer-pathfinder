@@ -470,10 +470,10 @@ export class PathFinder extends EventEmitter {
   }
 }
 
-const inject = bot => (bot.pathfinder = new PathFinder(bot))
+const pathfinder = bot => (bot.pathfinder = new PathFinder(bot))
 
 module.exports = {
-  inject,
+  pathfinder,
   AStar,
   Constants: require('./lib/constants'),
   goals,

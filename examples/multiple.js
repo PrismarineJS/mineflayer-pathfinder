@@ -1,5 +1,5 @@
 const mineflayer = require('mineflayer')
-const { goals, inject, Movements } = require('mineflayer-pathfinder')
+const { goals, pathfinder, Movements } = require('mineflayer-pathfinder')
 
 mineflayer.multiple = (bots, constructor) => {
   const { Worker, isMainThread, workerData } = require('worker_threads')
@@ -21,7 +21,7 @@ for (let i = 0; i < 40; i++) {
 mineflayer.multiple(bots, ({ username }) => {
   const bot = mineflayer.createBot({ username })
 
-  bot.loadPlugin(inject)
+  bot.loadPlugin(pathfinder)
 
   bot.once('spawn', () => {
     // Once we've spawn, it is safe to access mcData because we know the version

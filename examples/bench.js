@@ -1,7 +1,7 @@
 // Simple test to evaluate how much time it takes to find a path of 100 blocks
 
 const mineflayer = require('mineflayer')
-const { goals, inject, Movements } = require('mineflayer-pathfinder')
+const { goals, pathfinder, Movements } = require('mineflayer-pathfinder')
 const { performance } = require('perf_hooks')
 
 if (process.argv.length > 6) {
@@ -16,7 +16,7 @@ const bot = mineflayer.createBot({
   password: process.argv[5]
 })
 
-bot.loadPlugin(inject)
+bot.loadPlugin(pathfinder)
 
 const createTime = performance.now()
 bot.once('spawn', () => {

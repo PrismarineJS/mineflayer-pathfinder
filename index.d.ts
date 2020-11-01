@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 import { IndexedData, Entity, Block, Item } from 'minecraft-data';
 
 declare module 'mineflayer-pathfinder' {
-	export const inject: (bot: Bot) => PathFinder;
+	export const pathfinder: (bot: Bot) => PathFinder;
 
 	export namespace goals {
 		export abstract class Goal {

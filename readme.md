@@ -22,19 +22,19 @@ For a video tutorial explaining the usage of mineflayer-pathfinder, you can watc
 
 ```js
 const mineflayer = require('mineflayer')
-const { Movements, goals, inject } = require('mineflayer-pathfinder')
+const { Movements, goals, pathfinder } = require('mineflayer-pathfinder')
 const bot = mineflayer.createBot({ username: 'Player' })
 
-bot.loadPlugin(inject)
+bot.loadPlugin(pathfinder)
 
 bot.once('spawn', () => {
 
   const mcData = require('minecraft-data')(bot.version)
 
   const defaultMove = new Movements(bot, mcData)
-  
+
   bot.on('chat', function(username, message) {
-  
+
     if (username === bot.username) return
 
     const target = bot.players[username] ? bot.players[username].entity : null
@@ -47,27 +47,29 @@ bot.once('spawn', () => {
 
       bot.pathfinder.setMovements(defaultMove)
       bot.pathfinder.setGoal(new GoalNear(p.x, p.y, p.z, 1))
-    } 
+    }
 })
 ```
 
 ## Features
- * Optimized and modernized A* pathfinding
- * Complexe goals can be specified (inspired by [baritone goals](https://github.com/cabaletta/baritone/blob/master/FEATURES.md#goals) )
- * Customizable movements generator
- * Each movement can have a different cost
- * Can break/place blocks as part of its deplacement
- * Automatically update path when environment change
- * Long distance paths
- * Can swim
+
+- Optimized and modernized A\* pathfinding
+- Complexe goals can be specified (inspired by [baritone goals](https://github.com/cabaletta/baritone/blob/master/FEATURES.md#goals) )
+- Customizable movements generator
+- Each movement can have a different cost
+- Can break/place blocks as part of its deplacement
+- Automatically update path when environment change
+- Long distance paths
+- Can swim
 
 ## TODO
-* Make computations span multiple ticks
-* Ladders and vines
-* Parkour jumps
-* Limit search range
-* Make a modular api to configure the movements
-* Dynamic enemies avoidance
-* Dynamic harvest/mining paths
-* Sprint
-* Actual move speed per block
+
+- Make computations span multiple ticks
+- Ladders and vines
+- Parkour jumps
+- Limit search range
+- Make a modular api to configure the movements
+- Dynamic enemies avoidance
+- Dynamic harvest/mining paths
+- Sprint
+- Actual move speed per block
