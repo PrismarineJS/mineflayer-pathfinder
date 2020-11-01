@@ -22,12 +22,10 @@ For a video tutorial explaining the usage of mineflayer-pathfinder, you can watc
 
 ```js
 const mineflayer = require('mineflayer')
-const pathfinder = require('mineflayer-pathfinder').pathfinder
-const Movements = require('mineflayer-pathfinder').Movements
-const { GoalNear } = require('mineflayer-pathfinder').goals
+const { Movements, goals, inject } = require('mineflayer-pathfinder')
 const bot = mineflayer.createBot({ username: 'Player' })
 
-bot.loadPlugin(pathfinder)
+bot.loadPlugin(inject)
 
 bot.once('spawn', () => {
 
