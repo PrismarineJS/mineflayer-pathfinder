@@ -1,6 +1,5 @@
 const mineflayer = require('mineflayer')
-const { pathfinder, Movements } = require('mineflayer-pathfinder')
-const { GoalInvert, GoalFollow } = require('mineflayer-pathfinder').goals
+const { goals, inject, Movements } = require('mineflayer-pathfinder')
 
 mineflayer.multiple = (bots, constructor) => {
   const { Worker, isMainThread, workerData } = require('worker_threads')
@@ -22,7 +21,7 @@ for (let i = 0; i < 40; i++) {
 mineflayer.multiple(bots, ({ username }) => {
   const bot = mineflayer.createBot({ username })
 
-  bot.loadPlugin(pathfinder)
+  bot.loadPlugin(inject)
 
   bot.once('spawn', () => {
     // Once we've spawn, it is safe to access mcData because we know the version
@@ -32,11 +31,19 @@ mineflayer.multiple(bots, ({ username }) => {
     const defaultMove = new Movements(bot, mcData)
     defaultMove.allowFreeMotion = true
 
-    bot.on('path_update', (results) => {
-      console.log('[' + username + '] I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
+    bot.on('path_update', results => {
+      console.log(
+        '[' +
+          username +
+          '] I can get there in ' +
+          results.path.length +
+          ' moves. Computation took ' +
+          results.time.toFixed(2) +
+          ' ms.'
+      )
     })
 
-    bot.on('goal_reached', (goal) => {
+    bot.on('goal_reached', () => {
       console.log('[' + username + '] Here I am !')
     })
 
@@ -46,10 +53,13 @@ mineflayer.multiple(bots, ({ username }) => {
       const target = bot.players[username].entity
       if (message === 'follow') {
         bot.pathfinder.setMovements(defaultMove)
-        bot.pathfinder.setGoal(new GoalFollow(target, 5), true)
+        bot.pathfinder.setGoal(new goals.GoalFollow(target, 5), true)
       } else if (message === 'avoid') {
         bot.pathfinder.setMovements(defaultMove)
-        bot.pathfinder.setGoal(new GoalInvert(new GoalFollow(target, 5)), true)
+        bot.pathfinder.setGoal(
+          new goals.GoalInvert(new goals.GoalFollow(target, 5)),
+          true
+        )
       } else if (message === 'stop') {
         bot.pathfinder.setGoal(null)
       }
