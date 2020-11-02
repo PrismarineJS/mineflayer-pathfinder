@@ -23,6 +23,6 @@
   },
   "devDependencies": {
     "require-self": "^0.2.3",
-    "standard": "^14.3.4"
+    "standard": "^16.0.1"
   }
 }
