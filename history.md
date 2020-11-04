@@ -48,10 +48,10 @@
 * Added multiple bot example
 * Added experimental "free-motion"
 * Added composite goal
-* Adddd `isMoving()` function
-* Adddd `isMining()` function
-* Adddd `isBuilding()` function
-* Adddd `isThinking()` function
+* Added `isMoving()` function
+* Added `isMining()` function
+* Added `isBuilding()` function
+* Added `isThinking()` function
 
 ## 1.0.4
 
