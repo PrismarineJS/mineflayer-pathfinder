@@ -1,0 +1,96 @@
+# History
+
+## 1.0.12
+
+* Added `canDig` movements variable
+* Added `goto(goal, cb)` function
+
+## 1.0.11
+
+* Added `goal_updated` event
+* Movements are now initialized by default
+* Fixed Typescript headers
+* Fixed bugs with block height when jumping
+
+## 1.0.10
+
+* Fixed "cannot read property 'shapes' of null" bug
+* Exposed `thinkTimeout` pathfinder variable
+
+## 1.0.9
+
+* Added simple postprocessing fallback for unsuitable positions
+
+## 1.0.8
+
+* Fixed null pointer exception for "getPositionOnTopOf"
+
+## 1.0.7
+
+* Improved post processing for standing on more block types
+* Improved tool selection when breaking blocks
+* Retrieve player state from Prismarine-Physics
+* Fixed bug with parkour cooldown
+* Added Typescript headers
+* Fixed bug with clearing controls while recalculating path
+* Removed path recalculation detection radius
+
+## 1.0.6
+
+* Added basic parkour movements
+* Movement nodes are now stored as classes
+* Astar algorithm is now stored as a class
+* Improved blocks-to-break estimation in the path
+* Fixed 12.x Node.js compatibility in example bot
+
+## 1.0.5
+
+* Added multiple bot example
+* Added experimental "free-motion"
+* Added composite goal
+* Adddd `isMoving()` function
+* Adddd `isMining()` function
+* Adddd `isBuilding()` function
+* Adddd `isThinking()` function
+
+## 1.0.4
+
+* Paths are now recalculated on chunk loading to fix long paths
+* Minor bug fixes
+* Moved scaffolding blocks from index.js to movements.js internally
+* Updated readme todo list
+* Added 1x1 tower creation
+
+## 1.0.3
+
+* Fixed `goal_reached` not being called if bot is already at the goal
+* Control state is cleared when path is reset
+* Fixed example bot code in readme
+* Improved readme
+* Fixed bug with place/dig logic
+* Added swimming support
+
+## 1.0.2
+
+* Exposed goals and movements classes
+* Fixed bugs with bot stopping incorrectly
+* Improved readme
+* Added performance benchmarks
+* Added build CI support
+
+## 1.0.1
+
+* Added deployment CI support
+* Added standard
+* Fixed bug with not canceling digging when resetting path
+* Fixed undefined pos error
+* Added configurable fall height
+* Added dynamic goals
+* Added automatic path recalculation
+* Added 1x1 digging holes
+* Added more movement abilities
+* Added internal scaffolding block count
+
+## 1.0.0
+
+* Initial release
