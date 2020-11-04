@@ -205,6 +205,7 @@ declare module 'mineflayer-pathfinder' {
 		public isBuilding(): boolean;
 		public bestHarvestTool(block: Block): Item;
 		public getPathTo(movements: Movements, goal: goals.Goal, timeout?: number): ComputedData;
+		public goto(goal: goals.Goal, callback: (error?: Error) => void): void;
 		public setGoal<T extends goals.Goal | null>(goal: T, dynamic?: boolean): T
 		public setMovements(movements: Movements): Movements;
 		public isPositionNearPath(position: Vec3, path?: Move[]): boolean;
