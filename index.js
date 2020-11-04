@@ -3,6 +3,7 @@ const { performance } = require('perf_hooks')
 const AStar = require('./lib/astar')
 const Move = require('./lib/move')
 const Movements = require('./lib/movements')
+const gotoUtil = require('./lib/goto')
 
 const Vec3 = require('vec3').Vec3
 
@@ -84,6 +85,10 @@ function inject (bot) {
 
   bot.pathfinder.isThinking = function () {
     return thinking
+  }
+
+  bot.pathfinder.goto = function (goal, cb) {
+    gotoUtil(bot, goal, cb)
   }
 
   bot.on('physicTick', monitorMovement)
