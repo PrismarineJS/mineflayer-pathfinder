@@ -5,6 +5,8 @@ const { AStar, PathNode } = require('./lib/AStar')
 const Move = require('./lib/Move')
 const { EventEmitter } = require('events')
 const goals = require('./lib/goals')
+const gotoUtil = require('./lib/goto')
+
 const { PlayerState } = require('prismarine-physics')
 const nbt = require('prismarine-nbt')
 
@@ -121,6 +123,10 @@ export class PathFinder extends EventEmitter {
       const dz = Math.abs(node.z - position.z)
       return dz <= 1
     })
+  }
+
+  goto (goal, cb) {
+    gotoUtil(this.bot, goal, cb)
   }
 
   resetPath (clearControlStates = true) {
