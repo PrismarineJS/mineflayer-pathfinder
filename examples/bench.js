@@ -21,7 +21,7 @@ bot.loadPlugin(pathfinder)
 const createTime = performance.now()
 bot.once('spawn', () => {
   console.log(
-    'Spawning took ' + (performance.now() - createTime).toFixed(2) + ' ms.'
+    `Spawning took ${(performance.now() - createTime).toFixed(2)} ms.`
   )
 
   const mcData = require('minecraft-data')(bot.version)
@@ -34,13 +34,11 @@ bot.once('spawn', () => {
   bot.pathfinder.getPathTo(
     defaultMove,
     goal,
-    results => {
+    ({ path, time }) => {
       console.log(
-        'I can get there in ' +
-          results.path.length +
-          ' moves. Computation took ' +
-          results.time.toFixed(2) +
-          ' ms.'
+        `I can get there in ${
+          path.length
+        } moves. Computation took ${time.toFixed(2)} ms.`
       )
       bot.quit()
       process.exit()

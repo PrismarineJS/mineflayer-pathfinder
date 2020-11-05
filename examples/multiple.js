@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer')
 const { goals, pathfinder, Movements } = require('mineflayer-pathfinder')
 
-mineflayer.multiple = (bots, constructor) => {
+const multiple = (bots, constructor) => {
   const { Worker, isMainThread, workerData } = require('worker_threads')
   if (isMainThread) {
     const threads = []
@@ -18,34 +18,27 @@ for (let i = 0; i < 40; i++) {
   bots.push({ username: `Bot${i}` })
 }
 
-mineflayer.multiple(bots, ({ username }) => {
+multiple(bots, ({ username }) => {
   const bot = mineflayer.createBot({ username })
 
   bot.loadPlugin(pathfinder)
 
   bot.once('spawn', () => {
-    // Once we've spawn, it is safe to access mcData because we know the version
-    const mcData = require('minecraft-data')(bot.version)
-
-    // We create different movement generators for different type of activity
-    const defaultMove = new Movements(bot, mcData)
+    // We create different movement generators for different types of activity
+    const defaultMove = new Movements(bot)
     defaultMove.allowFreeMotion = true
 
-    bot.on('path_update', results => {
-      console.log(
-        '[' +
-          username +
-          '] I can get there in ' +
-          results.path.length +
-          ' moves. Computation took ' +
-          results.time.toFixed(2) +
-          ' ms.'
-      )
-    })
+    const log = info => console.log(`[${username}] ${info}`)
 
-    bot.on('goal_reached', () => {
-      console.log('[' + username + '] Here I am !')
-    })
+    bot.on('path_update', ({ path, time }) =>
+      log(
+        `I can get there in ${
+          path.length
+        } moves. Computation took ${time.toFixed(2)} ms.`
+      )
+    )
+
+    bot.on('goal_reached', () => log("I'm here!"))
 
     bot.on('chat', (username, message) => {
       if (username === bot.username) return

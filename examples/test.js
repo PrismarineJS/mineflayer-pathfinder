@@ -22,34 +22,30 @@ bot.once('spawn', () => {
   // We create different movement generators for different type of activity
   const defaultMove = new Movements(bot, mcData)
 
-  bot.on('path_update', r => {
-    const nodesPerTick = ((r.visitedNodes * 50) / r.time).toFixed(2)
+  bot.on('path_update', ({ path, time, visitedNodes }) => {
+    const nodesPerTick = ((visitedNodes * 50) / time).toFixed(2)
     console.log(
-      `I can get there in ${
-        r.path.length
-      } moves. Computation took ${r.time.toFixed(
+      `I can get there in ${path.length} moves. Computation took ${time.toFixed(
         2
       )} ms (${nodesPerTick} nodes/tick).`
     )
   })
 
-  bot.on('goal_reached', () => {
-    console.log('Here I am !')
-  })
+  bot.on('goal_reached', () => console.log("I'm here!"))
 
   bot.on('chat', (username, message) => {
     if (username === bot.username) return
 
-    const target = bot.players[username] ? bot.players[username].entity : null
+    const target = bot.players[username].entity
     if (message === 'come') {
       if (!target) {
         bot.chat("I don't see you !")
         return
       }
-      const p = target.position
+      const { x, y, z } = target.position
 
       bot.pathfinder.setMovements(defaultMove)
-      bot.pathfinder.setGoal(new goals.GoalNear(p.x, p.y, p.z, 1))
+      bot.pathfinder.setGoal(new goals.GoalNear(x, y, z, 1))
     } else if (message.startsWith('goto')) {
       const cmd = message.split(' ')
 
