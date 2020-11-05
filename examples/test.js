@@ -36,7 +36,7 @@ bot.once('spawn', () => {
   bot.on('chat', (username, message) => {
     if (username === bot.username) return
 
-    const target = bot.players[username].entity
+    const target = username in bot.players ? bot.players[username].entity : null
     if (message === 'come') {
       if (!target) {
         bot.chat("I don't see you !")

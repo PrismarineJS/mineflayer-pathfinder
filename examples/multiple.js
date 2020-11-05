@@ -43,11 +43,23 @@ multiple(bots, ({ username }) => {
     bot.on('chat', (username, message) => {
       if (username === bot.username) return
 
-      const target = bot.players[username].entity
+      const target =
+        username in bot.players ? bot.players[username].entity : null
+
+      const canSee = () => {
+        if (!target) {
+          bot.chat("I don't see you !")
+          return false
+        }
+        return true
+      }
+
       if (message === 'follow') {
+        if (!canSee()) return
         bot.pathfinder.setMovements(defaultMove)
         bot.pathfinder.setGoal(new goals.GoalFollow(target, 5), true)
       } else if (message === 'avoid') {
+        if (!canSee()) return
         bot.pathfinder.setMovements(defaultMove)
         bot.pathfinder.setGoal(
           new goals.GoalInvert(new goals.GoalFollow(target, 5)),
