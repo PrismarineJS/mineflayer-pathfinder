@@ -41,6 +41,10 @@ declare module 'mineflayer-pathfinder' {
 			public x: number;
 			public y: number;
 			public z: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalNear extends Goal {
@@ -50,6 +54,10 @@ declare module 'mineflayer-pathfinder' {
 			public y: number;
 			public z: number;
 			public rangeSq: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalXZ extends Goal {
@@ -57,12 +65,20 @@ declare module 'mineflayer-pathfinder' {
 
 			public x: number;
 			public z: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalY extends Goal {
 			public constructor(y: number);
 
 			public y: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalGetToBlock extends Goal {
@@ -71,24 +87,38 @@ declare module 'mineflayer-pathfinder' {
 			public x: number;
 			public y: number;
 			public z: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalCompositeAny extends Goal {
 			public goals: Goal[];
 			
 			public push(goal: Goal): void;
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalCompositeAll extends Goal {
 			public goals: Goal[];
 
 			public push(goal: Goal): void;
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalInvert extends Goal {
 			public constructor(goal: Goal);
 			
 			public goal: Goal;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 
 		export class GoalFollow extends Goal {
@@ -99,6 +129,10 @@ declare module 'mineflayer-pathfinder' {
 			public z: number;
 			public entity: Entity;
 			public rangeSq: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
 		}
 	}
 
