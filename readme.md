@@ -84,6 +84,7 @@ Also, **for now**, there is only the `pathfinder` module, `movements` and `goals
 
 `bot.pathfinder.bestHarvestTool(block)`
 
+
 `bot.pathfinder.getPathTo(movements, goal, done, timeout)`
 
 `bot.pathfinder.setGoal(goal, dynamic)`
@@ -99,7 +100,7 @@ Also, **for now**, there is only the `pathfinder` module, `movements` and `goals
 `bot.pathfinder.isThinking()`
 
 
-# Variables(?):
+# Variables():
 `bot.pathfinder.thinkTimeout`
 Default: 40 (ms)
 
