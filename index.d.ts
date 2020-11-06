@@ -1,7 +1,10 @@
 import { Vec3 } from 'vec3';
 import { Bot } from 'mineflayer';
 import { EventEmitter } from 'events';
-import { IndexedData, Entity, Block, Item } from 'minecraft-data';
+import { IndexedData } from 'minecraft-data';
+import { Item } from 'prismarine-item';
+import { Block } from 'prismarine-block';
+import { Entity } from 'prismarine-entity';
 
 declare module 'mineflayer-pathfinder' {
 	export const pathfinder: (bot: Bot) => PathFinder;
@@ -151,7 +154,7 @@ declare module 'mineflayer-pathfinder' {
 		public constructor(bot: Bot, minecraftData?: IndexedData);
 	
 		public countScaffoldingItems(): number;
-		public getScaffoldingItem(): Item;
+		public getScaffoldingItem(): Item | null;
 		public getBlock(position: CoordinatesObject | null, dx: number, dy: number, dz: number): SafeBlock;
 		public safeToBreak(block: Block): boolean;
 		public safeOrBreak({ safe, block }: SafeBlock, toBreak: CoordinatesObject[]): number;
