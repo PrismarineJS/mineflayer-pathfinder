@@ -50,6 +50,19 @@ function inject (bot) {
   let thinking = false
   let lastNodeTime = performance.now()
 
+  Object.defineProperties(bot.pathfinder, {
+    goal: {
+      get () {
+        return stateGoal
+      }
+    },
+    movements: {
+      get () {
+        return stateMovements
+      }
+    }
+  })
+
   function resetPath (clearStates = true) {
     path = []
     if (digging) bot.stopDigging()
