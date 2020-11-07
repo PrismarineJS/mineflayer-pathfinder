@@ -80,10 +80,9 @@ Considering there are a lot of deep changes that are being worked on, it could t
 Also, **for now**, there is only the `pathfinder` module, `movements` and `goals` still need to be done
 
 
-# Apis:
+# Functions:
 
 `bot.pathfinder.bestHarvestTool(block)`
-
 
 `bot.pathfinder.getPathTo(movements, goal, done, timeout)`
 
@@ -100,10 +99,9 @@ Also, **for now**, there is only the `pathfinder` module, `movements` and `goals
 `bot.pathfinder.isThinking()`
 
 
-# Variables():
+# Properties:
 `bot.pathfinder.thinkTimeout`
 Default: 40 (ms)
 
 # Events:
 TBD
-
