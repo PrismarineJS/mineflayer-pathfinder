@@ -119,7 +119,6 @@ Think Timeout in milliseconds
  * `Default` - 40
 
 # Events:
-WIP
 
 ### goal_reached
 
