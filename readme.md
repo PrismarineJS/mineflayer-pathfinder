@@ -74,7 +74,7 @@ bot.once('spawn', () => {
 * Sprint
 * Actual move speed per block
 
-## API(WIP)
+## API
 Considering there are a lot of deep changes that are being worked on, it could take some time before it's done
 
 Also, **for now**, there is only the `pathfinder` module, `movements` and `goals` still need to be done
