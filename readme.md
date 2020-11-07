@@ -82,42 +82,47 @@ Also, **for now**, there is only the `pathfinder` module, `movements` and `goals
 
 # Functions:
 
-bot.pathfinder.bestHarvestTool(block)
-`block` - Block instance
+### bot.pathfinder.bestHarvestTool(block)
+Returns the best harvest tool in the inventory for the specified block
+ * `Return` - ?
+ * `block` - Block instance
 
-bot.pathfinder.getPathTo(movements, goal, done, timeout)
-`Return` - Path instance
-`movments` - Movements instance
-`goal` - Goal instance
-`done` - ?
-`timeout` - ?
+### bot.pathfinder.getPathTo(movements, goal, done, timeout)
+Returns a Path instance
+ * `Return` - Path instance
+ * `movments` - Movements instance
+ * `goal` - Goal instance
+ * `done` - ?
+ * `timeout` - ?
 
-bot.pathfinder.setGoal(Goal, dynamic)
-`goal` - Goal instance
+### bot.pathfinder.setGoal(Goal, dynamic)
+ * `goal` - Goal instance
 
-bot.pathfinder.setMovements(movements)
-`movments` - Movements instance
+### bot.pathfinder.setMovements(movements)
+ * `movments` - Movements instance
 
-bot.pathfinder.isMoving()
-`Return` - bool
+### bot.pathfinder.isMoving()
+ * `Return` - bool
 
-bot.pathfinder.isMining()
-`Return` - bool
+### bot.pathfinder.isMining()
+ * `Return` - bool
 
-bot.pathfinder.isBuilding()
-`Return` - bool
+### bot.pathfinder.isBuilding()
+ * `Return` - bool
 
-bot.pathfinder.isThinking()
-`Return` - bool
+### bot.pathfinder.isThinking()
+ * `Return` - bool
 
 # Properties:
-`bot.pathfinder.thinkTimeout`
-`Default: 40 (ms)`
+### bot.pathfinder.thinkTimeout
+Think Timeout in milliseconds
+ * `Default` - 40
 
 # Events:
+WIP
 
-goal_reached
+### goal_reached
 
-path_update
+### path_update
 
-goal_updated
+### goal_updated
