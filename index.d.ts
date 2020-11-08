@@ -182,7 +182,7 @@ declare module 'mineflayer-pathfinder' {
 		hash: string;
 	}
 
-	type Callback = (error: Error) => void;
+	type Callback = (error?: Error) => void;
 
 	export interface ComputedPath {
 		status: 'noPath' | 'timeout' | 'success';
