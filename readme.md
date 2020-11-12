@@ -134,3 +134,53 @@ Called whenever the path is recalculated.
 
 ### goal_updated
 Called whenever a new goal is assigned to the pathfinder.
+
+# Goals:
+
+### GoalBlock(x, y, z)
+One specific block that the player should stand inside at foot level
+ * `x` - Integer
+ * `y` - Integer
+ * `z` - Integer
+
+### GoalNear(x, y, z, range)
+A block position that the player should get within a certain radius of
+ * `x` - Integer
+ * `y` - Integer
+ * `z` - Integer
+ * `range` - Integer
+ 
+### GoalXZ(x, z)
+Useful for long-range goals that don't have a specific Y level
+ * `x` - Integer
+ * `z` - Integer
+
+### GoalY(y)
+Get to y level
+ * `z` - Integer
+
+
+### GoalGetToBlock(x, y, z)
+Don't get into the block, but get directly adjacent to it. Useful for chests.
+ * `x` - Integer
+ * `y` - Integer
+ * `z` - Integer
+
+### GoalCompositeAny(Array?)
+A composite of many goals, any one of which satisfies the composite.
+For example, a GoalCompositeAny of block goals for every oak log in loaded
+chunks would result in it pathing to the easiest oak log to get to
+ * `Array` - Array of goals
+
+### GoalCompositeAll(Array?)
+A composite of many goals, all of them needs to be satisfied.
+ * `Array` - Array of goals
+
+### GoalInvert(goal)
+Inverts the goal
+ * `goal` - Goal to invert
+
+### GoalFollow(entity, range)
+Follows an entity
+ * `entity` - Entity instance
+ * `range` - Integer
