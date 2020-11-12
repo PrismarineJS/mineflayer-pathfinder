@@ -84,34 +84,35 @@ Also, **for now**, there is only the `pathfinder` module, `movements` and `goals
 
 ### bot.pathfinder.bestHarvestTool(block)
 Returns the best harvest tool in the inventory for the specified block
- * `Return` - ?
+ * `Returns` - ?
  * `block` - Block instance
 
 ### bot.pathfinder.getPathTo(movements, goal, done, timeout)
 Returns a Path instance
- * `Return` - Path instance
+ * `Returns` - void
  * `movments` - Movements instance
  * `goal` - Goal instance
  * `done` - ?
- * `timeout` - ?
+ * `timeout` - (optional, default `bot.pathfinder.thinkTimeout`) number
 
 ### bot.pathfinder.setGoal(Goal, dynamic)
  * `goal` - Goal instance
-
+ * `dynamic` - (optional, default false) boolean
+ 
 ### bot.pathfinder.setMovements(movements)
  * `movments` - Movements instance
 
 ### bot.pathfinder.isMoving()
- * `Return` - bool
+ * `Returns` - boolean
 
 ### bot.pathfinder.isMining()
- * `Return` - bool
+ * `Returns` - boolean
 
 ### bot.pathfinder.isBuilding()
- * `Return` - bool
+ * `Returns` - boolean
 
 ### bot.pathfinder.isThinking()
- * `Return` - bool
+ * `Returns` - boolean
 
 # Properties:
 ### bot.pathfinder.thinkTimeout
