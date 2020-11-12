@@ -88,7 +88,7 @@ Returns the best harvest tool in the inventory for the specified block
  * `block` - Block instance
 
 ### bot.pathfinder.getPathTo(movements, goal, done, timeout)
-A callback that is called when the path is calculated.
+? - A callback that is called when the path is calculated.
  * `Returns` - void
  * `movments` - Movements instance
  * `goal` - Goal instance
