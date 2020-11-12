@@ -100,18 +100,23 @@ Returns a Path instance
  * `dynamic` - (optional, default false) boolean
  
 ### bot.pathfinder.setMovements(movements)
+Assigns the movements config
  * `movments` - Movements instance
 
 ### bot.pathfinder.isMoving()
+A function that checks if the bot is currently moving.
  * `Returns` - boolean
 
 ### bot.pathfinder.isMining()
+A function that checks if the bot is currently mining blocks.
  * `Returns` - boolean
 
 ### bot.pathfinder.isBuilding()
+A function that checks if the bot is currently placing blocks.
  * `Returns` - boolean
 
 ### bot.pathfinder.isThinking()
+A function that returns true if a path is currently being calculated. False otherwise.
  * `Returns` - boolean
 
 # Properties:
@@ -122,7 +127,10 @@ Think Timeout in milliseconds
 # Events:
 
 ### goal_reached
+Called when the goal has been reached. Is not called for dynamic goals.
 
 ### path_update
+Called whenever the path is recalculated.
 
 ### goal_updated
+Called whenever a new goal is assigned to the pathfinder.
