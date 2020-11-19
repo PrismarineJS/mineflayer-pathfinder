@@ -73,3 +73,114 @@ bot.once('spawn', () => {
 * Dynamic harvest/mining paths
 * Sprint
 * Actual move speed per block
+
+## API
+Considering there are a lot of deep changes that are being worked on, it could take some time before it's done
+
+Also, **for now**, there is only the `pathfinder` module, `movements` and `goals` still need to be done
+
+
+# Functions:
+
+### bot.pathfinder.bestHarvestTool(block)
+Returns the best harvest tool in the inventory for the specified block
+ * `Returns` - ?
+ * `block` - Block instance
+
+### bot.pathfinder.getPathTo(movements, goal, done, timeout)
+? - A callback that is called when the path is calculated.
+ * `Returns` - void
+ * `movments` - Movements instance
+ * `goal` - Goal instance
+ * `done` - ?
+ * `timeout` - number (optional, default `bot.pathfinder.thinkTimeout`)
+
+### bot.pathfinder.setGoal(Goal, dynamic)
+ * `goal` - Goal instance
+ * `dynamic` - boolean (optional, default false)
+ 
+### bot.pathfinder.setMovements(movements)
+Assigns the movements config
+ * `movments` - Movements instance
+
+### bot.pathfinder.isMoving()
+A function that checks if the bot is currently moving.
+ * `Returns` - boolean
+
+### bot.pathfinder.isMining()
+A function that checks if the bot is currently mining blocks.
+ * `Returns` - boolean
+
+### bot.pathfinder.isBuilding()
+A function that checks if the bot is currently placing blocks.
+ * `Returns` - boolean
+
+### bot.pathfinder.isThinking()
+A function that returns true if a path is currently being calculated. False otherwise.
+ * `Returns` - boolean
+
+# Properties:
+### bot.pathfinder.thinkTimeout
+Think Timeout in milliseconds
+ * `Default` - 40
+
+# Events:
+
+### goal_reached
+Called when the goal has been reached. Is not called for dynamic goals.
+
+### path_update
+Called whenever the path is recalculated.
+
+### goal_updated
+Called whenever a new goal is assigned to the pathfinder.
+
+# Goals:
+
+### GoalBlock(x, y, z)
+One specific block that the player should stand inside at foot level
+ * `x` - Integer
+ * `y` - Integer
+ * `z` - Integer
+
+### GoalNear(x, y, z, range)
+A block position that the player should get within a certain radius of
+ * `x` - Integer
+ * `y` - Integer
+ * `z` - Integer
+ * `range` - Integer
+ 
+### GoalXZ(x, z)
+Useful for long-range goals that don't have a specific Y level
+ * `x` - Integer
+ * `z` - Integer
+
+### GoalY(y)
+Get to y level
+ * `z` - Integer
+
+
+### GoalGetToBlock(x, y, z)
+Don't get into the block, but get directly adjacent to it. Useful for chests.
+ * `x` - Integer
+ * `y` - Integer
+ * `z` - Integer
+
+### GoalCompositeAny(Array?)
+A composite of many goals, any one of which satisfies the composite.
+For example, a GoalCompositeAny of block goals for every oak log in loaded
+chunks would result in it pathing to the easiest oak log to get to
+ * `Array` - Array of goals
+
+### GoalCompositeAll(Array?)
+A composite of many goals, all of them needs to be satisfied.
+ * `Array` - Array of goals
+
+### GoalInvert(goal)
+Inverts the goal
+ * `goal` - Goal to invert
+
+### GoalFollow(entity, range)
+Follows an entity
+ * `entity` - Entity instance
+ * `range` - Integer
