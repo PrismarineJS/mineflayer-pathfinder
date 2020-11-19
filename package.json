@@ -1,6 +1,6 @@
 {
   "name": "mineflayer-pathfinder",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,6 @@
   },
   "devDependencies": {
     "require-self": "^0.2.3",
-    "standard": "^14.3.4"
+    "standard": "^16.0.1"
   }
 }

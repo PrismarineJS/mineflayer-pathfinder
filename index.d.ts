@@ -1,160 +1,211 @@
-/// <reference types="prismarine-entity" />
+import { Bot } from 'mineflayer';
+import { IndexedData } from 'minecraft-data';
+import { Item } from 'prismarine-item';
+import { Vec3 } from 'vec3';
+import { Block } from 'prismarine-block';
+import { Entity } from 'prismarine-entity';
 
-import { Entity } from "prismarine-entity";
-import { Bot } from "mineflayer";
-import { Item } from "prismarine-item";
-import { Block } from "prismarine-block";
+declare module 'mineflayer-pathfinder' {
+	export function pathfinder(bot: Bot): void;
 
-declare module 'mineflayer-pathfinder'
-{
+	export interface Pathfinder {
+		thinkTimeout: number;
 
-    export function pathfinder(bot: Bot): void;
-    export namespace goals
-    {
-        export class Goal
-        {
-            constructor();
+		bestHarvestTool(block: Block): Item | null;
+		getPathTo(
+			movements: Movements,
+			goal: goals.Goal,
+			done: (result: ComputedPath) => void,
+			timeout?: number
+		): void;
+		setGoal(goal: goals.Goal, dynamic?: boolean): void;
+		setMovements(movements: Movements): void;
+		goto(goal: goals.Goal, callback: Callback): void;
 
-            heuristic(node: Move): number;
-            isEnd(node: Move): boolean;
-            hasChanged(): boolean;
-        }
+		isMoving(): boolean;
+		isMining(): boolean;
+		isBuilding(): boolean;
+		isThinking(): boolean;
+	}
 
-        export class GoalBlock extends Goal
-        {
-            x: number;
-            y: number;
-            z: number;
+	export namespace goals {
+		export abstract class Goal {
+			public abstract heuristic(node: Move): number;
+			public abstract isEnd(node: Move): boolean;
+			public abstract hasChanged(): boolean;
+		}
 
-            constructor(x: number, y: number, z: number);
-        }
+		export class GoalBlock extends Goal {
+			public constructor(x: number, y: number, z: number);
 
-        export class GoalNear extends Goal
-        {
-            x: number;
-            y: number;
-            z: number;
-            range: number;
+			public x: number;
+			public y: number;
+			public z: number;
 
-            constructor(x: number, y: number, z: number, range: number);
-        }
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-        export class GoalXZ extends Goal
-        {
-            x: number;
-            z: number;
+		export class GoalNear extends Goal {
+			public constructor(x: number, y: number, z: number, range: number);
 
-            constructor(x: number, z: number);
-        }
+			public x: number;
+			public y: number;
+			public z: number;
+			public rangeSq: number;
 
-        export class GoalY extends Goal
-        {
-            y: number;
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-            constructor(y: number);
-        }
+		export class GoalXZ extends Goal {
+			public constructor(x: number, z: number);
 
-        export class GoalGetToBlock extends Goal
-        {
-            x: number;
-            y: number;
-            z: number;
+			public x: number;
+			public z: number;
 
-            constructor(x: number, y: number, z: number);
-        }
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-        export class GoalCompositeAny extends Goal
-        {
-            goals: Goal[];
+		export class GoalY extends Goal {
+			public constructor(y: number);
 
-            constructor();
+			public y: number;
 
-            push(goal: Goal): void;
-        }
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-        export class GoalCompositeAll extends Goal
-        {
-            goals: Goal[];
+		export class GoalGetToBlock extends Goal {
+			public constructor(x: number, y: number, z: number);
 
-            constructor();
+			public x: number;
+			public y: number;
+			public z: number;
 
-            push(goal: Goal): void;
-        }
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-        export class GoalInvert extends Goal
-        {
-            goal: Goal;
+		export class GoalCompositeAny extends Goal {
+			public goals: Goal[];
+			
+			public push(goal: Goal): void;
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-            constructor(goal: Goal);
-        }
+		export class GoalCompositeAll extends Goal {
+			public goals: Goal[];
 
-        export class GoalFollow extends Goal
-        {
-            entity: Entity;
-            range: number;
+			public push(goal: Goal): void;
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-            constructor(entity: Entity, range: number);
-        }
-    }
+		export class GoalInvert extends Goal {
+			public constructor(goal: Goal);
+			
+			public goal: Goal;
 
-    export class Movements
-    {
-        constructor(bot: Bot, mcData: any);
-    }
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 
-    export class PathNode
-    {
-        data: Move;
-        g: number;
-        h: number;
-        f: number;
-        parent?: PathNode;
+		export class GoalFollow extends Goal {
+			public constructor(entity: Entity, range: number);
 
-        set(data: Move, g: number, h: number, parent?: PathNode): void;
-    }
+			public x: number;
+			public y: number;
+			public z: number;
+			public entity: Entity;
+			public rangeSq: number;
 
-    export interface MoveBlockChange
-    {
-        x: number;
-        y: number;
-        z: number;
-        dx?: number;
-        dy?: number;
-        dz?: number;
-    }
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
+	}
 
-    export class Move
-    {
-        x: number;
-        y: number;
-        z: number;
-        remainingBlocks?: number;
-        cost?: number;
-        toBreak?: MoveBlockChange[];
-        toPlace?: MoveBlockChange[];
-        parkour?: boolean;
-        hash?: string;
-    }
+	export class Movements {
+		public constructor(bot: Bot, mcData: IndexedData);
 
-    export class Result
-    {
-        status: string;
-        cost: number;
-        time: number;
-        visitedNodes: number;
-        generatedNodes: number;
-        path: Move[];
-    }
+		public bot: Bot;
 
-    export class Pathfinder
-    {
-        bestHarvestTool(block: Block): Item | null;
-        getPathTo(movements: Movements, goal: goals.Goal, done: (result: Result) => void, timeout: number): void;
-        setGoal(goal: goals.Goal, dynamic?: boolean): void;
-        setMovements(movements: Movements): void;
-        isMoving(): boolean;
-        isMining(): boolean;
-        isBuilding(): boolean;
-        isThinking(): boolean;
-    }
+		public canDig: boolean;
+		public dontCreateFlow: boolean;
+		public allow1by1towers: boolean;
+		public allowFreeMotion: boolean;
+		public allowParkour: boolean;
+		
+		public blocksCantBreak: Set<number>;
+		public blocksToAvoid: Set<number>;
+		public liquids: Set<number>;
+		public scafoldingBlocks: number[];
+
+		public maxDropDown: number;
+		public digCost: number;
+
+		public countScaffoldingItems(): number;
+		public getScaffoldingItem(): Item | null;
+		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;
+		public safeToBreak(block: SafeBlock): boolean;
+		public safeOrBreak(block: SafeBlock): number;
+		public getMoveJumpUp(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
+		public getMoveForward(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
+		public getMoveDiagonal(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
+		public getMoveDropDown(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
+		public getMoveParkourForward(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
+		public getMoveJumpUp(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
+		public getMoveUp(node: Move, neighbors: Move[]): void;
+		public getMoveDown(node: Move, neighbors: Move[]): void;
+		public getLandingBlock(node: Move, dir: XZCoordinates): SafeBlock;
+		public getNeighbors(node: Move): Move[];
+	}
+
+	// this is a class, but its not exported so we use an interface
+	export interface Move extends XYZCoordinates {
+		remainingBlocks: number;
+		cost: number;
+		toBreak: Move[];
+		toPlace: Move[];
+		parkour: boolean;
+		hash: string;
+	}
+
+	type Callback = (error?: Error) => void;
+
+	export interface ComputedPath {
+		status: 'noPath' | 'timeout' | 'success';
+		cost: number;
+		time: number;
+		visitedNodes: number;
+		generatedNodes: number;
+		path: Move[];
+	}
+
+	export interface XZCoordinates {
+		x: number;
+		z: number;
+	}
+
+	export interface XYZCoordinates extends XZCoordinates {
+		y: number;
+	}
+
+	export interface SafeBlock extends Block {
+		safe: boolean;
+		physical: boolean;
+		liquid: boolean;
+		height: number;
+	}
 }
