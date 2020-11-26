@@ -10,6 +10,8 @@ declare module 'mineflayer-pathfinder' {
 
 	export interface Pathfinder {
 		thinkTimeout: number;
+		readonly goal: goals.Goal | null;
+		readonly movements: Movements;
 
 		bestHarvestTool(block: Block): Item | null;
 		getPathTo(
