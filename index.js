@@ -292,6 +292,7 @@ function inject (bot) {
       nextPoint.z = np.z
     } else {
       nextPoint.x = Math.floor(nextPoint.x) + 0.5
+      nextPoint.y = nextPoint.y - 1
       nextPoint.z = Math.floor(nextPoint.z) + 0.5
     }
 
