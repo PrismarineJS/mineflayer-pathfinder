@@ -62,17 +62,6 @@ bot.once('spawn', () => {
  * Long distance paths
  * Can swim
 
-## TODO
-* Make computations span multiple ticks
-* Ladders and vines
-* Parkour jumps
-* Limit search range
-* Make a modular api to configure the movements
-* Dynamic enemies avoidance
-* Dynamic harvest/mining paths
-* Sprint
-* Actual move speed per block
-
 ## API
 Considering there are a lot of deep changes that are being worked on, it could take some time before it's done
 
