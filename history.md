@@ -1,5 +1,10 @@
 # History
 
+## 1.1.1
+
+* Fix 1x1 towering
+* Fix path starting on shorter blocks
+
 ## 1.1.0
 
 * Fixed crash with null positions
