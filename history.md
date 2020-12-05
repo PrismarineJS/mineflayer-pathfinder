@@ -1,5 +1,11 @@
 # History
 
+## 1.1.0
+
+* Fixed crash with null positions
+* API in the readme
+* Expose movements and goal
+
 ## 1.0.12
 
 * Added `canDig` movements variable
