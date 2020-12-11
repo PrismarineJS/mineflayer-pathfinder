@@ -7,7 +7,7 @@ const gotoUtil = require('./lib/goto')
 
 const Vec3 = require('vec3').Vec3
 
-const { PlayerState } = require('prismarine-physics')
+const Physics = require('./lib/physics')
 const nbt = require('prismarine-nbt')
 
 function inject (bot) {
@@ -37,8 +37,10 @@ function inject (bot) {
     const p = bot.entity.position
     const dy = p.y - Math.floor(p.y)
     const b = bot.blockAt(p)
-    const start = new Move(p.x, p.y + (dy > 0.001 && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
-    done(new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout).compute())
+    const start = new Move(p.x, p.y + (b && dy > 0.001 && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
+    const result = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout).compute()
+    postProcessPath(result.path)
+    done(result)
   }
 
   let stateMovements = new Movements(bot, require('minecraft-data')(bot.version))
@@ -51,6 +53,7 @@ function inject (bot) {
   let placingBlock = null
   let thinking = false
   let lastNodeTime = performance.now()
+  const physics = new Physics(bot)
 
   Object.defineProperties(bot.pathfinder, {
     goal: {
@@ -108,12 +111,27 @@ function inject (bot) {
 
   bot.on('physicTick', monitorMovement)
 
+  function postProcessPath (path) {
+    for (const nextPoint of path) {
+      let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
+      if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
+      if (np) {
+        nextPoint.x = np.x
+        nextPoint.y = np.y
+        nextPoint.z = np.z
+      } else {
+        nextPoint.x = Math.floor(nextPoint.x) + 0.5
+        nextPoint.y = nextPoint.y - 1
+        nextPoint.z = Math.floor(nextPoint.z) + 0.5
+      }
+    }
+  }
+
   function isPositionNearPath (pos, path) {
-    for (const i in path) {
-      const node = path[i]
-      const dx = Math.abs(node.x - pos.x)
-      const dy = Math.abs(node.y - pos.y)
-      const dz = Math.abs(node.z - pos.z)
+    for (const node of path) {
+      const dx = Math.abs(node.x - pos.x - 0.5)
+      const dy = Math.abs(node.y - pos.y - 0.5)
+      const dz = Math.abs(node.z - pos.z - 0.5)
       if (dx <= 1 && dy <= 2 && dz <= 1) return true
     }
     return false
@@ -170,36 +188,14 @@ function inject (bot) {
     resetPath()
   })
 
-  function canStraightPathTo (pos) {
-    const state = new PlayerState(bot, {
-      forward: true,
-      back: false,
-      left: false,
-      right: false,
-      jump: false,
-      sprint: false,
-      sneak: false
-    })
-    const delta = pos.minus(bot.entity.position)
-    state.yaw = Math.atan2(-delta.x, -delta.z)
-    const world = { getBlock: (pos) => { return bot.blockAt(pos, false) } }
-    for (let step = 0; step < 1000; step++) {
-      bot.physics.simulatePlayer(state, world)
-      if (pos.distanceTo(state.pos) <= 2) return true
-      // TODO: check blocks to avoid
-      if (!state.onGround || state.isCollidedHorizontally) return false
-    }
-    return false
-  }
-
   function monitorMovement () {
     // Test freemotion
     if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity) {
       const target = stateGoal.entity
-      if (canStraightPathTo(target.position)) {
+      if (physics.canStraightLine(target.position)) {
         bot.lookAt(target.position.offset(0, 1.6, 0))
 
-        if (target.position.distanceTo(bot.entity.position) > Math.sqrt(stateGoal.rangeSq)) {
+        if (target.position.distanceSquared(bot.entity.position) > stateGoal.rangeSq) {
           bot.setControlState('forward', true)
         } else {
           bot.clearControlStates()
@@ -285,21 +281,8 @@ function inject (bot) {
       return
     }
 
-    let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
-    if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
-    if (np) {
-      nextPoint.x = np.x
-      nextPoint.y = np.y
-      nextPoint.z = np.z
-    } else {
-      nextPoint.x = Math.floor(nextPoint.x) + 0.5
-      nextPoint.y = nextPoint.y - 1
-      nextPoint.z = Math.floor(nextPoint.z) + 0.5
-    }
-
-    const dx = nextPoint.x - p.x
-    const dy = nextPoint.y - p.y
-    const dz = nextPoint.z - p.z
+    let dx = nextPoint.x - p.x
+    let dz = nextPoint.z - p.z
     if ((dx * dx + dz * dz) <= 0.15 * 0.15 && (bot.entity.onGround || bot.entity.isInWater)) {
       // arrived at next point
       lastNodeTime = performance.now()
@@ -316,31 +299,30 @@ function inject (bot) {
       nextPoint = path[0]
       if (nextPoint.toBreak.length > 0 || nextPoint.toPlace.length > 0) {
         fullStop()
+        return
       }
-      return
+      dx = nextPoint.x - p.x
+      dz = nextPoint.z - p.z
     }
-    let gottaJump = false
-    const horizontalDelta = Math.sqrt(dx * dx + dz * dz)
 
-    if (dy > 0.6) {
-      // gotta jump up when we're close enough
-      gottaJump = horizontalDelta < 1.75
-    } else if (dy > -0.1 && nextPoint.parkour) {
-      // possibly jump over a hole
-      gottaJump = horizontalDelta > 1.5 && horizontalDelta < 2.5
-    }
-    gottaJump = gottaJump || bot.entity.isInWater
-    bot.setControlState('jump', gottaJump)
-
-    // run toward next point
     bot.look(Math.atan2(-dx, -dz), 0)
+    bot.setControlState('forward', true)
+    bot.setControlState('jump', false)
+    bot.setControlState('sprint', false)
 
-    const lx = -Math.sin(bot.entity.yaw)
-    const lz = -Math.cos(bot.entity.yaw)
-
-    const frontBackProj = lx * dx + lz * dz
-    bot.setControlState('forward', frontBackProj > 0)
-    bot.setControlState('back', frontBackProj < 0)
+    if (!physics.canStraightLine(nextPoint)) {
+      if (physics.canWalkJump(nextPoint)) {
+        bot.setControlState('jump', true)
+        bot.setControlState('sprint', false)
+      } else if (stateMovements.allowSprinting && physics.canSprintJump(nextPoint)) {
+        bot.setControlState('jump', true)
+        bot.setControlState('sprint', true)
+      }
+    }
+    if (bot.entity.isInWater) {
+      bot.setControlState('jump', true)
+      bot.setControlState('sprint', false)
+    }
 
     // check for futility
     if (performance.now() - lastNodeTime > 1500) {
