@@ -185,7 +185,7 @@ function inject (bot) {
   })
 
   bot.on('chunkColumnLoad', (chunk) => {
-    resetPath()
+    resetPath(false)
   })
 
   function monitorMovement () {
