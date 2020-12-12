@@ -43,7 +43,9 @@ function inject (bot) {
     done(result)
   }
 
-  let stateMovements = new Movements(bot, require('minecraft-data')(bot.version))
+  const mcData = require('minecraft-data')(bot.version)
+  const waterType = mcData.blocksByName.water.id
+  let stateMovements = new Movements(bot, mcData)
   let stateGoal = null
   let dynamicGoal = false
   let path = []
@@ -113,7 +115,14 @@ function inject (bot) {
 
   function postProcessPath (path) {
     for (const nextPoint of path) {
-      let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
+      const b = bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z))
+      if (b && b.type === waterType) {
+        nextPoint.x = Math.floor(nextPoint.x) + 0.5
+        nextPoint.y = Math.floor(nextPoint.y)
+        nextPoint.z = Math.floor(nextPoint.z) + 0.5
+        continue
+      }
+      let np = getPositionOnTopOf(b)
       if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
       if (np) {
         nextPoint.x = np.x
