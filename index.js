@@ -11,11 +11,26 @@ const Physics = require('./lib/physics')
 const nbt = require('prismarine-nbt')
 
 function inject (bot) {
+  const mcData = require('minecraft-data')(bot.version)
+  const waterType = mcData.blocksByName.water.id
+  let stateMovements = new Movements(bot, mcData)
+  let stateGoal = null
+  let astarContext = null
+  let astartTimedout = false
+  let dynamicGoal = false
+  let path = []
+  let pathUpdated = false
+  let digging = false
+  let placing = false
+  let placingBlock = null
+  let lastNodeTime = performance.now()
+  const physics = new Physics(bot)
+
   bot.pathfinder = {}
 
-  bot.pathfinder.thinkTimeout = 40 // ms
+  bot.pathfinder.thinkTimeout = 5000 // ms
 
-  bot.pathfinder.bestHarvestTool = function (block) {
+  bot.pathfinder.bestHarvestTool = (block) => {
     const availableTools = bot.inventory.items()
     const effects = bot.entity.effects
 
@@ -33,29 +48,16 @@ function inject (bot) {
     return bestTool
   }
 
-  bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
+  bot.pathfinder.getPathTo = (movements, goal, timeout) => {
     const p = bot.entity.position
     const dy = p.y - Math.floor(p.y)
     const b = bot.blockAt(p)
     const start = new Move(p.x, p.y + (b && dy > 0.001 && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
-    const result = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout).compute()
+    astarContext = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout)
+    const result = astarContext.compute()
     postProcessPath(result.path)
-    done(result)
+    return result
   }
-
-  const mcData = require('minecraft-data')(bot.version)
-  const waterType = mcData.blocksByName.water.id
-  let stateMovements = new Movements(bot, mcData)
-  let stateGoal = null
-  let dynamicGoal = false
-  let path = []
-  let pathUpdated = false
-  let digging = false
-  let placing = false
-  let placingBlock = null
-  let thinking = false
-  let lastNodeTime = performance.now()
-  const physics = new Physics(bot)
 
   Object.defineProperties(bot.pathfinder, {
     goal: {
@@ -76,7 +78,8 @@ function inject (bot) {
     digging = false
     placing = false
     pathUpdated = false
-    if (clearStates) { bot.clearControlStates() }
+    astarContext = null
+    if (clearStates) bot.clearControlStates()
   }
 
   bot.pathfinder.setGoal = function (goal, dynamic = false) {
@@ -91,21 +94,9 @@ function inject (bot) {
     resetPath()
   }
 
-  bot.pathfinder.isMoving = function () {
-    return path.length > 0 || thinking
-  }
-
-  bot.pathfinder.isMining = function () {
-    return digging
-  }
-
-  bot.pathfinder.isBuilding = function () {
-    return placing
-  }
-
-  bot.pathfinder.isThinking = function () {
-    return thinking
-  }
+  bot.pathfinder.isMoving = () => path.length > 0
+  bot.pathfinder.isMining = () => digging
+  bot.pathfinder.isBuilding = () => placing
 
   bot.pathfinder.goto = function (goal, cb) {
     gotoUtil(bot, goal, cb)
@@ -134,6 +125,29 @@ function inject (bot) {
         nextPoint.z = Math.floor(nextPoint.z) + 0.5
       }
     }
+  }
+
+  function pathFromPlayer (path) {
+    let minI = 0
+    let minDistance = 1000
+    for (let i = 0; i < path.length; i++) {
+      const node = path[i]
+      const dist = bot.entity.position.distanceSquared(node)
+      if (dist < minDistance) {
+        minDistance = dist
+        minI = i
+      }
+    }
+    // check if we are between 2 nodes
+    let next = 0
+    if (minI + 1 < path.length) {
+      const n1 = path[minI]
+      const n2 = path[minI + 1]
+      const d2 = bot.entity.position.distanceSquared(n2)
+      const d12 = new Vec3(n1.x, n1.y, n1.z).distanceSquared(n2)
+      next = d12 > d2 ? 1 : 0
+    }
+    path.splice(0, minI + next)
   }
 
   function isPositionNearPath (pos, path) {
@@ -219,22 +233,31 @@ function inject (bot) {
 
     if (path.length === 0) {
       lastNodeTime = performance.now()
-      if (stateGoal && stateMovements && !thinking) {
+      if (stateGoal && stateMovements) {
         if (stateGoal.isEnd(bot.entity.position.floored()) || pathUpdated) {
           if (!dynamicGoal) {
             bot.emit('goal_reached', stateGoal)
             stateGoal = null
           }
         } else {
-          thinking = true
-          bot.pathfinder.getPathTo(stateMovements, stateGoal, (results) => {
-            bot.emit('path_update', results)
-            path = results.path
-            thinking = false
-            pathUpdated = true
-          })
+          const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
+          bot.emit('path_update', results)
+          path = results.path
+          astartTimedout = results.status === 'timeout'
+          pathUpdated = true
         }
       }
+    } else if (astarContext && astartTimedout) {
+      const results = astarContext.compute()
+      postProcessPath(results.path)
+      pathFromPlayer(results.path)
+      bot.emit('path_update', results)
+      path = results.path
+      astartTimedout = results.status === 'timeout'
+    }
+
+    if (path.length === 0) {
+      fullStop()
       return
     }
 
