@@ -29,6 +29,7 @@ function inject (bot) {
   bot.pathfinder = {}
 
   bot.pathfinder.thinkTimeout = 5000 // ms
+  bot.pathfinder.enablePathShortcut = false // disabled by default as it can cause bugs in specific configurations
 
   bot.pathfinder.bestHarvestTool = (block) => {
     const availableTools = bot.inventory.items()
@@ -55,7 +56,7 @@ function inject (bot) {
     const start = new Move(p.x, p.y + (b && dy > 0.001 && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
     astarContext = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout)
     const result = astarContext.compute()
-    postProcessPath(result.path)
+    result.path = postProcessPath(result.path)
     return result
   }
 
@@ -82,14 +83,14 @@ function inject (bot) {
     if (clearStates) bot.clearControlStates()
   }
 
-  bot.pathfinder.setGoal = function (goal, dynamic = false) {
+  bot.pathfinder.setGoal = (goal, dynamic = false) => {
     stateGoal = goal
     dynamicGoal = dynamic
     bot.emit('goal_updated', goal, dynamic)
     resetPath()
   }
 
-  bot.pathfinder.setMovements = function (movements) {
+  bot.pathfinder.setMovements = (movements) => {
     stateMovements = movements
     resetPath()
   }
@@ -98,7 +99,7 @@ function inject (bot) {
   bot.pathfinder.isMining = () => digging
   bot.pathfinder.isBuilding = () => placing
 
-  bot.pathfinder.goto = function (goal, cb) {
+  bot.pathfinder.goto = (goal, cb) => {
     gotoUtil(bot, goal, cb)
   }
 
@@ -125,6 +126,20 @@ function inject (bot) {
         nextPoint.z = Math.floor(nextPoint.z) + 0.5
       }
     }
+
+    if (!bot.pathfinder.enablePathShortcut || path.length === 0) return path
+
+    const newPath = []
+    let lastNode = bot.entity.position
+    for (let i = 1; i < path.length; i++) {
+      const node = path[i]
+      if (Math.abs(node.y - lastNode.y) > 0.5 || node.toBreak.length > 0 || node.toPlace.length > 0 || !physics.canStraightLineBetween(lastNode, node)) {
+        newPath.push(path[i - 1])
+        lastNode = path[i - 1]
+      }
+    }
+    newPath.push(path[path.length - 1])
+    return newPath
   }
 
   function pathFromPlayer (path) {
@@ -144,7 +159,7 @@ function inject (bot) {
       const n1 = path[minI]
       const n2 = path[minI + 1]
       const d2 = bot.entity.position.distanceSquared(n2)
-      const d12 = new Vec3(n1.x, n1.y, n1.z).distanceSquared(n2)
+      const d12 = n1.distanceSquared(n2)
       next = d12 > d2 ? 1 : 0
     }
     path.splice(0, minI + next)
@@ -249,7 +264,7 @@ function inject (bot) {
       }
     } else if (astarContext && astartTimedout) {
       const results = astarContext.compute()
-      postProcessPath(results.path)
+      results.path = postProcessPath(results.path)
       pathFromPlayer(results.path)
       bot.emit('path_update', results)
       path = results.path
@@ -314,8 +329,9 @@ function inject (bot) {
     }
 
     let dx = nextPoint.x - p.x
+    const dy = nextPoint.y - p.y
     let dz = nextPoint.z - p.z
-    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && (bot.entity.onGround || bot.entity.isInWater)) {
+    if ((dx * dx + dz * dz) <= (0.15 * 0.15) && ((bot.entity.onGround && Math.abs(dy) < 1) || bot.entity.isInWater)) {
       // arrived at next point
       lastNodeTime = performance.now()
       path.shift()
@@ -340,19 +356,26 @@ function inject (bot) {
     bot.look(Math.atan2(-dx, -dz), 0)
     bot.setControlState('forward', true)
     bot.setControlState('jump', false)
-    bot.setControlState('sprint', false)
 
-    if (!physics.canStraightLine(nextPoint)) {
-      if (physics.canWalkJump(nextPoint)) {
-        bot.setControlState('jump', true)
-        bot.setControlState('sprint', false)
-      } else if (stateMovements.allowSprinting && physics.canSprintJump(nextPoint)) {
-        bot.setControlState('jump', true)
-        bot.setControlState('sprint', true)
-      }
-    }
     if (bot.entity.isInWater) {
       bot.setControlState('jump', true)
+      bot.setControlState('sprint', false)
+    } else if (stateMovements.allowSprinting && bot.entity.onGround && physics.canStraightLine(path, true)) {
+      bot.setControlState('jump', false)
+      bot.setControlState('sprint', true)
+    } else if (stateMovements.allowSprinting && bot.entity.onGround && physics.canSprintJump(path)) {
+      bot.setControlState('jump', true)
+      bot.setControlState('sprint', true)
+    } else if (physics.canStraightLine(path)) {
+      bot.setControlState('jump', false)
+      bot.setControlState('sprint', false)
+    } else if (bot.entity.onGround && physics.canWalkJump(path)) {
+      bot.setControlState('jump', true)
+      bot.setControlState('sprint', false)
+    } else if (!bot.entity.onGround || !physics.simulateUntilNextTick().onGround) {
+      bot.setControlState('forward', false)
+      bot.setControlState('sprint', false)
+    } else {
       bot.setControlState('sprint', false)
     }
 
