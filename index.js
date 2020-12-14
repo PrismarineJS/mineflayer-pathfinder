@@ -243,7 +243,7 @@ function inject (bot) {
     }
 
     if (stateGoal && stateGoal.hasChanged()) {
-      resetPath()
+      resetPath(false)
     }
 
     if (path.length === 0) {
@@ -272,7 +272,6 @@ function inject (bot) {
     }
 
     if (path.length === 0) {
-      fullStop()
       return
     }
 
