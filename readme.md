@@ -76,11 +76,9 @@ Returns the best harvest tool in the inventory for the specified block
  * `block` - Block instance
 
 ### bot.pathfinder.getPathTo(movements, goal, done, timeout)
-? - A callback that is called when the path is calculated.
- * `Returns` - void
+ * `Returns` - The path
  * `movments` - Movements instance
  * `goal` - Goal instance
- * `done` - ?
  * `timeout` - number (optional, default `bot.pathfinder.thinkTimeout`)
 
 ### bot.pathfinder.setGoal(Goal, dynamic)
@@ -101,10 +99,6 @@ A function that checks if the bot is currently mining blocks.
 
 ### bot.pathfinder.isBuilding()
 A function that checks if the bot is currently placing blocks.
- * `Returns` - boolean
-
-### bot.pathfinder.isThinking()
-A function that returns true if a path is currently being calculated. False otherwise.
  * `Returns` - boolean
 
 # Properties:
