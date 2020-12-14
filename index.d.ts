@@ -17,9 +17,8 @@ declare module 'mineflayer-pathfinder' {
 		getPathTo(
 			movements: Movements,
 			goal: goals.Goal,
-			done: (result: ComputedPath) => void,
 			timeout?: number
-		): void;
+		): ComputedPath;
 		setGoal(goal: goals.Goal, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
 		goto(goal: goals.Goal, callback: Callback): void;
@@ -27,7 +26,6 @@ declare module 'mineflayer-pathfinder' {
 		isMoving(): boolean;
 		isMining(): boolean;
 		isBuilding(): boolean;
-		isThinking(): boolean;
 	}
 
 	export namespace goals {
