@@ -104,7 +104,7 @@ A function that checks if the bot is currently placing blocks.
 # Properties:
 ### bot.pathfinder.thinkTimeout
 Think Timeout in milliseconds
- * `Default` - 40
+ * `Default` - 5000
 
 # Events:
 
@@ -112,7 +112,11 @@ Think Timeout in milliseconds
 Called when the goal has been reached. Is not called for dynamic goals.
 
 ### path_update
-Called whenever the path is recalculated.
+Called whenever the path is recalculated. Status may be:
+ * `success` a path has been found
+ * `partial` a partial path has been found, computations will continue next tick
+ * `timeout` timed out
+ * `noPath` no path was found
 
 ### goal_updated
 Called whenever a new goal is assigned to the pathfinder.

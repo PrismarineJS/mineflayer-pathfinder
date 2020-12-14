@@ -258,7 +258,7 @@ function inject (bot) {
           const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
           bot.emit('path_update', results)
           path = results.path
-          astartTimedout = results.status === 'timeout'
+          astartTimedout = results.status === 'partial'
           pathUpdated = true
         }
       }
@@ -268,7 +268,7 @@ function inject (bot) {
       pathFromPlayer(results.path)
       bot.emit('path_update', results)
       path = results.path
-      astartTimedout = results.status === 'timeout'
+      astartTimedout = results.status === 'partial'
     }
 
     if (path.length === 0) {
