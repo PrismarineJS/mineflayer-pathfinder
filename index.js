@@ -253,6 +253,7 @@ function inject (bot) {
           if (!dynamicGoal) {
             bot.emit('goal_reached', stateGoal)
             stateGoal = null
+            fullStop()
           }
         } else {
           const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
