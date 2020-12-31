@@ -1,5 +1,11 @@
 # History
 
+## 1.2.0
+
+* Use physics to predict motion and choose best controls
+* Add more parkour moves
+* Sprint and sprint-jump over gaps
+
 ## 1.1.2
 
 * Set every non diggable block automatically from mcdata

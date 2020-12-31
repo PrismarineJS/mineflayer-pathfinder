@@ -7,15 +7,31 @@ const gotoUtil = require('./lib/goto')
 
 const Vec3 = require('vec3').Vec3
 
-const { PlayerState } = require('prismarine-physics')
+const Physics = require('./lib/physics')
 const nbt = require('prismarine-nbt')
 
 function inject (bot) {
+  const mcData = require('minecraft-data')(bot.version)
+  const waterType = mcData.blocksByName.water.id
+  let stateMovements = new Movements(bot, mcData)
+  let stateGoal = null
+  let astarContext = null
+  let astartTimedout = false
+  let dynamicGoal = false
+  let path = []
+  let pathUpdated = false
+  let digging = false
+  let placing = false
+  let placingBlock = null
+  let lastNodeTime = performance.now()
+  const physics = new Physics(bot)
+
   bot.pathfinder = {}
 
-  bot.pathfinder.thinkTimeout = 40 // ms
+  bot.pathfinder.thinkTimeout = 5000 // ms
+  bot.pathfinder.enablePathShortcut = false // disabled by default as it can cause bugs in specific configurations
 
-  bot.pathfinder.bestHarvestTool = function (block) {
+  bot.pathfinder.bestHarvestTool = (block) => {
     const availableTools = bot.inventory.items()
     const effects = bot.entity.effects
 
@@ -33,24 +49,16 @@ function inject (bot) {
     return bestTool
   }
 
-  bot.pathfinder.getPathTo = function (movements, goal, done, timeout) {
+  bot.pathfinder.getPathTo = (movements, goal, timeout) => {
     const p = bot.entity.position
     const dy = p.y - Math.floor(p.y)
     const b = bot.blockAt(p)
-    const start = new Move(p.x, p.y + (dy > 0.001 && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
-    done(new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout).compute())
+    const start = new Move(p.x, p.y + (b && dy > 0.001 && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
+    astarContext = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout)
+    const result = astarContext.compute()
+    result.path = postProcessPath(result.path)
+    return result
   }
-
-  let stateMovements = new Movements(bot, require('minecraft-data')(bot.version))
-  let stateGoal = null
-  let dynamicGoal = false
-  let path = []
-  let pathUpdated = false
-  let digging = false
-  let placing = false
-  let placingBlock = null
-  let thinking = false
-  let lastNodeTime = performance.now()
 
   Object.defineProperties(bot.pathfinder, {
     goal: {
@@ -71,49 +79,97 @@ function inject (bot) {
     digging = false
     placing = false
     pathUpdated = false
-    if (clearStates) { bot.clearControlStates() }
+    astarContext = null
+    if (clearStates) bot.clearControlStates()
   }
 
-  bot.pathfinder.setGoal = function (goal, dynamic = false) {
+  bot.pathfinder.setGoal = (goal, dynamic = false) => {
     stateGoal = goal
     dynamicGoal = dynamic
     bot.emit('goal_updated', goal, dynamic)
     resetPath()
   }
 
-  bot.pathfinder.setMovements = function (movements) {
+  bot.pathfinder.setMovements = (movements) => {
     stateMovements = movements
     resetPath()
   }
 
-  bot.pathfinder.isMoving = function () {
-    return path.length > 0 || thinking
-  }
+  bot.pathfinder.isMoving = () => path.length > 0
+  bot.pathfinder.isMining = () => digging
+  bot.pathfinder.isBuilding = () => placing
 
-  bot.pathfinder.isMining = function () {
-    return digging
-  }
-
-  bot.pathfinder.isBuilding = function () {
-    return placing
-  }
-
-  bot.pathfinder.isThinking = function () {
-    return thinking
-  }
-
-  bot.pathfinder.goto = function (goal, cb) {
+  bot.pathfinder.goto = (goal, cb) => {
     gotoUtil(bot, goal, cb)
   }
 
   bot.on('physicTick', monitorMovement)
 
-  function isPositionNearPath (pos, path) {
-    for (const i in path) {
+  function postProcessPath (path) {
+    for (const nextPoint of path) {
+      const b = bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z))
+      if (b && b.type === waterType) {
+        nextPoint.x = Math.floor(nextPoint.x) + 0.5
+        nextPoint.y = Math.floor(nextPoint.y)
+        nextPoint.z = Math.floor(nextPoint.z) + 0.5
+        continue
+      }
+      let np = getPositionOnTopOf(b)
+      if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
+      if (np) {
+        nextPoint.x = np.x
+        nextPoint.y = np.y
+        nextPoint.z = np.z
+      } else {
+        nextPoint.x = Math.floor(nextPoint.x) + 0.5
+        nextPoint.y = nextPoint.y - 1
+        nextPoint.z = Math.floor(nextPoint.z) + 0.5
+      }
+    }
+
+    if (!bot.pathfinder.enablePathShortcut || path.length === 0) return path
+
+    const newPath = []
+    let lastNode = bot.entity.position
+    for (let i = 1; i < path.length; i++) {
       const node = path[i]
-      const dx = Math.abs(node.x - pos.x)
-      const dy = Math.abs(node.y - pos.y)
-      const dz = Math.abs(node.z - pos.z)
+      if (Math.abs(node.y - lastNode.y) > 0.5 || node.toBreak.length > 0 || node.toPlace.length > 0 || !physics.canStraightLineBetween(lastNode, node)) {
+        newPath.push(path[i - 1])
+        lastNode = path[i - 1]
+      }
+    }
+    newPath.push(path[path.length - 1])
+    return newPath
+  }
+
+  function pathFromPlayer (path) {
+    let minI = 0
+    let minDistance = 1000
+    for (let i = 0; i < path.length; i++) {
+      const node = path[i]
+      const dist = bot.entity.position.distanceSquared(node)
+      if (dist < minDistance) {
+        minDistance = dist
+        minI = i
+      }
+    }
+    // check if we are between 2 nodes
+    let next = 0
+    if (minI + 1 < path.length) {
+      const n1 = path[minI]
+      const n2 = path[minI + 1]
+      const d2 = bot.entity.position.distanceSquared(n2)
+      const d12 = n1.distanceSquared(n2)
+      next = d12 > d2 ? 1 : 0
+    }
+    path.splice(0, minI + next)
+  }
+
+  function isPositionNearPath (pos, path) {
+    for (const node of path) {
+      const dx = Math.abs(node.x - pos.x - 0.5)
+      const dy = Math.abs(node.y - pos.y - 0.5)
+      const dz = Math.abs(node.z - pos.z - 0.5)
       if (dx <= 1 && dy <= 2 && dz <= 1) return true
     }
     return false
@@ -167,39 +223,17 @@ function inject (bot) {
   })
 
   bot.on('chunkColumnLoad', (chunk) => {
-    resetPath()
+    resetPath(false)
   })
-
-  function canStraightPathTo (pos) {
-    const state = new PlayerState(bot, {
-      forward: true,
-      back: false,
-      left: false,
-      right: false,
-      jump: false,
-      sprint: false,
-      sneak: false
-    })
-    const delta = pos.minus(bot.entity.position)
-    state.yaw = Math.atan2(-delta.x, -delta.z)
-    const world = { getBlock: (pos) => { return bot.blockAt(pos, false) } }
-    for (let step = 0; step < 1000; step++) {
-      bot.physics.simulatePlayer(state, world)
-      if (pos.distanceTo(state.pos) <= 2) return true
-      // TODO: check blocks to avoid
-      if (!state.onGround || state.isCollidedHorizontally) return false
-    }
-    return false
-  }
 
   function monitorMovement () {
     // Test freemotion
     if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity) {
       const target = stateGoal.entity
-      if (canStraightPathTo(target.position)) {
+      if (physics.canStraightLine(target.position)) {
         bot.lookAt(target.position.offset(0, 1.6, 0))
 
-        if (target.position.distanceTo(bot.entity.position) > Math.sqrt(stateGoal.rangeSq)) {
+        if (target.position.distanceSquared(bot.entity.position) > stateGoal.rangeSq) {
           bot.setControlState('forward', true)
         } else {
           bot.clearControlStates()
@@ -209,27 +243,36 @@ function inject (bot) {
     }
 
     if (stateGoal && stateGoal.hasChanged()) {
-      resetPath()
+      resetPath(false)
     }
 
     if (path.length === 0) {
       lastNodeTime = performance.now()
-      if (stateGoal && stateMovements && !thinking) {
+      if (stateGoal && stateMovements) {
         if (stateGoal.isEnd(bot.entity.position.floored()) || pathUpdated) {
           if (!dynamicGoal) {
             bot.emit('goal_reached', stateGoal)
             stateGoal = null
+            fullStop()
           }
         } else {
-          thinking = true
-          bot.pathfinder.getPathTo(stateMovements, stateGoal, (results) => {
-            bot.emit('path_update', results)
-            path = results.path
-            thinking = false
-            pathUpdated = true
-          })
+          const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
+          bot.emit('path_update', results)
+          path = results.path
+          astartTimedout = results.status === 'partial'
+          pathUpdated = true
         }
       }
+    } else if (astarContext && astartTimedout) {
+      const results = astarContext.compute()
+      results.path = postProcessPath(results.path)
+      pathFromPlayer(results.path)
+      bot.emit('path_update', results)
+      path = results.path
+      astartTimedout = results.status === 'partial'
+    }
+
+    if (path.length === 0) {
       return
     }
 
@@ -285,22 +328,10 @@ function inject (bot) {
       return
     }
 
-    let np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z)))
-    if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
-    if (np) {
-      nextPoint.x = np.x
-      nextPoint.y = np.y
-      nextPoint.z = np.z
-    } else {
-      nextPoint.x = Math.floor(nextPoint.x) + 0.5
-      nextPoint.y = nextPoint.y - 1
-      nextPoint.z = Math.floor(nextPoint.z) + 0.5
-    }
-
-    const dx = nextPoint.x - p.x
+    let dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
-    const dz = nextPoint.z - p.z
-    if ((dx * dx + dz * dz) <= 0.15 * 0.15 && (bot.entity.onGround || bot.entity.isInWater)) {
+    let dz = nextPoint.z - p.z
+    if ((dx * dx + dz * dz) <= (0.15 * 0.15) && ((bot.entity.onGround && Math.abs(dy) < 1) || bot.entity.isInWater)) {
       // arrived at next point
       lastNodeTime = performance.now()
       path.shift()
@@ -316,31 +347,37 @@ function inject (bot) {
       nextPoint = path[0]
       if (nextPoint.toBreak.length > 0 || nextPoint.toPlace.length > 0) {
         fullStop()
+        return
       }
-      return
+      dx = nextPoint.x - p.x
+      dz = nextPoint.z - p.z
     }
-    let gottaJump = false
-    const horizontalDelta = Math.sqrt(dx * dx + dz * dz)
 
-    if (dy > 0.6) {
-      // gotta jump up when we're close enough
-      gottaJump = horizontalDelta < 1.75
-    } else if (dy > -0.1 && nextPoint.parkour) {
-      // possibly jump over a hole
-      gottaJump = horizontalDelta > 1.5 && horizontalDelta < 2.5
-    }
-    gottaJump = gottaJump || bot.entity.isInWater
-    bot.setControlState('jump', gottaJump)
-
-    // run toward next point
     bot.look(Math.atan2(-dx, -dz), 0)
+    bot.setControlState('forward', true)
+    bot.setControlState('jump', false)
 
-    const lx = -Math.sin(bot.entity.yaw)
-    const lz = -Math.cos(bot.entity.yaw)
-
-    const frontBackProj = lx * dx + lz * dz
-    bot.setControlState('forward', frontBackProj > 0)
-    bot.setControlState('back', frontBackProj < 0)
+    if (bot.entity.isInWater) {
+      bot.setControlState('jump', true)
+      bot.setControlState('sprint', false)
+    } else if (stateMovements.allowSprinting && bot.entity.onGround && physics.canStraightLine(path, true)) {
+      bot.setControlState('jump', false)
+      bot.setControlState('sprint', true)
+    } else if (stateMovements.allowSprinting && bot.entity.onGround && physics.canSprintJump(path)) {
+      bot.setControlState('jump', true)
+      bot.setControlState('sprint', true)
+    } else if (physics.canStraightLine(path)) {
+      bot.setControlState('jump', false)
+      bot.setControlState('sprint', false)
+    } else if (bot.entity.onGround && physics.canWalkJump(path)) {
+      bot.setControlState('jump', true)
+      bot.setControlState('sprint', false)
+    } else if (!bot.entity.onGround || !physics.simulateUntilNextTick().onGround) {
+      bot.setControlState('forward', false)
+      bot.setControlState('sprint', false)
+    } else {
+      bot.setControlState('sprint', false)
+    }
 
     // check for futility
     if (performance.now() - lastNodeTime > 1500) {
