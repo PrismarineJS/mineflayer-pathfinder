@@ -77,7 +77,7 @@ Returns the best harvest tool in the inventory for the specified block
 
 ### bot.pathfinder.getPathTo(movements, goal, done, timeout)
  * `Returns` - The path
- * `movments` - Movements instance
+ * `movements` - Movements instance
  * `goal` - Goal instance
  * `timeout` - number (optional, default `bot.pathfinder.thinkTimeout`)
 
@@ -87,7 +87,7 @@ Returns the best harvest tool in the inventory for the specified block
  
 ### bot.pathfinder.setMovements(movements)
 Assigns the movements config
- * `movments` - Movements instance
+ * `movements` - Movements instance
 
 ### bot.pathfinder.isMoving()
 A function that checks if the bot is currently moving.
