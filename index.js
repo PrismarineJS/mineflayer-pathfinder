@@ -216,11 +216,11 @@ function inject (bot) {
     if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
   }
 
-  function moveToEdge(block, edge) {
+  function moveToEdge (block, edge) {
     // TODO should be replaced with sneak when it is implemented in prismarine-physics
     const maxMovement = 0.2
-    const noneFalloffDistance = .58
-    const targetPos = block.clone().offset(.5, 0, .5).offset(edge.x * noneFalloffDistance, 1, edge.z * noneFalloffDistance)
+    const noneFalloffDistance = 0.58
+    const targetPos = block.clone().offset(0.5, 0, 0.5).offset(edge.x * noneFalloffDistance, 1, edge.z * noneFalloffDistance)
     if (bot.entity.position.distanceTo(targetPos) > 0.001) {
       const targetVec = targetPos.clone().subtract(bot.entity.position).normalize()
       if (maxMovement * maxMovement < bot.entity.position.distanceSquared(targetPos)) {
