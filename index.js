@@ -216,6 +216,24 @@ function inject (bot) {
     if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
   }
 
+  function moveToEdge(block, edge) {
+    //TODO should be replaced with sneak when it is implemented in prismarine-physics
+    const maxMovement = 0.2
+    const noneFalloffDistance = .58
+    const targetPos = block.clone().offset(.5, 0, .5).offset(edge.x * noneFalloffDistance, 1, edge.z * noneFalloffDistance)
+    if (bot.entity.position.distanceTo(targetPos) > 0.001) {
+      const targetVec = targetPos.clone().subtract(bot.entity.position).normalize()
+      if (maxMovement * maxMovement < bot.entity.position.distanceSquared(targetPos)) {
+        targetVec.scale(maxMovement)
+      } else {
+        targetVec.scale(bot.entity.position.distanceTo(targetPos))
+      }
+      bot.entity.position.add(targetVec)
+      return false
+    }
+    return true
+  }
+
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
       resetPath(false)
@@ -309,6 +327,9 @@ function inject (bot) {
       if (!block) {
         resetPath()
         return
+      }
+      if (placingBlock.y === bot.entity.position.floored().y - 1) {
+        if (!moveToEdge(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), new Vec3(placingBlock.dx, 0, placingBlock.dz))) return
       }
       let canPlace = true
       if (placingBlock.jump) {
