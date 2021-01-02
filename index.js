@@ -24,6 +24,7 @@ function inject (bot) {
   let placing = false
   let placingBlock = null
   let lastNodeTime = performance.now()
+  let returningPos = null
   const physics = new Physics(bot)
 
   bot.pathfinder = {}
@@ -217,10 +218,15 @@ function inject (bot) {
   }
 
   function moveToEdge (block, edge) {
-    // TODO should be replaced with sneak when it is implemented in prismarine-physics
-    const maxMovement = 0.2
     const noneFalloffDistance = 0.58
-    const targetPos = block.clone().offset(0.5, 0, 0.5).offset(edge.x * noneFalloffDistance, 1, edge.z * noneFalloffDistance)
+    return moveToBlock(block.offset(edge.x * noneFalloffDistance, 1, edge.z * noneFalloffDistance))
+  }
+
+  function moveToBlock (block) {
+    // TODO should be replaced with sneak when it is implemented in prismarine-physics
+    const maxMovement = 0.1
+    const targetPos = block.clone().offset(0.5, 0, 0.5)
+    console.log(targetPos)
     if (bot.entity.position.distanceTo(targetPos) > 0.001) {
       const targetVec = targetPos.clone().subtract(bot.entity.position).normalize()
       if (maxMovement * maxMovement < bot.entity.position.distanceSquared(targetPos)) {
@@ -262,6 +268,11 @@ function inject (bot) {
 
     if (stateGoal && stateGoal.hasChanged()) {
       resetPath(false)
+    }
+
+    if (returningPos) {
+      if (!moveToBlock(returningPos)) return
+      returningPos = null
     }
 
     if (path.length === 0) {
@@ -328,7 +339,7 @@ function inject (bot) {
         resetPath()
         return
       }
-      if (placingBlock.y === bot.entity.position.floored().y - 1) {
+      if (placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
         if (!moveToEdge(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), new Vec3(placingBlock.dx, 0, placingBlock.dz))) return
       }
       let canPlace = true
@@ -341,6 +352,7 @@ function inject (bot) {
           const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
             placing = false
+            if (placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
             lastNodeTime = performance.now()
             if (err) resetPath()
           })
