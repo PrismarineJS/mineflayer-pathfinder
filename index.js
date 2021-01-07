@@ -55,7 +55,7 @@ function inject (bot) {
     const p = bot.entity.position
     const dy = p.y - Math.floor(p.y)
     const b = bot.blockAt(p)
-    const start = new Move(p.x, p.y + (b && dy > 0.001 && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
+    const start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
     astarContext = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout)
     const result = astarContext.compute()
     result.path = postProcessPath(result.path)
@@ -249,16 +249,25 @@ function inject (bot) {
       resetPath(false)
     }
 
+    if (astarContext && astartTimedout) {
+      const results = astarContext.compute()
+      results.path = postProcessPath(results.path)
+      pathFromPlayer(results.path)
+      bot.emit('path_update', results)
+      path = results.path
+      astartTimedout = results.status === 'partial'
+    }
+
     if (path.length === 0) {
       lastNodeTime = performance.now()
       if (stateGoal && stateMovements) {
-        if (stateGoal.isEnd(bot.entity.position.floored()) || pathUpdated) {
+        if (stateGoal.isEnd(bot.entity.position.floored())) {
           if (!dynamicGoal) {
             bot.emit('goal_reached', stateGoal)
             stateGoal = null
             fullStop()
           }
-        } else {
+        } else if (!pathUpdated) {
           const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
           bot.emit('path_update', results)
           path = results.path
@@ -266,13 +275,6 @@ function inject (bot) {
           pathUpdated = true
         }
       }
-    } else if (astarContext && astartTimedout) {
-      const results = astarContext.compute()
-      results.path = postProcessPath(results.path)
-      pathFromPlayer(results.path)
-      bot.emit('path_update', results)
-      path = results.path
-      astartTimedout = results.status === 'partial'
     }
 
     if (path.length === 0) {
@@ -339,7 +341,7 @@ function inject (bot) {
       lastNodeTime = performance.now()
       path.shift()
       if (path.length === 0) { // done
-        if (!dynamicGoal && stateGoal.isEnd(p.floored())) {
+        if (!dynamicGoal && stateGoal && stateGoal.isEnd(p.floored())) {
           bot.emit('goal_reached', stateGoal)
           stateGoal = null
         }
