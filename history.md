@@ -1,5 +1,11 @@
 # History
 
+## 1.3.0
+
+* Add ladder support
+* Add ability to drop in water from high places
+* Improve movement execution
+
 ## 1.2.0
 
 * Use physics to predict motion and choose best controls
