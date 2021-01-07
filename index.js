@@ -13,6 +13,8 @@ const nbt = require('prismarine-nbt')
 function inject (bot) {
   const mcData = require('minecraft-data')(bot.version)
   const waterType = mcData.blocksByName.water.id
+  const ladderId = mcData.blocksByName.ladder.id
+  const vineId = mcData.blocksByName.vine.id
   let stateMovements = new Movements(bot, mcData)
   let stateGoal = null
   let astarContext = null
@@ -106,24 +108,25 @@ function inject (bot) {
   bot.on('physicTick', monitorMovement)
 
   function postProcessPath (path) {
-    for (const nextPoint of path) {
-      const b = bot.blockAt(new Vec3(nextPoint.x, nextPoint.y, nextPoint.z))
-      if (b && b.type === waterType) {
-        nextPoint.x = Math.floor(nextPoint.x) + 0.5
-        nextPoint.y = Math.floor(nextPoint.y)
-        nextPoint.z = Math.floor(nextPoint.z) + 0.5
+    for (let i = 0; i < path.length; i++) {
+      const curPoint = path[i]
+      const b = bot.blockAt(new Vec3(curPoint.x, curPoint.y, curPoint.z))
+      if (b && (b.type === waterType || ((b.type === ladderId || b.type === vineId) && i + 1 < path.length && path[i + 1].y < curPoint.y))) {
+        curPoint.x = Math.floor(curPoint.x) + 0.5
+        curPoint.y = Math.floor(curPoint.y)
+        curPoint.z = Math.floor(curPoint.z) + 0.5
         continue
       }
       let np = getPositionOnTopOf(b)
-      if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(nextPoint.x, nextPoint.y - 1, nextPoint.z)))
+      if (np === null) np = getPositionOnTopOf(bot.blockAt(new Vec3(curPoint.x, curPoint.y - 1, curPoint.z)))
       if (np) {
-        nextPoint.x = np.x
-        nextPoint.y = np.y
-        nextPoint.z = np.z
+        curPoint.x = np.x
+        curPoint.y = np.y
+        curPoint.z = np.z
       } else {
-        nextPoint.x = Math.floor(nextPoint.x) + 0.5
-        nextPoint.y = nextPoint.y - 1
-        nextPoint.z = Math.floor(nextPoint.z) + 0.5
+        curPoint.x = Math.floor(curPoint.x) + 0.5
+        curPoint.y = curPoint.y - 1
+        curPoint.z = Math.floor(curPoint.z) + 0.5
       }
     }
 
@@ -331,7 +334,7 @@ function inject (bot) {
     let dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
     let dz = nextPoint.z - p.z
-    if ((dx * dx + dz * dz) <= (0.15 * 0.15) && ((bot.entity.onGround && Math.abs(dy) < 1) || bot.entity.isInWater)) {
+    if (Math.abs(dx) <= 0.35 && Math.abs(dz) <= 0.35 && Math.abs(dy) < 1) {
       // arrived at next point
       lastNodeTime = performance.now()
       path.shift()
@@ -360,22 +363,20 @@ function inject (bot) {
     if (bot.entity.isInWater) {
       bot.setControlState('jump', true)
       bot.setControlState('sprint', false)
-    } else if (stateMovements.allowSprinting && bot.entity.onGround && physics.canStraightLine(path, true)) {
+    } else if (stateMovements.allowSprinting && physics.canStraightLine(path, true)) {
       bot.setControlState('jump', false)
       bot.setControlState('sprint', true)
-    } else if (stateMovements.allowSprinting && bot.entity.onGround && physics.canSprintJump(path)) {
+    } else if (stateMovements.allowSprinting && physics.canSprintJump(path)) {
       bot.setControlState('jump', true)
       bot.setControlState('sprint', true)
     } else if (physics.canStraightLine(path)) {
       bot.setControlState('jump', false)
       bot.setControlState('sprint', false)
-    } else if (bot.entity.onGround && physics.canWalkJump(path)) {
+    } else if (physics.canWalkJump(path)) {
       bot.setControlState('jump', true)
       bot.setControlState('sprint', false)
-    } else if (!bot.entity.onGround || !physics.simulateUntilNextTick().onGround) {
-      bot.setControlState('forward', false)
-      bot.setControlState('sprint', false)
     } else {
+      bot.setControlState('forward', false)
       bot.setControlState('sprint', false)
     }
 
