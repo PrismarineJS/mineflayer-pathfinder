@@ -110,6 +110,7 @@ function inject (bot) {
   function postProcessPath (path) {
     for (let i = 0; i < path.length; i++) {
       const curPoint = path[i]
+      if (curPoint.toBreak.length > 0 || curPoint.toPlace.length > 0) break
       const b = bot.blockAt(new Vec3(curPoint.x, curPoint.y, curPoint.z))
       if (b && (b.type === waterType || ((b.type === ladderId || b.type === vineId) && i + 1 < path.length && path[i + 1].y < curPoint.y))) {
         curPoint.x = Math.floor(curPoint.x) + 0.5
@@ -150,6 +151,7 @@ function inject (bot) {
     let minDistance = 1000
     for (let i = 0; i < path.length; i++) {
       const node = path[i]
+      if (node.toBreak.length !== 0 || node.toPlace.length !== 0) break
       const dist = bot.entity.position.distanceSquared(node)
       if (dist < minDistance) {
         minDistance = dist
@@ -157,15 +159,20 @@ function inject (bot) {
       }
     }
     // check if we are between 2 nodes
-    let next = 0
-    if (minI + 1 < path.length) {
-      const n1 = path[minI]
+    const n1 = path[minI]
+    // check if node already reached
+    const dx = n1.x - bot.entity.position.x
+    const dy = n1.y - bot.entity.position.y
+    const dz = n1.z - bot.entity.position.z
+    const reached = Math.abs(dx) <= 0.35 && Math.abs(dz) <= 0.35 && Math.abs(dy) < 1
+    if (minI + 1 < path.length && n1.toBreak.length === 0 && n1.toPlace.length === 0) {
       const n2 = path[minI + 1]
       const d2 = bot.entity.position.distanceSquared(n2)
       const d12 = n1.distanceSquared(n2)
-      next = d12 > d2 ? 1 : 0
+      minI += d12 > d2 || reached ? 1 : 0
     }
-    path.splice(0, minI + next)
+
+    path.splice(0, minI)
   }
 
   function isPositionNearPath (pos, path) {
