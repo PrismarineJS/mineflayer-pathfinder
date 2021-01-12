@@ -228,9 +228,48 @@ function inject (bot) {
     if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
   }
 
-  function moveToEdge(block, edge) {
-    const noneFalloffDistance = .58
-    return moveToBlock(block.offset(edge.x * noneFalloffDistance, 1, edge.z * noneFalloffDistance))
+  function moveToEdge(pos, edge) {
+    const dirVector = {
+      '1,0': new Vec3(-0.540, -0.841, 0),
+      '-1,0': new Vec3(0.540, -0.841, 0),
+      '0,1': new Vec3(0, -0.841, -0.540),
+      '0,-1': new Vec3(0, -0.841, 0.540),
+    }
+    const anglesEuler = {
+      '1,0': {yaw: 1.570, pitch: -1},
+      '-1,0': {yaw: -1.570, pitch: -1},
+      '0,1': {yaw: 0, pitch: -1},
+      '0,-1': {yaw: 3.141, pitch: -1}
+    }
+    // If allowed turn instantly should maybe be an option
+    let allowInstantTurn = false
+    // Target viewing direction
+    let yaw = anglesEuler[parseInt(edge.x) + ',' + parseInt(edge.z)].yaw
+    let pitch = -1
+    // Figure out if the bot is looking the right way
+    function getViewDirection (pitch, yaw) {
+      const csPitch = Math.cos(pitch)
+      const snPitch = Math.sin(pitch)
+      const csYaw = Math.cos(yaw)
+      const snYaw = Math.sin(yaw)
+      return new Vec3(-snYaw * csPitch, snPitch, -csYaw * csPitch)
+    }
+    const view = getViewDirection(bot.entity.pitch, bot.entity.yaw)
+    const idealDir = dirVector[parseInt(edge.x) + ',' + parseInt(edge.z)]
+    // Check the distance it is away from the target position
+    if (bot.entity.position.distanceTo(pos.offset(edge.x + .5, 1, edge.z + .5)) > 0.6) {
+      // Check if the Bot is still turning to the target view
+      if (view.dot(idealDir) < 0.9) {
+        bot.look(yaw, pitch, allowInstantTurn, () => {})
+        bot.setControlState('sneak', true)
+        return false
+      }
+      bot.setControlState('sneak', true)
+      bot.setControlState('back', true)
+      return false
+    }
+    bot.setControlState('back', false)
+    return true
   }
 
   function moveToBlock(block) {
@@ -364,6 +403,7 @@ function inject (bot) {
         bot.equip(block, 'hand', function () {
           const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
+            bot.setControlState('sneak', false)
             placing = false
             if (placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
             lastNodeTime = performance.now()
