@@ -147,6 +147,7 @@ function inject (bot) {
   }
 
   function pathFromPlayer (path) {
+    if (path.length === 0) return
     let minI = 0
     let minDistance = 1000
     for (let i = 0; i < path.length; i++) {
@@ -240,7 +241,7 @@ function inject (bot) {
     // Test freemotion
     if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity) {
       const target = stateGoal.entity
-      if (physics.canStraightLine(target.position)) {
+      if (physics.canStraightLine([target.position])) {
         bot.lookAt(target.position.offset(0, 1.6, 0))
 
         if (target.position.distanceSquared(bot.entity.position) > stateGoal.rangeSq) {
