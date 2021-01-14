@@ -272,10 +272,10 @@ function inject (bot) {
     return true
   }
 
-  function moveToBlock(pos) {
+  function moveToBlock (pos) {
     // minDistanceSq = Min distance sqrt to the target pos were the bot is centered enough to place blocks around him
     const minDistanceSq = 0.2 * 0.2
-    const targetPos = pos.clone().offset(.5, 0, .5)
+    const targetPos = pos.clone().offset(0.5, 0, 0.5)
     if (bot.entity.position.distanceSquared(targetPos) > minDistanceSq) {
       bot.lookAt(targetPos)
       bot.setControlState('forward', true)
