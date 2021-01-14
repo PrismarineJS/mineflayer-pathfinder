@@ -272,21 +272,16 @@ function inject (bot) {
     return true
   }
 
-  function moveToBlock(block) {
-    //TODO should be replaced with sneak when it is implemented in prismarine-physics
-    const maxMovement = 0.1
-    const targetPos = block.clone().offset(.5, 0, .5)
-    console.log(targetPos)
-    if (bot.entity.position.distanceTo(targetPos) > 0.001) {
-      const targetVec = targetPos.clone().subtract(bot.entity.position).normalize()
-      if (maxMovement * maxMovement < bot.entity.position.distanceSquared(targetPos)) {
-        targetVec.scale(maxMovement)
-      } else {
-        targetVec.scale(bot.entity.position.distanceTo(targetPos))
-      }
-      bot.entity.position.add(targetVec)
+  function moveToBlock(pos) {
+    // minDistanceSq = Min distance sqrt to the target pos were the bot is centered enough to place blocks around him
+    const minDistanceSq = 0.2 * 0.2
+    const targetPos = pos.clone().offset(.5, 0, .5)
+    if (bot.entity.position.distanceSquared(targetPos) > minDistanceSq) {
+      bot.lookAt(targetPos)
+      bot.setControlState('forward', true)
       return false
     }
+    bot.setControlState('forward', false)
     return true
   }
 
