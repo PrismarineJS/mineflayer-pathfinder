@@ -33,6 +33,7 @@ function inject (bot) {
 
   bot.pathfinder.thinkTimeout = 5000 // ms
   bot.pathfinder.enablePathShortcut = false // disabled by default as it can cause bugs in specific configurations
+  bot.pathfinder.LOSWhenPlacingBlocks = true
 
   bot.pathfinder.bestHarvestTool = (block) => {
     const availableTools = bot.inventory.items()
@@ -324,7 +325,7 @@ function inject (bot) {
       astartTimedout = results.status === 'partial'
     }
 
-    if (returningPos) {
+    if (bot.pathfinder.LOSWhenPlacingBlocks && returningPos) {
       if (!moveToBlock(returningPos)) return
       returningPos = null
     }
@@ -386,7 +387,7 @@ function inject (bot) {
         resetPath()
         return
       }
-      if (placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
+      if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
         if (!moveToEdge(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), new Vec3(placingBlock.dx, 0, placingBlock.dz))) return
       }
       let canPlace = true
@@ -400,7 +401,7 @@ function inject (bot) {
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
             bot.setControlState('sneak', false)
             placing = false
-            if (placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
+            if (bot.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
             lastNodeTime = performance.now()
             if (err) resetPath()
           })
