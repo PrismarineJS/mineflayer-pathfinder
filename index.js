@@ -228,24 +228,24 @@ function inject (bot) {
     if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
   }
 
-  function moveToEdge(pos, edge) {
+  function moveToEdge (pos, edge) {
     const dirVector = {
       '1,0': new Vec3(-0.540, -0.841, 0),
       '-1,0': new Vec3(0.540, -0.841, 0),
       '0,1': new Vec3(0, -0.841, -0.540),
-      '0,-1': new Vec3(0, -0.841, 0.540),
+      '0,-1': new Vec3(0, -0.841, 0.540)
     }
     const anglesEuler = {
-      '1,0': {yaw: 1.570, pitch: -1},
-      '-1,0': {yaw: -1.570, pitch: -1},
-      '0,1': {yaw: 0, pitch: -1},
-      '0,-1': {yaw: 3.141, pitch: -1}
+      '1,0': { yaw: 1.570, pitch: -1 },
+      '-1,0': { yaw: -1.570, pitch: -1 },
+      '0,1': { yaw: 0, pitch: -1 },
+      '0,-1': { yaw: 3.141, pitch: -1 }
     }
     // If allowed turn instantly should maybe be an option
-    let allowInstantTurn = false
+    const allowInstantTurn = false
     // Target viewing direction
-    let yaw = anglesEuler[parseInt(edge.x) + ',' + parseInt(edge.z)].yaw
-    let pitch = -1
+    const yaw = anglesEuler[parseInt(edge.x) + ',' + parseInt(edge.z)].yaw
+    const pitch = -1
     // Figure out if the bot is looking the right way
     function getViewDirection (pitch, yaw) {
       const csPitch = Math.cos(pitch)
@@ -257,7 +257,7 @@ function inject (bot) {
     const view = getViewDirection(bot.entity.pitch, bot.entity.yaw)
     const idealDir = dirVector[parseInt(edge.x) + ',' + parseInt(edge.z)]
     // Check the distance it is away from the target position
-    if (bot.entity.position.distanceTo(pos.offset(edge.x + .5, 1, edge.z + .5)) > 0.6) {
+    if (bot.entity.position.distanceTo(pos.offset(edge.x + 0.5, 1, edge.z + 0.5)) > 0.6) {
       // Check if the Bot is still turning to the target view
       if (view.dot(idealDir) < 0.9) {
         bot.look(yaw, pitch, allowInstantTurn, () => {})
