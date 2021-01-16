@@ -229,42 +229,28 @@ function inject (bot) {
     if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
   }
 
-  function moveToEdge (pos, edge) {
-    const dirVector = {
-      '1,0': new Vec3(-0.540, -0.841, 0),
-      '-1,0': new Vec3(0.540, -0.841, 0),
-      '0,1': new Vec3(0, -0.841, -0.540),
-      '0,-1': new Vec3(0, -0.841, 0.540)
-    }
-    const anglesEuler = {
-      '1,0': { yaw: 1.570, pitch: -1 },
-      '-1,0': { yaw: -1.570, pitch: -1 },
-      '0,1': { yaw: 0, pitch: -1 },
-      '0,-1': { yaw: 3.141, pitch: -1 }
-    }
-    // If allowed turn instantly should maybe be an option
+  function moveToEdge (refBlock, edge) {
+    // If allowed turn instantly should maybe be a bot option
     const allowInstantTurn = false
-    // Target viewing direction
-    const yaw = anglesEuler[parseInt(edge.x) + ',' + parseInt(edge.z)].yaw
-    const pitch = -1
-    // Figure out if the bot is looking the right way
-    function getViewDirection (pitch, yaw) {
+    function getViewVector (pitch, yaw) {
       const csPitch = Math.cos(pitch)
       const snPitch = Math.sin(pitch)
       const csYaw = Math.cos(yaw)
       const snYaw = Math.sin(yaw)
       return new Vec3(-snYaw * csPitch, snPitch, -csYaw * csPitch)
     }
-    const view = getViewDirection(bot.entity.pitch, bot.entity.yaw)
-    const idealDir = dirVector[parseInt(edge.x) + ',' + parseInt(edge.z)]
-    // Check the distance it is away from the target position
-    if (bot.entity.position.distanceTo(pos.offset(edge.x + 0.5, 1, edge.z + 0.5)) > 0.6) {
-      // Check if the Bot is still turning to the target view
-      if (view.dot(idealDir) < 0.9) {
-        bot.look(yaw, pitch, allowInstantTurn, () => {})
-        bot.setControlState('sneak', true)
-        return false
-      }
+    // Target viewing direction while approaching edge
+    // The Bot approaches the edge while looking in the opposite direction from where it needs to go
+    // The target Pitch angle is roughly the angle the bot has to look down for when it is in the position
+    // to place the next block
+    const targetBlockPos = refBlock.offset(edge.x + 0.5, edge.y, edge.z + 0.5)
+    const targetPosDelta = bot.entity.position.clone().subtract(targetBlockPos)
+    const targetYaw = Math.atan2(-targetPosDelta.x, -targetPosDelta.z)
+    const targetPitch = -1.421
+    const viewVector = getViewVector(targetPitch, targetYaw)
+    // While the bot is not in the right position rotate the view and press back while crouching
+    if (bot.entity.position.distanceTo(refBlock.clone().offset(edge.x + 0.5, 1, edge.z + 0.5)) > 0.4) {
+      bot.lookAt(bot.entity.position.offset(viewVector.x, viewVector.y, viewVector.z), allowInstantTurn)
       bot.setControlState('sneak', true)
       bot.setControlState('back', true)
       return false
@@ -399,11 +385,15 @@ function inject (bot) {
         bot.equip(block, 'hand', function () {
           const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
-            bot.setControlState('sneak', false)
             placing = false
-            if (bot.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
             lastNodeTime = performance.now()
-            if (err) resetPath()
+            if (err) {
+              resetPath()
+            } else {
+              // Dont release Sneak if the block placement was not successful
+              if (!err) bot.setControlState('sneak', false)
+              if (bot.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
+            }
           })
         })
       }
