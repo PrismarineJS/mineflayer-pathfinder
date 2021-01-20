@@ -101,8 +101,8 @@ function inject (bot) {
   bot.pathfinder.isMining = () => digging
   bot.pathfinder.isBuilding = () => placing
 
-  bot.pathfinder.goto = (goal, cb) => {
-    gotoUtil(bot, goal, cb)
+  bot.pathfinder.goto = (goal) => {
+    return gotoUtil(bot, goal)
   }
 
   bot.on('physicTick', monitorMovement)
