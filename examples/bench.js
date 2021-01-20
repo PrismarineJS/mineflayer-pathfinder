@@ -29,7 +29,7 @@ bot.once('spawn', () => {
 
   const defaultMove = new Movements(bot, mcData)
   const goal = new GoalXZ(bot.entity.position.x + 100, bot.entity.position.z)
-  const results = bot.pathfinder.getPathTo(defaultMove, goal, 1000)
+  const results = bot.pathfinder.getPathTo(defaultMove, goal, 10000)
   console.log('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
 
   bot.quit()
