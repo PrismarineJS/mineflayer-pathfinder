@@ -1,5 +1,9 @@
 # History
 
+## 1.3.7
+
+* Promisified goto
+
 ## 1.3.0
 
 * Add ladder support
