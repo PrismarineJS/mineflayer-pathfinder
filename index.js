@@ -105,6 +105,8 @@ function inject (bot) {
     return gotoUtil(bot, goal)
   }
 
+  bot.pathfinder.goto = callbackify(bot.pathfinder.goto, 1)
+
   bot.on('physicTick', monitorMovement)
 
   function postProcessPath (path) {
@@ -395,6 +397,13 @@ function inject (bot) {
       // should never take this long to go to the next node
       resetPath()
     }
+  }
+}
+
+function callbackify (f) {
+  return function (...args) {
+    const cb = args[f.length] || (() => {})
+    return f(...args).then(r => { if (cb) { cb(null, r) } return r }, err => { if (cb) { cb(err) } else throw err })
   }
 }
 
