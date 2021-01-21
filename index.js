@@ -101,9 +101,11 @@ function inject (bot) {
   bot.pathfinder.isMining = () => digging
   bot.pathfinder.isBuilding = () => placing
 
-  bot.pathfinder.goto = (goal, cb) => {
-    gotoUtil(bot, goal, cb)
+  bot.pathfinder.goto = (goal) => {
+    return gotoUtil(bot, goal)
   }
+
+  bot.pathfinder.goto = callbackify(bot.pathfinder.goto, 1)
 
   bot.on('physicTick', monitorMovement)
 
@@ -395,6 +397,13 @@ function inject (bot) {
       // should never take this long to go to the next node
       resetPath()
     }
+  }
+}
+
+function callbackify (f) {
+  return function (...args) {
+    const cb = args[f.length]
+    return f(...args).then(r => { if (cb) { cb(null, r) } return r }, err => { if (cb) { cb(err) } else throw err })
   }
 }
 
