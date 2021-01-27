@@ -1,5 +1,11 @@
 # History
 
+# 1.4.0
+
+* Legit bot bridging (with sneak)
+* Fixed bug for detect when mining is stopped correctly
+* Fix GoalGetToBlock
+
 ## 1.3.7
 
 * Promisified goto
