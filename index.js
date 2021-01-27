@@ -26,12 +26,14 @@ function inject (bot) {
   let placing = false
   let placingBlock = null
   let lastNodeTime = performance.now()
+  let returningPos = null
   const physics = new Physics(bot)
 
   bot.pathfinder = {}
 
   bot.pathfinder.thinkTimeout = 5000 // ms
   bot.pathfinder.enablePathShortcut = false // disabled by default as it can cause bugs in specific configurations
+  bot.pathfinder.LOSWhenPlacingBlocks = true
 
   bot.pathfinder.bestHarvestTool = (block) => {
     const availableTools = bot.inventory.items()
@@ -237,6 +239,49 @@ function inject (bot) {
     if (Math.abs(bot.entity.position.z - blockZ) > 0.2) { bot.entity.position.z = blockZ }
   }
 
+  function moveToEdge (refBlock, edge) {
+    // If allowed turn instantly should maybe be a bot option
+    const allowInstantTurn = false
+    function getViewVector (pitch, yaw) {
+      const csPitch = Math.cos(pitch)
+      const snPitch = Math.sin(pitch)
+      const csYaw = Math.cos(yaw)
+      const snYaw = Math.sin(yaw)
+      return new Vec3(-snYaw * csPitch, snPitch, -csYaw * csPitch)
+    }
+    // Target viewing direction while approaching edge
+    // The Bot approaches the edge while looking in the opposite direction from where it needs to go
+    // The target Pitch angle is roughly the angle the bot has to look down for when it is in the position
+    // to place the next block
+    const targetBlockPos = refBlock.offset(edge.x + 0.5, edge.y, edge.z + 0.5)
+    const targetPosDelta = bot.entity.position.clone().subtract(targetBlockPos)
+    const targetYaw = Math.atan2(-targetPosDelta.x, -targetPosDelta.z)
+    const targetPitch = -1.421
+    const viewVector = getViewVector(targetPitch, targetYaw)
+    // While the bot is not in the right position rotate the view and press back while crouching
+    if (bot.entity.position.distanceTo(refBlock.clone().offset(edge.x + 0.5, 1, edge.z + 0.5)) > 0.4) {
+      bot.lookAt(bot.entity.position.offset(viewVector.x, viewVector.y, viewVector.z), allowInstantTurn)
+      bot.setControlState('sneak', true)
+      bot.setControlState('back', true)
+      return false
+    }
+    bot.setControlState('back', false)
+    return true
+  }
+
+  function moveToBlock (pos) {
+    // minDistanceSq = Min distance sqrt to the target pos were the bot is centered enough to place blocks around him
+    const minDistanceSq = 0.2 * 0.2
+    const targetPos = pos.clone().offset(0.5, 0, 0.5)
+    if (bot.entity.position.distanceSquared(targetPos) > minDistanceSq) {
+      bot.lookAt(targetPos)
+      bot.setControlState('forward', true)
+      return false
+    }
+    bot.setControlState('forward', false)
+    return true
+  }
+
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
       resetPath(false)
@@ -274,6 +319,11 @@ function inject (bot) {
       bot.emit('path_update', results)
       path = results.path
       astartTimedout = results.status === 'partial'
+    }
+
+    if (bot.pathfinder.LOSWhenPlacingBlocks && returningPos) {
+      if (!moveToBlock(returningPos)) return
+      returningPos = null
     }
 
     if (path.length === 0) {
@@ -333,6 +383,9 @@ function inject (bot) {
         resetPath()
         return
       }
+      if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
+        if (!moveToEdge(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), new Vec3(placingBlock.dx, 0, placingBlock.dz))) return
+      }
       let canPlace = true
       if (placingBlock.jump) {
         bot.setControlState('jump', true)
@@ -344,7 +397,13 @@ function inject (bot) {
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
             placing = false
             lastNodeTime = performance.now()
-            if (err) resetPath()
+            if (err) {
+              resetPath()
+            } else {
+              // Dont release Sneak if the block placement was not successful
+              if (!err) bot.setControlState('sneak', false)
+              if (bot.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
+            }
           })
         })
       }
