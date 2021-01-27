@@ -75,10 +75,18 @@ function inject (bot) {
     }
   })
 
+  function detectDiggingStopped () {
+    digging = false
+    bot.removeAllListeners('diggingAborted', detectDiggingStopped)
+    bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
+  }
   function resetPath (clearStates = true) {
     path = []
-    if (digging) bot.stopDigging()
-    digging = false
+    if (digging) {
+      bot.stopDigging()
+      bot.on('diggingAborted', detectDiggingStopped)
+      bot.on('diggingCompleted', detectDiggingStopped)
+    }
     placing = false
     pathUpdated = false
     astarContext = null
