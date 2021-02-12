@@ -1,5 +1,12 @@
 # History
 
+# 1.5.0
+
+* Improve diagonal movements (add up/down)
+* Expose A* context in result
+* Fix fences
+* Fix carpets
+
 # 1.4.0
 
 * Legit bot bridging (with sneak)
