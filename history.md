@@ -1,5 +1,11 @@
 # History
 
+# 1.6.0
+
+* Add GoalPlaceBlock
+* Fix various parkour moves
+* Fix goto
+
 # 1.5.0
 
 * Improve diagonal movements (add up/down)
