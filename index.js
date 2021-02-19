@@ -85,9 +85,9 @@ function inject (bot) {
   function resetPath (clearStates = true) {
     path = []
     if (digging) {
-      bot.stopDigging()
       bot.on('diggingAborted', detectDiggingStopped)
       bot.on('diggingCompleted', detectDiggingStopped)
+      bot.stopDigging()
     }
     placing = false
     pathUpdated = false
