@@ -32,6 +32,8 @@ function inject (bot) {
   bot.pathfinder = {}
 
   bot.pathfinder.thinkTimeout = 5000 // ms
+  bot.pathfinder.tickTimeout = 40 // ms, amount of thinking per tick (max 50 ms)
+  bot.pathfinder.searchRadius = -1 // in blocks, limits of the search area, -1: don't limit the search
   bot.pathfinder.enablePathShortcut = false // disabled by default as it can cause bugs in specific configurations
   bot.pathfinder.LOSWhenPlacingBlocks = true
 
@@ -58,7 +60,7 @@ function inject (bot) {
     const dy = p.y - Math.floor(p.y)
     const b = bot.blockAt(p)
     const start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
-    astarContext = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout)
+    astarContext = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout, bot.pathfinder.tickTimeout, bot.pathfinder.searchRadius)
     const result = astarContext.compute()
     result.path = postProcessPath(result.path)
     return result
