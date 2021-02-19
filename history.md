@@ -1,5 +1,10 @@
 # History
 
+# 1.6.1
+
+* Add option to limit search range
+* Expose tickTimeout
+
 # 1.6.0
 
 * Add GoalPlaceBlock
