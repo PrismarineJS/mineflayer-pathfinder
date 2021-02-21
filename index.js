@@ -404,7 +404,7 @@ function inject (bot) {
               resetPath()
             } else {
               // Dont release Sneak if the block placement was not successful
-              bot.emit('block_placed', bot.blockAt(vec3(0, 0, 0).asAdd(refBlock.position, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz))))
+              bot.emit('block_placed', bot.blockAt(new Vec3(0, 0, 0).asAdd(refBlock.position, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz))))
               if (!err) bot.setControlState('sneak', false)
               if (bot.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
             }
