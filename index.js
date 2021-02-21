@@ -368,6 +368,7 @@ function inject (bot) {
             if (err) resetPath()
             digging = false
           })
+          bot.emit('block_digged', block)
         })
       }
       return
@@ -401,6 +402,7 @@ function inject (bot) {
             lastNodeTime = performance.now()
             if (err) {
               resetPath()
+              bot.emit('block_placed', bot.blockAt(vec3(0, 0, 0).asAdd(refBlock.position, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz))))
             } else {
               // Dont release Sneak if the block placement was not successful
               if (!err) bot.setControlState('sneak', false)
