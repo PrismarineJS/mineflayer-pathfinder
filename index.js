@@ -85,7 +85,7 @@ function inject (bot) {
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
   function resetPath (reason, clearStates = true) {
-    bot.emit('path_reset', reason)
+    if (path.length > 0) bot.emit('path_reset', reason)
     path = []
     if (digging) {
       bot.on('diggingAborted', detectDiggingStopped)

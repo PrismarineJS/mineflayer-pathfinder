@@ -32,6 +32,10 @@ bot.once('spawn', () => {
     console.log('Here I am !')
   })
 
+  bot.on('path_reset', (reason) => {
+    console.log(`Path was reset for reason: ${reason}`)
+  })
+
   bot.on('chat', (username, message) => {
     if (username === bot.username) return
 
