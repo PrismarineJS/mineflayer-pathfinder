@@ -3,7 +3,7 @@ const { pathfinder, Movements } = require('mineflayer-pathfinder')
 const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow } = require('mineflayer-pathfinder').goals
 
 if (process.argv.length > 6) {
-  console.log('Usage : node test.js [<host>] [<port>] [<name>] [<password>]')
+  console.log('Usage : node example.js [<host>] [<port>] [<name>] [<password>]')
   process.exit(1)
 }
 
