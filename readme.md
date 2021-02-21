@@ -129,6 +129,18 @@ Called whenever the path is recalculated. Status may be:
 ### goal_updated
 Called whenever a new goal is assigned to the pathfinder.
 
+### path_reset
+Called when the path is reset, with a reason:
+ * `goal_updated`
+ * `movements_updated`
+ * `block_updated`
+ * `chunk_loaded`
+ * `goal_moved`
+ * `dig_error`
+ * `no_scaffolding_blocks`
+ * `place_error`
+ * `stuck`
+
 # Goals:
 
 ### GoalBlock(x, y, z)

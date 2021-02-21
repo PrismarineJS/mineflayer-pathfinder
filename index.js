@@ -84,7 +84,8 @@ function inject (bot) {
     bot.removeAllListeners('diggingAborted', detectDiggingStopped)
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
-  function resetPath (clearStates = true) {
+  function resetPath (reason, clearStates = true) {
+    bot.emit('path_reset', reason)
     path = []
     if (digging) {
       bot.on('diggingAborted', detectDiggingStopped)
@@ -101,12 +102,12 @@ function inject (bot) {
     stateGoal = goal
     dynamicGoal = dynamic
     bot.emit('goal_updated', goal, dynamic)
-    resetPath()
+    resetPath('goal_updated')
   }
 
   bot.pathfinder.setMovements = (movements) => {
     stateMovements = movements
-    resetPath()
+    resetPath('movements_updated')
   }
 
   bot.pathfinder.isMoving = () => path.length > 0
@@ -286,12 +287,12 @@ function inject (bot) {
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
-      resetPath(false)
+      resetPath('block_updated', false)
     }
   })
 
   bot.on('chunkColumnLoad', (chunk) => {
-    resetPath(false)
+    resetPath('chunk_loaded', false)
   })
 
   function monitorMovement () {
@@ -311,7 +312,7 @@ function inject (bot) {
     }
 
     if (stateGoal && stateGoal.hasChanged()) {
-      resetPath(false)
+      resetPath('goal_moved', false)
     }
 
     if (astarContext && astartTimedout) {
@@ -365,7 +366,7 @@ function inject (bot) {
         bot.equip(tool, 'hand', function () {
           bot.dig(block, function (err) {
             lastNodeTime = performance.now()
-            if (err) resetPath()
+            if (err) resetPath('dig_error')
             digging = false
           })
         })
@@ -382,7 +383,7 @@ function inject (bot) {
       }
       const block = stateMovements.getScaffoldingItem()
       if (!block) {
-        resetPath()
+        resetPath('no_scaffolding_blocks')
         return
       }
       if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
@@ -400,7 +401,7 @@ function inject (bot) {
             placing = false
             lastNodeTime = performance.now()
             if (err) {
-              resetPath()
+              resetPath('place_error')
             } else {
               // Dont release Sneak if the block placement was not successful
               if (!err) bot.setControlState('sneak', false)
@@ -464,7 +465,7 @@ function inject (bot) {
     // check for futility
     if (performance.now() - lastNodeTime > 1500) {
       // should never take this long to go to the next node
-      resetPath()
+      resetPath('stuck')
     }
   }
 }
