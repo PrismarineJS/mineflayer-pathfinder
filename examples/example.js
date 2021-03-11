@@ -1,6 +1,7 @@
 const mineflayer = require('mineflayer')
-const { pathfinder, Movements } = require('mineflayer-pathfinder')
+const { pathfinder, Movements, ExclusionArea } = require('mineflayer-pathfinder')
 const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow } = require('mineflayer-pathfinder').goals
+const Vec3 = require("vec3")
 
 if (process.argv.length > 6) {
   console.log('Usage : node example.js [<host>] [<port>] [<name>] [<password>]')
@@ -9,19 +10,20 @@ if (process.argv.length > 6) {
 
 const bot = mineflayer.createBot({
   host: process.argv[2] || 'localhost',
-  port: parseInt(process.argv[3]) || 25565,
+  port: process.argv[3] || 25565,
   username: process.argv[4] || 'pathfinder',
   password: process.argv[5]
 })
+
 
 bot.loadPlugin(pathfinder)
 
 bot.once('spawn', () => {
   // Once we've spawn, it is safe to access mcData because we know the version
   const mcData = require('minecraft-data')(bot.version)
-
+  const areas = [new ExclusionArea(Vec3(-144, 0, -100), Vec3(-154, 100, -97))]
   // We create different movement generators for different type of activity
-  const defaultMove = new Movements(bot, mcData)
+  const defaultMove = new Movements(bot, mcData, areas)
 
   bot.on('path_update', (r) => {
     const nodesPerTick = (r.visitedNodes * 50 / r.time).toFixed(2)
