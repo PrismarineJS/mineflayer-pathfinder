@@ -10,7 +10,7 @@ if (process.argv.length > 6) {
 
 const bot = mineflayer.createBot({
   host: process.argv[2] || 'localhost',
-  port: process.argv[3] || 25565,
+  port: parseInt(process.argv[3]) || 25565,
   username: process.argv[4] || 'pathfinder',
   password: process.argv[5]
 })
