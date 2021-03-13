@@ -104,7 +104,15 @@ A function that checks if the bot is currently placing blocks.
 # Properties:
 ### bot.pathfinder.thinkTimeout
 Think Timeout in milliseconds
- * `Default` - 5000
+ * `Default` - `5000`
+
+### bot.pathfinder.tickTimeout
+How many ms per tick are allocated to thinking
+ * `Default` - `40`
+
+### bot.pathfinder.searchRadius
+The search limiting radius, in blocks, if `-1` the search is not limited by distance.
+ * `Default` - `-1`
 
 # Events:
 
@@ -120,6 +128,18 @@ Called whenever the path is recalculated. Status may be:
 
 ### goal_updated
 Called whenever a new goal is assigned to the pathfinder.
+
+### path_reset
+Called when the path is reset, with a reason:
+ * `goal_updated`
+ * `movements_updated`
+ * `block_updated`
+ * `chunk_loaded`
+ * `goal_moved`
+ * `dig_error`
+ * `no_scaffolding_blocks`
+ * `place_error`
+ * `stuck`
 
 # Goals:
 
@@ -170,3 +190,14 @@ Inverts the goal
 Follows an entity
  * `entity` - Entity instance
  * `range` - Integer
+
+### GoalPlaceBlock(pos, world, options)
+Position the bot in order to place a block
+ * `pos` - Vec3 the position of the placed block
+ * `world` - the world of the bot
+ * `options` - object containing all optionals properties:
+   * `range` - maximum distance from the clicked face
+   * `faces` - the directions of the faces the player can click
+   * `facing` - the direction the player must be facing
+   * `facing3D` - boolean, facing is 3D (true) or 2D (false)
+   * `half` - `top` or `bottom`, the half that must be clicked

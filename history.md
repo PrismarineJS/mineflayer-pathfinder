@@ -1,5 +1,33 @@
 # History
 
+# 1.6.1
+
+* Add option to limit search range
+* Expose tickTimeout
+
+# 1.6.0
+
+* Add GoalPlaceBlock
+* Fix various parkour moves
+* Fix goto
+
+# 1.5.0
+
+* Improve diagonal movements (add up/down)
+* Expose A* context in result
+* Fix fences
+* Fix carpets
+
+# 1.4.0
+
+* Legit bot bridging (with sneak)
+* Fixed bug for detect when mining is stopped correctly
+* Fix GoalGetToBlock
+
+## 1.3.7
+
+* Promisified goto
+
 ## 1.3.0
 
 * Add ladder support

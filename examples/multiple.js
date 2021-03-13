@@ -20,7 +20,7 @@ for (let i = 0; i < 40; i++) {
 }
 
 mineflayer.multiple(bots, ({ username }) => {
-  const bot = mineflayer.createBot({ username })
+  const bot = mineflayer.createBot({ username, viewDistance: 'tiny' })
 
   bot.loadPlugin(pathfinder)
 
@@ -31,6 +31,7 @@ mineflayer.multiple(bots, ({ username }) => {
     // We create different movement generators for different type of activity
     const defaultMove = new Movements(bot, mcData)
     defaultMove.allowFreeMotion = true
+    bot.pathfinder.searchRadius = 10
 
     bot.on('path_update', (results) => {
       console.log('[' + username + '] I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')

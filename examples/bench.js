@@ -19,6 +19,8 @@ const bot = mineflayer.createBot({
 
 bot.loadPlugin(pathfinder)
 
+bot.on('error', (err) => console.log(err))
+
 const createTime = performance.now()
 bot.once('spawn', () => {
   console.log('Spawning took ' + (performance.now() - createTime).toFixed(2) + ' ms.')
@@ -27,9 +29,9 @@ bot.once('spawn', () => {
 
   const defaultMove = new Movements(bot, mcData)
   const goal = new GoalXZ(bot.entity.position.x + 100, bot.entity.position.z)
-  bot.pathfinder.getPathTo(defaultMove, goal, (results) => {
-    console.log('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
-    bot.quit()
-    process.exit()
-  }, 10000)
+  const results = bot.pathfinder.getPathTo(defaultMove, goal, 10000)
+  console.log('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
+
+  bot.quit()
+  process.exit()
 })

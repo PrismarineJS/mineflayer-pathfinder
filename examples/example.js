@@ -3,7 +3,7 @@ const { pathfinder, Movements } = require('mineflayer-pathfinder')
 const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow } = require('mineflayer-pathfinder').goals
 
 if (process.argv.length > 6) {
-  console.log('Usage : node test.js [<host>] [<port>] [<name>] [<password>]')
+  console.log('Usage : node example.js [<host>] [<port>] [<name>] [<password>]')
   process.exit(1)
 }
 
@@ -30,6 +30,10 @@ bot.once('spawn', () => {
 
   bot.on('goal_reached', (goal) => {
     console.log('Here I am !')
+  })
+
+  bot.on('path_reset', (reason) => {
+    console.log(`Path was reset for reason: ${reason}`)
   })
 
   bot.on('chat', (username, message) => {
