@@ -97,7 +97,7 @@ function inject (bot) {
     astarContext = null
     if (clearStates) bot.clearControlStates()
   }
-
+  bot.on("death", () =>{ bot.removeAllListeners('diggingAborted');  bot.removeAllListeners('diggingCompleted') })
   bot.pathfinder.setGoal = (goal, dynamic = false) => {
     stateGoal = goal
     dynamicGoal = dynamic
