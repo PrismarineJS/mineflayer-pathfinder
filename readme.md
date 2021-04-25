@@ -49,6 +49,7 @@ bot.once('spawn', () => {
       bot.pathfinder.setMovements(defaultMove)
       bot.pathfinder.setGoal(new GoalNear(p.x, p.y, p.z, 1))
     } 
+  })
 })
 ```
 
