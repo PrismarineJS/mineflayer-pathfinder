@@ -21,7 +21,7 @@ declare module 'mineflayer-pathfinder' {
 		): ComputedPath;
 		setGoal(goal: goals.Goal, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
-		goto(goal: goals.Goal, callback: Callback): void;
+		goto(goal: goals.Goal, callback?: Callback): Promise<void>;
 
 		isMoving(): boolean;
 		isMining(): boolean;
@@ -207,5 +207,11 @@ declare module 'mineflayer-pathfinder' {
 		physical: boolean;
 		liquid: boolean;
 		height: number;
+	}
+}
+
+declare module 'mineflayer' {
+	interface Bot {
+		pathfinder: Pathfinder
 	}
 }
