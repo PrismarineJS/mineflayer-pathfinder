@@ -19,7 +19,7 @@ declare module 'mineflayer-pathfinder' {
 			goal: goals.Goal,
 			timeout?: number
 		): ComputedPath;
-		setGoal(goal: goals.Goal, dynamic?: boolean): void;
+		setGoal(goal: goals.Goal | null, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
 		goto(goal: goals.Goal, callback?: Callback): Promise<void>;
 
