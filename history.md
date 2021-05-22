@@ -1,5 +1,13 @@
 # History
 
+# 1.6.2
+
+* Fix swimming in lava
+* Fix TypeScript headers
+* Add +1 to movement cost when going forward and up 1 block
+* Fix bot trying to go underwater
+* Add `path_reset` event
+
 # 1.6.1
 
 * Add option to limit search range
