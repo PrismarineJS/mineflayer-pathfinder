@@ -88,9 +88,13 @@ function inject (bot) {
     if (path.length > 0) bot.emit('path_reset', reason)
     path = []
     if (digging) {
-      bot.on('diggingAborted', detectDiggingStopped)
-      bot.on('diggingCompleted', detectDiggingStopped)
-      bot.stopDigging()
+      if (bot.targetDigBlock) {
+        bot.on('diggingAborted', detectDiggingStopped)
+        bot.on('diggingCompleted', detectDiggingStopped)
+        bot.stopDigging()
+      } else {
+        digging = false
+      }
     }
     placing = false
     pathUpdated = false
