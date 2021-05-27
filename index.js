@@ -405,7 +405,7 @@ function inject (bot) {
             } else {
               // Dont release Sneak if the block placement was not successful
               if (!err) bot.setControlState('sneak', false)
-              if (bot.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
+              if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
             }
           })
         })
