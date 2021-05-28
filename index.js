@@ -254,7 +254,7 @@ function inject (bot) {
 
   /**
    * Moves the bot to a given edge of a block
-   * 
+   *
    * @param {vec3} refBlock Reference block were moving starts
    * @param {vec3} edge Edge were movement ends
    * @returns boolean false if still moving true if reached
@@ -291,7 +291,7 @@ function inject (bot) {
 
   /**
    * Centers to bot on a given block so it does not intersect adjacent blocks
-   * 
+   *
    * @param {vec3} pos Block pos to move to
    * @returns boolean false if moving true if reached
    */
@@ -308,21 +308,21 @@ function inject (bot) {
     return true
   }
 
-  function doNotPathResetOn(reason) {
+  function doNotPathResetOn (reason) {
     if (preventPathReset.includes(reason)) return
     preventPathReset.push(reason)
   }
 
-  function doPathResetOn(reason) {
-    let index = preventPathReset.indexOf(reason)
+  function doPathResetOn (reason) {
+    const index = preventPathReset.indexOf(reason)
     if (index !== -1) preventPathReset.splice(index, 1)
   }
 
-  function clearPreventResets() {
+  function clearPreventResets () {
     preventPathReset = []
   }
 
-  function preventResetIncludes(reason) {
+  function preventResetIncludes (reason) {
     return preventPathReset.includes(reason)
   }
 
@@ -332,7 +332,7 @@ function inject (bot) {
    * @param {Vec3} pos2 vec3 pos2
    * @returns boolean true if pos1 and pos2 have the same coordinates
    */
-  function isSamePosition(pos1, pos2) {
+  function isSamePosition (pos1, pos2) {
     return pos1?.x === pos2?.x && pos1?.y === pos2?.y && pos1?.z === pos2?.z
   }
 
@@ -449,7 +449,7 @@ function inject (bot) {
           doPathResetOn('chunk_loaded')
           doPathResetOn('goal_updated')
         }
-      } 
+      }
       let canPlace = true
       if (placingBlock.jump) {
         bot.setControlState('jump', true)
