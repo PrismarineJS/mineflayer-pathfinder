@@ -1,5 +1,5 @@
 const { performance } = require('perf_hooks')
-const debug = require('debug')
+const debug = require('debug')('pathfinder')
 
 const AStar = require('./lib/astar')
 const Move = require('./lib/move')
@@ -235,6 +235,7 @@ function inject (bot) {
   }
 
   function fullStop () {
+    debug('Fullstop')
     clearPreventResets()
     bot.clearControlStates()
 
@@ -430,6 +431,7 @@ function inject (bot) {
       if (!placing) {
         placing = true
         placingBlock = nextPoint.toPlace.shift()
+        debug('Next block to place', placingBlock)
         fullStop()
       }
       const block = stateMovements.getScaffoldingItem()
@@ -456,11 +458,12 @@ function inject (bot) {
         canPlace = placingBlock.y + 1 < bot.entity.position.y
       }
       if (canPlace) {
+        if (isSamePosition(waitingPlaceConfirmation, placingBlock)) return
         bot.equip(block, 'hand', function () {
           if (isSamePosition(waitingPlaceConfirmation, placingBlock)) return
+          debug('Placing block', placingBlock)
+          waitingPlaceConfirmation = new Vec3(placingBlock.x, placingBlock.y, placingBlock.z)
           const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
-          waitingPlaceConfirmation = refBlock?.position?.offset(placingBlock.dx, placingBlock.dy, placingBlock.dz)
-          if (!waitingPlaceConfirmation) debug('refBlock', refBlock)
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
             waitingPlaceConfirmation = null
             placing = false
