@@ -4,7 +4,11 @@ const AStar = require('./lib/astar')
 const Move = require('./lib/move')
 const Movements = require('./lib/movements')
 const gotoUtil = require('./lib/goto')
+<<<<<<< HEAD
 const Lock = require('./lib/lock')
+=======
+// const debug = require('debug')('pathfinder')
+>>>>>>> 80152e7 (Added comment and uncomment scripts)
 
 const Vec3 = require('vec3').Vec3
 
@@ -98,11 +102,11 @@ function inject (bot) {
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
 =======
     if (preventResetIncludes(reason)) {
-      debug('Path reset blocked by', preventPathReset)
+      // debug('Path reset blocked by', preventPathReset)
       return
     }
     clearPreventResets()
-    debug('Path reset', reason)
+    // debug('Path reset', reason)
     if (path.length > 0) bot.emit('path_reset', reason)
 >>>>>>> b609291 (Pathfinder block place improvements)
     path = []
@@ -252,7 +256,7 @@ function inject (bot) {
   }
 
   function fullStop () {
-    debug('Fullstop')
+    // debug('Fullstop')
     clearPreventResets()
     bot.clearControlStates()
 
@@ -456,7 +460,7 @@ function inject (bot) {
       if (!placing) {
         placing = true
         placingBlock = nextPoint.toPlace.shift()
-        debug('Next block to place', placingBlock)
+        // debug('Next block to place', placingBlock)
         fullStop()
       }
       const block = stateMovements.getScaffoldingItem()
@@ -487,6 +491,8 @@ function inject (bot) {
         bot.equip(block, 'hand', function () {
           lockEquipItem.release()
           debug('Placing block', placingBlock)
+          if (isSamePosition(waitingPlaceConfirmation, placingBlock)) return
+          // debug('Placing block', placingBlock)
           waitingPlaceConfirmation = new Vec3(placingBlock.x, placingBlock.y, placingBlock.z)
           const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
           if (!lockPlaceBlock.tryAcquire()) return
