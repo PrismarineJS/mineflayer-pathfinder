@@ -33,11 +33,18 @@ function inject (bot) {
   let lastNodeTime = performance.now()
   let returningPos = null
 <<<<<<< HEAD
+<<<<<<< HEAD
   let stopPathing = false
 =======
   let preventPathReset = []
   let waitingPlaceConfirmation = null
 >>>>>>> b609291 (Pathfinder block place improvements)
+=======
+  let resetIsPaused = false
+  let pathNeedsReset = false
+  let waitingPlaceConfirmation = null
+  let forceResetTimer = null
+>>>>>>> f8c7e61 (Simplified path reset pausing added timeout)
   const physics = new Physics(bot)
   const lockPlaceBlock = new Lock()
   const lockEquipItem = new Lock()
@@ -99,6 +106,7 @@ function inject (bot) {
   }
   function resetPath (reason, clearStates = true) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
 =======
     if (preventResetIncludes(reason)) {
@@ -106,6 +114,11 @@ function inject (bot) {
       return
     }
     clearPreventResets()
+=======
+    if (resetIsPaused) return
+    clearTimeout(forceResetTimer)
+    pathNeedsReset = false
+>>>>>>> f8c7e61 (Simplified path reset pausing added timeout)
     // debug('Path reset', reason)
     if (path.length > 0) bot.emit('path_reset', reason)
 >>>>>>> b609291 (Pathfinder block place improvements)
@@ -257,7 +270,6 @@ function inject (bot) {
 
   function fullStop () {
     // debug('Fullstop')
-    clearPreventResets()
     bot.clearControlStates()
 
     // Force horizontal velocity to 0 (otherwise inertia can move us too far)
@@ -352,8 +364,20 @@ function inject (bot) {
     preventPathReset = []
   }
 
-  function preventResetIncludes (reason) {
-    return preventPathReset.includes(reason)
+  function pausePathReset () {
+    // debug('Path reset paused')
+    resetIsPaused = true
+    if (!forceResetTimer) {
+      forceResetTimer = setTimeout(() => {
+        resetIsPaused = false
+        resetPath()
+      }, 10000)
+    }
+  }
+
+  function allowPathResets () {
+    clearTimeout(forceResetTimer)
+    resetIsPaused = false
   }
 
   /**
@@ -363,7 +387,7 @@ function inject (bot) {
    * @returns boolean true if pos1 and pos2 have the same coordinates
    */
   function isSamePosition (pos1, pos2) {
-    return pos1?.x === pos2?.x && pos1?.y === pos2?.y && pos1?.z === pos2?.z
+    return pos1 && pos2 && pos1?.x === pos2?.x && pos1?.y === pos2?.y && pos1?.z === pos2?.z
   }
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
@@ -377,6 +401,10 @@ function inject (bot) {
   })
 
   function monitorMovement () {
+    if (pathNeedsReset && !resetIsPaused) {
+      resetPath()
+      return
+    }
     // Test freemotion
     if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity) {
       const target = stateGoal.entity
@@ -474,11 +502,9 @@ function inject (bot) {
           return
         }
         if (!waitingPlaceConfirmation && !isSamePosition(waitingPlaceConfirmation, placingBlock) && placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
-          doNotPathResetOn('chunk_loaded')
-          doNotPathResetOn('goal_updated')
+          pausePathReset()
           if (!moveToEdge(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), new Vec3(placingBlock.dx, 0, placingBlock.dz))) return
-          doPathResetOn('chunk_loaded')
-          doPathResetOn('goal_updated')
+          allowPathResets()
         }
       }
       let canPlace = true
@@ -488,6 +514,10 @@ function inject (bot) {
       }
       if (canPlace) {
         if (!lockEquipItem.tryAcquire()) return
+        if (isSamePosition(waitingPlaceConfirmation, placingBlock)) {
+          // debug('Place block blocked already waiting for server confirmation')
+          return
+        }
         bot.equip(block, 'hand', function () {
           lockEquipItem.release()
           debug('Placing block', placingBlock)
