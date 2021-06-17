@@ -45,7 +45,7 @@ function inject (bot) {
     let bestTool = null
     for (const tool of availableTools) {
       const enchants = (tool && tool.nbt) ? nbt.simplify(tool.nbt).Enchantments : []
-      const digTime = block.digTime(tool ? tool.type : null, false, false, false, enchants, effects)
+      const digTime = block.digTime(tool ? tool.type : null, bot.player.gamemode, bot.entity.isInWater, !bot.entity.onGround, enchants, effects)
       if (digTime < fastest) {
         fastest = digTime
         bestTool = tool
