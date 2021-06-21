@@ -134,6 +134,10 @@ declare module 'mineflayer-pathfinder' {
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
 		}
+
+		export class GoalPlaceBlock extends Goal {
+			public constructor(pos: Vec3, world: World, options: GoalPlaceBlockOptions)
+		}
 	}
 
 	export class Movements {
@@ -207,6 +211,13 @@ declare module 'mineflayer-pathfinder' {
 		physical: boolean;
 		liquid: boolean;
 		height: number;
+	}
+
+	export interface GoalPlaceBlockOptions {
+		range: int;
+		LOS: boolean;
+		faces: Vec3[];
+		facing: 'north' | 'east' | 'south' | 'west' | 'up' | 'down';
 	}
 }
 
