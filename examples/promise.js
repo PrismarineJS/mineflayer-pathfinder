@@ -6,10 +6,10 @@ const Movements = require('mineflayer-pathfinder').Movements
 const { GoalNear } = require('mineflayer-pathfinder').goals
 const bot = mineflayer.createBot({ username: 'Player' })
 
-bot.once('spawn', () => {
-  // It's better to load plugins after spawning
-  bot.loadPlugin(pathfinder)
+// Load pathfinder
+bot.loadPlugin(pathfinder)
 
+bot.once('spawn', () => {
   // Require MCData and set pathfinder movements
   const mcData = require('minecraft-data')(bot.version)
   const defaultMove = new Movements(bot, mcData)

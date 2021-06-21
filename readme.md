@@ -26,8 +26,9 @@ const Movements = require('mineflayer-pathfinder').Movements
 const { GoalNear } = require('mineflayer-pathfinder').goals
 const bot = mineflayer.createBot({ username: 'Player' })
 
+bot.loadPlugin(pathfinder)
+
 bot.once('spawn', () => {
-  bot.loadPlugin(pathfinder)
 
   const mcData = require('minecraft-data')(bot.version)
 
