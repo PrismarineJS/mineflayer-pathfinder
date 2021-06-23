@@ -22,6 +22,7 @@ declare module 'mineflayer-pathfinder' {
 		setGoal(goal: goals.Goal | null, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
 		goto(goal: goals.Goal, callback?: Callback): Promise<void>;
+		stop(): void;
 
 		isMoving(): boolean;
 		isMining(): boolean;

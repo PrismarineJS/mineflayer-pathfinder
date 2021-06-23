@@ -96,6 +96,9 @@ Returns the best harvest tool in the inventory for the specified block
 Assigns the movements config
  * `movements` - Movements instance
 
+### bot.pathfinder.stop()
+Stops path finding when its save to stop or after the bot encountered an error while path finding. To force stop use bot.pathfinder.setGoal(null). Emits `path_stop` when stopped.
+
 ### bot.pathfinder.isMoving()
 A function that checks if the bot is currently moving.
  * `Returns` - boolean
@@ -147,6 +150,9 @@ Called when the path is reset, with a reason:
  * `no_scaffolding_blocks`
  * `place_error`
  * `stuck`
+
+ ### path_stop
+ Called when the pathing has been stopped by `bot.pathfinder.stop()`
 
 # Goals:
 
