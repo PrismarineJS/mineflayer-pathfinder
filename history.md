@@ -1,5 +1,16 @@
 # History
 
+# 1.6.3
+
+* Add setGoal null to typings
+* Add safeOrBreak check to getMoveDiagonal
+* Fix reference to LOSWhenPlacingBlocks
+* Fixed raycasting not considering block face
+* Add GoalPlaceBlock typing
+* Add placeBlock.js example
+* Add callback.js and promise.js example
+* Fix reference error in GoalPlaceBlock
+
 # 1.6.2
 
 * Fix swimming in lava
