@@ -81,7 +81,7 @@ bot.once('spawn', () => {
       bot.pathfinder.setMovements(defaultMove)
       bot.pathfinder.setGoal(new GoalInvert(new GoalFollow(target, 5)), true)
     } else if (message === 'stop') {
-      bot.pathfinder.setGoal(null)
+      bot.pathfinder.stop()
     }
   })
 })

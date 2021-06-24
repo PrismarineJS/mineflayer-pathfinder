@@ -27,6 +27,7 @@ function inject (bot) {
   let placingBlock = null
   let lastNodeTime = performance.now()
   let returningPos = null
+  let stopPathing = false
   const physics = new Physics(bot)
 
   bot.pathfinder = {}
@@ -85,7 +86,7 @@ function inject (bot) {
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
   function resetPath (reason, clearStates = true) {
-    if (path.length > 0) bot.emit('path_reset', reason)
+    if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
     path = []
     if (digging) {
       bot.on('diggingAborted', detectDiggingStopped)
@@ -96,6 +97,7 @@ function inject (bot) {
     pathUpdated = false
     astarContext = null
     if (clearStates) bot.clearControlStates()
+    if (stopPathing) return stop()
   }
 
   bot.pathfinder.setGoal = (goal, dynamic = false) => {
@@ -119,6 +121,10 @@ function inject (bot) {
   }
 
   bot.pathfinder.goto = callbackify(bot.pathfinder.goto, 1)
+
+  bot.pathfinder.stop = () => {
+    stopPathing = true
+  }
 
   bot.on('physicTick', monitorMovement)
 
@@ -285,6 +291,14 @@ function inject (bot) {
     return true
   }
 
+  function stop () {
+    stopPathing = false
+    stateGoal = null
+    path = []
+    bot.emit('path_stop')
+    fullStop()
+  }
+
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
       resetPath('block_updated', false)
@@ -419,6 +433,10 @@ function inject (bot) {
     if (Math.abs(dx) <= 0.35 && Math.abs(dz) <= 0.35 && Math.abs(dy) < 1) {
       // arrived at next point
       lastNodeTime = performance.now()
+      if (stopPathing) {
+        stop()
+        return
+      }
       path.shift()
       if (path.length === 0) { // done
         if (!dynamicGoal && stateGoal && stateGoal.isEnd(p.floored())) {
