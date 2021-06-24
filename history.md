@@ -10,6 +10,7 @@
 * Add placeBlock.js example
 * Add callback.js and promise.js example
 * Fix reference error in GoalPlaceBlock
+* Function to stop path finding when safe
 
 # 1.6.2
 
