@@ -432,7 +432,6 @@ function inject (bot) {
     let dz = nextPoint.z - p.z
     if (Math.abs(dx) <= 0.35 && Math.abs(dz) <= 0.35 && Math.abs(dy) < 1) {
       // arrived at next point
-      console.log('stop', stopPathing)
       lastNodeTime = performance.now()
       if (stopPathing) {
         stop()
