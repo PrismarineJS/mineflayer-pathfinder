@@ -79,7 +79,7 @@ Returns a Promise. Resolves when the goal is reached. Rejects on error.
 
 ### bot.pathfinder.bestHarvestTool(block)
 Returns the best harvest tool in the inventory for the specified block
- * `Returns` - ?
+ * `Returns` - `Item` instance or `null`
  * `block` - Block instance
 
 ### bot.pathfinder.getPathTo(movements, goal, done, timeout)
