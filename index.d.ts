@@ -72,6 +72,18 @@ declare module 'mineflayer-pathfinder' {
 			public hasChanged(): boolean;
 		}
 
+		export class GoalNearXZ extends Goal {
+			public constructor(x: number, z: number, range: number);
+
+			public x: number;
+			public z: number;
+			public rangeSq: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
+
 		export class GoalY extends Goal {
 			public constructor(y: number);
 
