@@ -1,5 +1,10 @@
 # History
 
+# 1.7.0
+
+* Add GoalNearXZ
+* Improve docs
+
 # 1.6.3
 
 * Add setGoal null to typings
