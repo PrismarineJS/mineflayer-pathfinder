@@ -163,6 +163,7 @@ declare module 'mineflayer-pathfinder' {
 		public allow1by1towers: boolean;
 		public allowFreeMotion: boolean;
 		public allowParkour: boolean;
+		public allowSprinting: boolean;
 		
 		public blocksCantBreak: Set<number>;
 		public blocksToAvoid: Set<number>;
