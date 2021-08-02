@@ -4,6 +4,7 @@ import { Item } from 'prismarine-item';
 import { Vec3 } from 'vec3';
 import { Block } from 'prismarine-block';
 import { Entity } from 'prismarine-entity';
+import { World } from 'prismarine-world'
 
 declare module 'mineflayer-pathfinder' {
 	export function pathfinder(bot: Bot): void;
@@ -149,6 +150,9 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalPlaceBlock extends Goal {
+		public heuristic(node: Move): number;
+		public isEnd(node: Move): boolean;
+		public hasChanged(): boolean;
 			public constructor(pos: Vec3, world: World, options: GoalPlaceBlockOptions)
 		}
 	}
@@ -228,7 +232,7 @@ declare module 'mineflayer-pathfinder' {
 	}
 
 	export interface GoalPlaceBlockOptions {
-		range: int;
+		range: number;
 		LOS: boolean;
 		faces: Vec3[];
 		facing: 'north' | 'east' | 'south' | 'west' | 'up' | 'down';
