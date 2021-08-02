@@ -150,9 +150,9 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalPlaceBlock extends Goal {
-            public heuristic(node: Move): number;
-            public isEnd(node: Move): boolean;
-            public hasChanged(): boolean;
+		public heuristic(node: Move): number;
+		public isEnd(node: Move): boolean;
+		public hasChanged(): boolean;
 			public constructor(pos: Vec3, world: World, options: GoalPlaceBlockOptions)
 		}
 	}
