@@ -182,7 +182,7 @@ Useful for finding builds that you don't have an exact Y level for, just an appr
 
 ### GoalY(y)
 Get to y level
- * `z` - Integer
+ * `y` - Integer
 
 
 ### GoalGetToBlock(x, y, z)
