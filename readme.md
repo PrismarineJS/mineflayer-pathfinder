@@ -174,7 +174,7 @@ Useful for long-range goals that don't have a specific Y level
  * `x` - Integer
  * `z` - Integer
 
-### GoalNearXZ(x, y, z, range)
+### GoalNearXZ(x, z, range)
 Useful for finding builds that you don't have an exact Y level for, just an approximate X and Z level
  * `x` - Integer
  * `z` - Integer
