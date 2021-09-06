@@ -25,7 +25,7 @@ bot.once('spawn', () => {
   bot.pathfinder.setMovements(defaultMove)
 
   bot.on('chat', async (username, message) => {
-    const target = bot.players[username]
+    const target = bot.players[username].entity
 
     if (message.startsWith('place')) {
       const [, itemName] = message.split(' ')
@@ -40,9 +40,8 @@ bot.once('spawn', () => {
       }
 
       try {
-        const rayBlock = rayTraceEntitySight(target.entity)
+        const rayBlock = rayTraceEntitySight(target)
         const face = directionToVector(rayBlock.face)
-        console.info('face', face)
         await bot.pathfinder.goto(new GoalPlaceBlock(rayBlock.position.offset(face.x, face.y, face.z), bot.world, {
           range: 4
         }))
@@ -62,10 +61,10 @@ bot.once('spawn', () => {
       bot.pathfinder.setMovements(defaultMove)
       bot.pathfinder.setGoal(new GoalNear(p.x, p.y, p.z, 1))
     } else if (message === 'stop') {
-      bot.pathfinder.setGoal(null)
+      bot.pathfinder.stop()
     } else if (message === 'follow') {
       bot.pathfinder.setMovements(defaultMove)
-      bot.pathfinder.setGoal(new GoalFollow(target, 3), true)
+      bot.pathfinder.setGoal(new GoalFollow(target, 1), true)
       // follow is a dynamic goal: setGoal(goal, dynamic=true)
       // when reached, the goal will stay active and will not
       // emit an event
