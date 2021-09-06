@@ -4,6 +4,7 @@ const AStar = require('./lib/astar')
 const Move = require('./lib/move')
 const Movements = require('./lib/movements')
 const gotoUtil = require('./lib/goto')
+const Lock = require('./lib/lock')
 
 const Vec3 = require('vec3').Vec3
 
@@ -29,6 +30,8 @@ function inject (bot) {
   let returningPos = null
   let stopPathing = false
   const physics = new Physics(bot)
+  const lockPlaceBlock = new Lock()
+  const lockEquipItem = new Lock()
 
   bot.pathfinder = {}
 
@@ -96,6 +99,8 @@ function inject (bot) {
     placing = false
     pathUpdated = false
     astarContext = null
+    lockEquipItem.release()
+    lockPlaceBlock.release()
     if (clearStates) bot.clearControlStates()
     if (stopPathing) return stop()
   }
@@ -409,9 +414,13 @@ function inject (bot) {
         canPlace = placingBlock.y + 1 < bot.entity.position.y
       }
       if (canPlace) {
+        if (!lockEquipItem.tryAcquire()) return
         bot.equip(block, 'hand', function () {
+          lockEquipItem.release()
           const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
+          if (!lockPlaceBlock.tryAcquire()) return
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
+            lockPlaceBlock.release()
             placing = false
             lastNodeTime = performance.now()
             if (err) {
