@@ -138,7 +138,7 @@
 
 * Paths are now recalculated on chunk loading to fix long paths
 * Minor bug fixes
-* Moved scaffolding blocks from goalinteractnaive.js to movements.js internally
+* Moved scaffolding blocks from index.js to movements.js internally
 * Updated readme todo list
 * Added 1x1 tower creation
 
