@@ -156,7 +156,7 @@ declare module 'mineflayer-pathfinder' {
 			public constructor(pos: Vec3, world: World, options: GoalPlaceBlockOptions)
 		}
 		
-		export class GoalBreak extends Goal {
+		export class GoalBlockBreak extends Goal {
 			public constructor(x: number, y: number, z: number, bot: Bot, options: Object)
 
 			public x: number;
