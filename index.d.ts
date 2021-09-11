@@ -155,6 +155,19 @@ declare module 'mineflayer-pathfinder' {
 		public hasChanged(): boolean;
 			public constructor(pos: Vec3, world: World, options: GoalPlaceBlockOptions)
 		}
+		
+		export class GoalBlockBreak extends Goal {
+			public constructor(x: number, y: number, z: number, bot: Bot, options: Object)
+
+			public x: number;
+			public y: number;
+			public z: number;
+			
+			public bot: Bot;
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
 	}
 
 	export class Movements {
