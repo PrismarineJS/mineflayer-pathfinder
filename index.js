@@ -31,14 +31,12 @@ function inject (bot) {
   let lastNodeTime = performance.now()
   let returningPos = null
   let stopPathing = false
-  let preventPathReset = []
-  let waitingPlaceConfirmation = null
-  let resetIsPaused = false
   let pathNeedsReset = false
-  let forceResetTimer = null
+  const forceResetTimer = null
   const physics = new Physics(bot)
-  const lockPlaceBlock = new Lock()
-  const lockEquipItem = new Lock()
+  const lockPlaceBlock = new Lock() // Used to keep track if the bot is currently placing a block
+  const lockEquipItem = new Lock() // Used to keep track if the bot is currently equipping an item
+  const lockExecuteMove = new Lock() // Used to keep track if the bot is currently executing a move that should not be interrupted ie jumps, block placement etc.
 
   bot.pathfinder = {}
 
@@ -95,15 +93,9 @@ function inject (bot) {
     bot.removeAllListeners('diggingAborted', detectDiggingStopped)
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
+
   function resetPath (reason, clearStates = true) {
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
-    if (preventResetIncludes(reason)) {
-      // debug('Path reset blocked by', preventPathReset)
-      return
-    }
-    clearPreventResets()
-    pathNeedsReset = false
-    if (resetIsPaused) return
     clearTimeout(forceResetTimer)
     pathNeedsReset = false
     // debug('Path reset', reason)
@@ -119,11 +111,20 @@ function inject (bot) {
     astarContext = null
     lockEquipItem.release()
     lockPlaceBlock.release()
+    lockExecuteMove.release()
     if (clearStates) bot.clearControlStates()
     if (stopPathing) return stop()
   }
 
   bot.pathfinder.setGoal = (goal, dynamic = false) => {
+    if (goal && lockExecuteMove.isLocked()) {
+      lockExecuteMove._emitter.removeAllListeners('release')
+      lockExecuteMove._emitter.once('release', onRelease)
+      const onRelease = () => {
+        bot.pathfinder.setGoal(goal, dynamic)
+      }
+      return // If we still have to execute a move dont reset the goal yet.
+    }
     stateGoal = goal
     dynamicGoal = dynamic
     bot.emit('goal_updated', goal, dynamic)
@@ -335,46 +336,6 @@ function inject (bot) {
     bot.emit('path_stop')
     fullStop()
   }
-  
-  function doNotPathResetOn (reason) {
-    if (preventPathReset.includes(reason)) return
-    preventPathReset.push(reason)
-  }
-
-  function doPathResetOn (reason) {
-    const index = preventPathReset.indexOf(reason)
-    if (index !== -1) preventPathReset.splice(index, 1)
-  }
-
-  function clearPreventResets () {
-    preventPathReset = []
-  }
-
-  function pausePathReset () {
-    // debug('Path reset paused')
-    resetIsPaused = true
-    if (!forceResetTimer) {
-      forceResetTimer = setTimeout(() => {
-        resetIsPaused = false
-        resetPath()
-      }, 10000)
-    }
-  }
-
-  function allowPathResets () {
-    clearTimeout(forceResetTimer)
-    resetIsPaused = false
-  }
-
-  /**
-   * Checks if two different Vec3 Positions have the same coordinates
-   * @param {Vec3} pos1 vec3 pos1
-   * @param {Vec3} pos2 vec3 pos2
-   * @returns boolean true if pos1 and pos2 have the same coordinates
-   */
-  function isSamePosition (pos1, pos2) {
-    return pos1 && pos2 && pos1?.x === pos2?.x && pos1?.y === pos2?.y && pos1?.z === pos2?.z
-  }
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
@@ -387,12 +348,12 @@ function inject (bot) {
   })
 
   function monitorMovement () {
-    if (pathNeedsReset && !resetIsPaused) {
+    if (pathNeedsReset && !lockExecuteMove.isLocked()) {
       resetPath()
       return
     }
     // Test freemotion
-    if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity) {
+    if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity && !lockExecuteMove.isLocked()) {
       const target = stateGoal.entity
       if (physics.canStraightLine([target.position])) {
         bot.lookAt(target.position.offset(0, 1.6, 0))
@@ -406,7 +367,7 @@ function inject (bot) {
       }
     }
 
-    if (stateGoal && stateGoal.hasChanged()) {
+    if (stateGoal && stateGoal.hasChanged() && !lockExecuteMove.isLocked()) {
       resetPath('goal_moved', false)
     }
 
@@ -482,16 +443,9 @@ function inject (bot) {
         resetPath('no_scaffolding_blocks')
         return
       }
-      if (bot.pathfinder.LOSWhenPlacingBlocks) {
-        if (bot.entity.position.distanceTo(placingBlock) > 3) {
-          resetPath('place_block_to_far')
-          return
-        }
-        if (!waitingPlaceConfirmation && !isSamePosition(waitingPlaceConfirmation, placingBlock) && placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
-          pausePathReset()
-          if (!moveToEdge(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), new Vec3(placingBlock.dx, 0, placingBlock.dz))) return
-          allowPathResets()
-        }
+      if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
+        lockExecuteMove.tryAcquire()
+        if (!moveToEdge(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), new Vec3(placingBlock.dx, 0, placingBlock.dz))) return
       }
       let canPlace = true
       if (placingBlock.jump) {
@@ -500,21 +454,14 @@ function inject (bot) {
       }
       if (canPlace) {
         if (!lockEquipItem.tryAcquire()) return
-        if (isSamePosition(waitingPlaceConfirmation, placingBlock)) {
-          // debug('Place block blocked already waiting for server confirmation')
-          return
-        }
         bot.equip(block, 'hand', function () {
           lockEquipItem.release()
-          debug('Placing block', placingBlock)
-          if (isSamePosition(waitingPlaceConfirmation, placingBlock)) return
           // debug('Placing block', placingBlock)
-          waitingPlaceConfirmation = new Vec3(placingBlock.x, placingBlock.y, placingBlock.z)
           const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
           if (!lockPlaceBlock.tryAcquire()) return
           bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
             lockPlaceBlock.release()
-            waitingPlaceConfirmation = null
+            lockExecuteMove.release()
             placing = false
             lastNodeTime = performance.now()
             if (err) {
