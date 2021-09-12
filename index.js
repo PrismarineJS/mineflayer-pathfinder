@@ -4,15 +4,9 @@ const AStar = require('./lib/astar')
 const Move = require('./lib/move')
 const Movements = require('./lib/movements')
 const gotoUtil = require('./lib/goto')
-<<<<<<< HEAD
-<<<<<<< HEAD
 const Lock = require('./lib/lock')
-=======
 // const debug = require('debug')('pathfinder')
->>>>>>> 80152e7 (Added comment and uncomment scripts)
-=======
 // const debug = require('debug')('pathfinder')
->>>>>>> 0cea1c105aa740d0c352baf1ecd648fbc7e8672f
 
 const Vec3 = require('vec3').Vec3
 
@@ -36,25 +30,12 @@ function inject (bot) {
   let placingBlock = null
   let lastNodeTime = performance.now()
   let returningPos = null
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   let stopPathing = false
-=======
   let preventPathReset = []
   let waitingPlaceConfirmation = null
->>>>>>> b609291 (Pathfinder block place improvements)
-=======
-=======
->>>>>>> 0cea1c105aa740d0c352baf1ecd648fbc7e8672f
   let resetIsPaused = false
   let pathNeedsReset = false
-  let waitingPlaceConfirmation = null
   let forceResetTimer = null
-<<<<<<< HEAD
->>>>>>> f8c7e61 (Simplified path reset pausing added timeout)
-=======
->>>>>>> 0cea1c105aa740d0c352baf1ecd648fbc7e8672f
   const physics = new Physics(bot)
   const lockPlaceBlock = new Lock()
   const lockEquipItem = new Lock()
@@ -115,29 +96,18 @@ function inject (bot) {
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
   function resetPath (reason, clearStates = true) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
-=======
     if (preventResetIncludes(reason)) {
       // debug('Path reset blocked by', preventPathReset)
       return
     }
     clearPreventResets()
-=======
+    pathNeedsReset = false
     if (resetIsPaused) return
     clearTimeout(forceResetTimer)
     pathNeedsReset = false
->>>>>>> f8c7e61 (Simplified path reset pausing added timeout)
-=======
-    if (resetIsPaused) return
-    clearTimeout(forceResetTimer)
-    pathNeedsReset = false
->>>>>>> 0cea1c105aa740d0c352baf1ecd648fbc7e8672f
     // debug('Path reset', reason)
     if (path.length > 0) bot.emit('path_reset', reason)
->>>>>>> b609291 (Pathfinder block place improvements)
     path = []
     if (digging) {
       bot.on('diggingAborted', detectDiggingStopped)
