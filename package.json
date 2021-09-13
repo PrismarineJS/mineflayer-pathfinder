@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint",
+    "mocha_test": "mocha --reporter spec --exit",
     "lint": "standard",
-    "fix": "standard --fix"
+    "fix": "standard --fix",
+    "test": "npm run lint && npm run mocha_test"
   },
   "author": "Karang",
   "license": "MIT",
@@ -21,7 +22,10 @@
   },
   "devDependencies": {
     "mineflayer-pathfinder": "file:./",
+    "minecraft-wrap": "^1.2.1",
     "mineflayer": "^4.0.0",
+    "mineflayer-pathfinder": "file:./",
+    "mocha": "^9.0.0",
     "standard": "^16.0.3"
   }
 }
