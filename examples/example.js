@@ -1,6 +1,6 @@
 const mineflayer = require('mineflayer')
 const { pathfinder, Movements } = require('mineflayer-pathfinder')
-const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow, GoalBlockBreak } = require('mineflayer-pathfinder').goals
+const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalInvert, GoalFollow, GoalBreakBlock } = require('mineflayer-pathfinder').goals
 
 if (process.argv.length > 6) {
   console.log('Usage : node example.js [<host>] [<port>] [<name>] [<password>]')
@@ -88,7 +88,7 @@ bot.once('spawn', () => {
         return
       }
       const p = target.position.offset(0, -1, 0)
-      const goal = new GoalBlockBreak(p.x, p.y, p.z, bot)
+      const goal = new GoalBreakBlock(p.x, p.y, p.z, bot)
       bot.pathfinder.goto(goal)
         .then(() => {
           bot.dig(bot.blockAt(p), 'raycast')
