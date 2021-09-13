@@ -131,7 +131,8 @@ describe('pathfinder Goals', function () {
       const targetBlock2 = new Vec3(10, 1, 0)
       const goal1 = new goals.GoalBlock(targetBlock.x, targetBlock.y, targetBlock.z)
       const goal2 = new goals.GoalBlock(targetBlock2.x, targetBlock2.y, targetBlock2.z)
-      const goalComposite = new goals.GoalCompositeAny([goal1, goal2])
+      const goalComposite = new goals.GoalCompositeAny()
+      goalComposite.goals = [goal1, goal2]
       assert.ok(!goalComposite.isEnd(bot.entity.position))
       bot.entity.position = targetBlock.clone()
       assert.ok(goalComposite.isEnd(bot.entity.position)) // target block 1
@@ -144,7 +145,8 @@ describe('pathfinder Goals', function () {
       const block2 = new Vec3(3, 1, 0)
       const goal1 = new goals.GoalBlock(targetBlock.x, targetBlock.y, targetBlock.z)
       const goal2 = new goals.GoalNear(block2.x, block2.y, block2.z, 2)
-      const goalComposite = new goals.GoalCompositeAll([goal1, goal2])
+      const goalComposite = new goals.GoalCompositeAll()
+      goalComposite.goals = [goal1, goal2]
       assert.ok(!goalComposite.isEnd(bot.entity.position))
       bot.entity.position = targetBlock.offset(0, 0, 0)
       assert.ok(goalComposite.isEnd(bot.entity.position))
