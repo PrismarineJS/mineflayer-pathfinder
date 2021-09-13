@@ -5,6 +5,8 @@ const { goals } = require('mineflayer-pathfinder')
 const { Vec3 } = require('vec3')
 const mc = require('minecraft-protocol')
 const assert = require('assert')
+const { v4: uuidv4 } = require('uuid')
+const Entity = require('prismarine-entity')
 
 describe('pathfinder Goals', function () {
   const Version = '1.16.4'
@@ -78,7 +80,7 @@ describe('pathfinder Goals', function () {
     })
   })
 
-  describe('Goals', async () => {
+  describe('Goals', () => {
     const targetBlock = new Vec3(2, 1, 0) // a gold block
     const start = new Vec3(0, 1, 0)
     beforeEach(() => {
@@ -158,6 +160,57 @@ describe('pathfinder Goals', function () {
       bot.entity.position = targetBlock.clone()
       assert.ok(!goal.isEnd(bot.entity.position))
       bot.entity.position = new Vec3(0, 1, 0)
+      assert.ok(goal.isEnd(bot.entity.position))
+    })
+
+    it('GoalPlaceBlock', () => {
+      const placeTarget = new Vec3(0, 1, 10)
+      const goal = new goals.GoalPlaceBlock(placeTarget, bot.world, {})
+      assert.ok(!goal.isEnd(bot.entity.position.floored()))
+      bot.entity.position = new Vec3(0, 1, 8)
+      assert.ok(goal.isEnd(bot.entity.position.floored()))
+    })
+
+    it('GoalBreakBlock', () => {
+      const breakTarget = targetBlock.clone() // should be a gold block
+      const goal = new goals.GoalBreakBlock(breakTarget.x, breakTarget.y, breakTarget.z, bot)
+      assert.ok(goal.isEnd(bot.entity.position.floored()))
+      bot.entity.position = targetBlock.offset(0, 0, 10) // should be to far away
+      assert.ok(!goal.isEnd(bot.entity.position.floored()))
+    })
+  })
+
+  describe('Goals with entity', () => {
+    const targetBlock = new Vec3(2, 1, 0) // a gold block
+    const start = new Vec3(0, 1, 0)
+    beforeEach(() => {
+      bot.entity.position = start.clone()
+    })
+    before((done) => {
+      const chicken = new Entity(mcData.entitiesByName.chicken.id)
+      const client = Object.values(server.clients)[0]
+      client.write('spawn_entity', { // Might only work for 1.16
+        entityId: chicken.id,
+        objectUUID: uuidv4(),
+        type: chicken.type,
+        x: targetBlock.x,
+        y: targetBlock.y + 1,
+        z: targetBlock.z,
+        pitch: 0,
+        yaw: 0,
+        objectData: 0,
+        velocityX: 0,
+        velocityY: 0,
+        velocityZ: 0
+      })
+      setTimeout(done, 100)
+    })
+
+    it('GoalFollow', () => {
+      const entity = bot.nearestEntity()
+      const goal = new goals.GoalFollow(entity, 1)
+      assert.ok(!goal.isEnd(bot.entity.position))
+      bot.entity.position = targetBlock.clone()
       assert.ok(goal.isEnd(bot.entity.position))
     })
   })
