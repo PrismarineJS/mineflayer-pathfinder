@@ -221,5 +221,5 @@ Position the bot in order to place a block
    * `facing3D` - boolean, facing is 3D (true) or 2D (false)
    * `half` - `top` or `bottom`, the half that must be clicked
    
- ### GoalBlockBreak(x, y, z, bot, { range = 5 })
+ ### GoalBreakBlock(x, y, z, bot, { range = 5 })
  Path into a position were a blockface of block at x y z is visible. Fourth argument is optional and contains options. `range` option defaults to 4.
