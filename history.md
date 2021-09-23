@@ -1,5 +1,14 @@
 # History
 
+# 1.8.0
+
+* Fixed placeBlock example
+* Fixed Readme typos
+* Fixed bot placing wrong blocks as scaffolding
+* Fixed GoalNearXZ
+* Fixed typings
+* Fixed index.d.ts compile errors
+
 # 1.7.0
 
 * Add GoalNearXZ
