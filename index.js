@@ -490,7 +490,7 @@ function inject (bot) {
     }
 
     // check for futility
-    if (performance.now() - lastNodeTime > 1500) {
+    if (performance.now() - lastNodeTime > 3500) {
       // should never take this long to go to the next node
       resetPath('stuck')
     }
