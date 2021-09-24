@@ -311,7 +311,17 @@ function inject (bot) {
   })
 
   bot.on('chunkColumnLoad', (chunk) => {
-    resetPath('chunk_loaded', false)
+    // Reset only if the new chunk is adjacent to a visited chunk
+    if (astarContext) {
+      const cx = chunk.x >> 4
+      const cz = chunk.z >> 4
+      if (astarContext.visitedChunks.has(`${cx - 1},${cz}`) ||
+          astarContext.visitedChunks.has(`${cx},${cz - 1}`) ||
+          astarContext.visitedChunks.has(`${cx + 1},${cz}`) ||
+          astarContext.visitedChunks.has(`${cx},${cz + 1}`)) {
+        resetPath('chunk_loaded', false)
+      }
+    }
   })
 
   function monitorMovement () {
