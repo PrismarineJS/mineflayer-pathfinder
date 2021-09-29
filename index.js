@@ -339,9 +339,12 @@ function inject (bot) {
         return
       }
     }
-
-    if (stateGoal && stateGoal.hasChanged()) {
-      resetPath('goal_moved', false)
+    if (stateGoal) {
+      if (!stateGoal.isValid()) {
+        stop()
+      } else if (stateGoal.hasChanged()) {
+        resetPath('goal_moved', false)  
+      }
     }
 
     if (astarContext && astartTimedout) {
