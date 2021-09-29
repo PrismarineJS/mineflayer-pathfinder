@@ -343,7 +343,7 @@ function inject (bot) {
       if (!stateGoal.isValid()) {
         stop()
       } else if (stateGoal.hasChanged()) {
-        resetPath('goal_moved', false)  
+        resetPath('goal_moved', false)
       }
     }
 
