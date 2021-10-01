@@ -480,7 +480,7 @@ describe('pathfinder Movement', function () {
       await wait()
     })
 
-    it('safeToBreak', async function () {  
+    it('safeToBreak', async function () {
       const block = bot.blockAt(targetBlock)
       assert.ok(defaultMovement.safeToBreak(block))
       defaultMovement.canDig = false
@@ -490,7 +490,6 @@ describe('pathfinder Movement', function () {
       assert.ok(!defaultMovement.safeToBreak(block))
     })
   })
-  
 
   it('safeOrBreak', function () {
     const block = defaultMovement.getBlock(targetBlock, 0, 0, 0)
@@ -515,7 +514,7 @@ describe('pathfinder Movement', function () {
     assert.ok(neighbors.length === 1, `getMoveForward neighbors not right length (${neighbors.length} === 1)`)
   })
 
-  it('getMoveDiagonal', function ( ) {
+  it('getMoveDiagonal', function () {
     const dir = new Vec3(1, 0, 0)
     const neighbors = []
     defaultMovement.getMoveDiagonal(targetBlock, dir, neighbors)
@@ -554,7 +553,6 @@ describe('pathfinder Movement', function () {
   it('getMoveParkourForward', function () {
     const dir = new Vec3(1, 0, 0)
     let neighbors = []
-    debugger
     defaultMovement.getMoveParkourForward(targetBlock.offset(0, 1, 0), dir, neighbors) // jump of the gold block
     assert.ok(neighbors.length === 1, `getMoveParkourForward jump off gold block neighbors not right length (${neighbors.length} === 1)`)
     neighbors = []
@@ -564,6 +562,6 @@ describe('pathfinder Movement', function () {
 
   it('getNeighbors', function () {
     const neighbors = defaultMovement.getNeighbors(targetBlock.offset(0, 1, 0))
-    assert.ok(neighbors.length > 0, `getNeighbors length 0`)
+    assert.ok(neighbors.length > 0, 'getNeighbors length 0')
   })
 })
