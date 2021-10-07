@@ -9,9 +9,45 @@ const { v4: uuidv4 } = require('uuid')
 const Entity = require('prismarine-entity')
 const { once } = require('events')
 const wait = require('util').promisify(setTimeout)
+const { Schematic } = require('prismarine-schematic')
+const { promises: fs } = require('fs')
+const path = require('path')
 
 const Version = '1.16.5'
 const ServerPort = 25567
+
+function flatMap (Version) {
+  const targetBlock = new Vec3(12, 1, 8) // a gold block away from the spawn position
+  const Block = require('prismarine-block')(Version)
+  const Chunk = require('prismarine-chunk')(Version)
+  const mcData = require('minecraft-data')(Version)
+  const chunk = new Chunk()
+  chunk.initialize((x, y, z) => {
+    if (targetBlock.x === x && targetBlock.y === y && targetBlock.z === z) {
+      return new Block(mcData.blocksByName.gold_block.id, 1, 0)
+    }
+    return y === 0 ? new Block(mcData.blocksByName.bedrock.id, 1, 0) : new Block(mcData.blocksByName.air.id, 1, 0) // Bedrock floor
+  })
+  return chunk
+}
+
+async function parkourMap (Version) {
+  const pwd = path.join(__dirname, './schematics/parkour1.schem')
+  const readSchem = await Schematic.read(await fs.readFile(pwd), '1.12.2')
+  // const schem = new Schematic(Version, readSchem.size, readSchem.offset, [], [])
+  // const data112 = require('minecraft-data')('1.12')
+  // const data = require('minecraft-data')(Version)
+
+  const Block = require('prismarine-block')(Version)
+  const Chunk = require('prismarine-chunk')(Version)
+  const mcData = require('minecraft-data')(Version)
+  const chunk = new Chunk()
+  chunk.initialize((x, y, z) => {
+    const block = readSchem.getBlock(new Vec3(x, y, z))
+    return new Block(mcData.blocksByName[block.name], 1, 0)
+  })
+  return chunk
+}
 
 /**
  *
@@ -21,9 +57,7 @@ const ServerPort = 25567
  * @param {string} Version
  * @returns {Promise<void>}
  */
-async function newServer (server, targetBlock, spawnPos, Version, useLoginPacket) {
-  const Block = require('prismarine-block')(Version)
-  const Chunk = require('prismarine-chunk')(Version)
+async function newServer (server, chunk, spawnPos, Version, useLoginPacket) {
   const mcData = require('minecraft-data')(Version)
   server = mc.createServer({
     'online-mode': false,
@@ -35,13 +69,6 @@ async function newServer (server, targetBlock, spawnPos, Version, useLoginPacket
     console.info('Listening')
   })
   server.on('login', (client) => {
-    const chunk = new Chunk()
-    chunk.initialize((x, y, z) => {
-      if (targetBlock.x === x && targetBlock.y === y && targetBlock.z === z) {
-        return new Block(mcData.blocksByName.gold_block.id, 1, 0)
-      }
-      return y === 0 ? new Block(mcData.blocksByName.bedrock.id, 1, 0) : new Block(mcData.blocksByName.air.id, 1, 0) // Bedrock floor
-    })
     let loginPacket
     // if (bot.supportFeature('usesLoginPacket')) {
     if (useLoginPacket) {
@@ -108,7 +135,8 @@ describe('pathfinder Goals', function () {
   let server
 
   before(async () => {
-    server = await newServer(server, targetBlock, spawnPos, Version, true)
+    const chunk = flatMap(Version)
+    server = await newServer(server, chunk, spawnPos, Version, true)
     bot = mineflayer.createBot({
       username: 'player',
       version: Version,
@@ -267,7 +295,8 @@ describe('pathfinder events', function () {
   let server
 
   before(async () => {
-    server = await newServer(server, targetBlock, spawnPos, Version, true)
+    const chunk = flatMap(Version)
+    server = await newServer(server, chunk, spawnPos, Version, true)
     bot = mineflayer.createBot({
       username: 'player',
       version: Version,
@@ -335,7 +364,8 @@ describe('pathfinder util functions', function () {
   let server
 
   before(async () => {
-    server = await newServer(server, targetBlock, spawnPos, Version, true)
+    const chunk = flatMap(Version)
+    server = await newServer(server, chunk, spawnPos, Version, true)
     bot = mineflayer.createBot({
       username: 'player',
       version: Version,
@@ -444,7 +474,8 @@ describe('pathfinder Movement', function () {
   const itemsToGive = [new Item(mcData.itemsByName.diamond_pickaxe.id, 1), new Item(mcData.itemsByName.dirt.id, 64)]
 
   before(async () => {
-    server = await newServer(server, targetBlock, spawnPos, Version, true)
+    const chunk = flatMap(Version)
+    server = await newServer(server, chunk, spawnPos, Version, true)
     bot = mineflayer.createBot({
       username: 'player',
       version: Version,
@@ -563,5 +594,41 @@ describe('pathfinder Movement', function () {
   it('getNeighbors', function () {
     const neighbors = defaultMovement.getNeighbors(targetBlock.offset(0, 1, 0))
     assert.ok(neighbors.length > 0, 'getNeighbors length 0')
+  })
+})
+
+describe('Parkour path test', function () {
+  const mcData = require('minecraft-data')(Version)
+
+  const spawnPos = new Vec3(8.5, 1, 8.5) // Center of the chunk & center of the block
+
+  /** @type { import('mineflayer').Bot & { pathfinder: import('mineflayer-pathfinder').Pathfinder }} */
+  let bot
+  /** @type { import('minecraft-protocol').Server } */
+  let server
+  /** @type { import('mineflayer-pathfinder').Movements } */
+  let defaultMovement
+
+  before(async () => {
+    this.timeout(50000)
+    debugger
+    const chunk = await parkourMap(Version)
+    console.info(chunk)
+    server = await newServer(server, chunk, spawnPos, Version, true)
+    bot = mineflayer.createBot({
+      username: 'player',
+      version: Version,
+      port: ServerPort
+    })
+    await once(bot, 'chunkColumnLoad')
+    defaultMovement = new Movements(bot, mcData)
+    bot.loadPlugin(pathfinder)
+    bot.pathfinder.setMovements(defaultMovement)
+  })
+  after(() => server.close())
+
+  it('test1', async function () {
+    this.timeout(50000)
+    await wait(50000)
   })
 })
