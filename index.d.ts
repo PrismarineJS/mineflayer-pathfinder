@@ -188,7 +188,6 @@ declare module 'mineflayer-pathfinder' {
 		public scafoldingBlocks: number[];
 
 		public maxDropDown: number;
-		public infiniteLiquidDropdownDistance: boolean;
 		public digCost: number;
 
 		public countScaffoldingItems(): number;
