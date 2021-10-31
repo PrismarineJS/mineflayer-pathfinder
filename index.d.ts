@@ -242,6 +242,8 @@ declare module 'mineflayer-pathfinder' {
 		physical: boolean;
 		liquid: boolean;
 		height: number;
+		replaceable: boolean;
+		climbable: boolean;
 	}
 
 	export interface GoalPlaceBlockOptions {
