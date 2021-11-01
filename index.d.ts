@@ -195,6 +195,24 @@ declare module 'mineflayer-pathfinder' {
 		public digCost: number;
 		public placeCost: number;
 
+		/** Exclusion Area that adds extra cost or prevents the bot from stepping onto positions included and adds extra cost or prevents to bot from breaking blocks.
+		 * @example
+		 * ```js
+			movements.exclusionAreas = [(block) => {
+				return block.type === someIdType // Prevents the bot from breaking a specific block.
+			},
+			(block) => {
+				return someVec3Pos.distanceTo(block.position) < 5 // Prevents the bot from getting near to a specific location
+			}]
+			``` */
+		public exclusionAreas: [(block: SafeBlock) => boolean];
+		/** How much extra cost moving through an exclusion area adds. Default is 8. 
+     * At about >8 the bots movements become very irregular and it have trouble reaching goals inside exclusion zones.
+     * At about >50 it will be unable to move out of an exclusion zone or move into an exclusion zone due to path costs being to heigh.
+     * At >100 it will not calculate any paths leading into or onto an exclusion zone. */
+		public exclusionAreaPower: number;
+
+		public isExcluded(block: SafeBlock): boolean;
 		public countScaffoldingItems(): number;
 		public getScaffoldingItem(): Item | null;
 		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;
