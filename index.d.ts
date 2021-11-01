@@ -207,9 +207,9 @@ declare module 'mineflayer-pathfinder' {
 			``` */
 		public exclusionAreas: [(block: SafeBlock) => boolean];
 		/** How much extra cost moving through an exclusion area adds. Default is 8. 
-     * At about >8 the bots movements become very irregular and it have trouble reaching goals inside exclusion zones.
-     * At about >50 it will be unable to move out of an exclusion zone or move into an exclusion zone due to path costs being to heigh.
-     * At >100 it will not calculate any paths leading into or onto an exclusion zone. */
+		 * At about >8 the bots movements become very irregular and it have trouble reaching goals inside exclusion zones.
+		 * At about >50 it will be unable to move out of an exclusion zone or move into an exclusion zone due to path costs being to heigh.
+		 * At >100 it will not calculate any paths leading into or onto an exclusion zone. */
 		public exclusionAreaPower: number;
 
 		public isExcluded(block: SafeBlock): boolean;
