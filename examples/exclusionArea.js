@@ -68,7 +68,7 @@ bot.once('spawn', () => {
           return block.position.distanceTo(center) <= radius
         }
         bot.pathfinder.movements.exclusionAreas.push(isExcluded)
-        // At 5. The bot avoids the area most of the time but can still move into and out of it. 
+        // At 5. The bot avoids the area most of the time but can still move into and out of it.
         bot.pathfinder.movements.exclusionAreaPower = 5
         bot.pathfinder.setMovements(bot.pathfinder.movements)
         bot.chat(`Added exclusion area circle around ${center.toString()} with radius ${radius}`)
