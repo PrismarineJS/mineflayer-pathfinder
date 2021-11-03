@@ -56,6 +56,8 @@ bot.once('spawn', () => {
           bot.chat('I can\'t see you')
           return
         }
+        const type = cmd[3].trim()
+        if (!['break', 'step', 'place'].includes(type.toLowerCase())) return bot.chat('type must be "break", "step" or "place"')
         const radius = Number(cmd[2])
         const center = target.position.floored()
         if (isNaN(radius)) return bot.chat('Radius must be a number')
@@ -67,7 +69,17 @@ bot.once('spawn', () => {
         const isExcluded = (block) => {
           return block.position.distanceTo(center) <= radius
         }
-        bot.pathfinder.movements.exclusionAreas.push(isExcluded)
+        switch (type.toLowerCase()) {
+          case 'step':
+            bot.pathfinder.movements.exclusionAreasStep.push(isExcluded)
+            break
+          case 'break':
+            bot.pathfinder.movements.exclusionAreasBreak.push(isExcluded)
+            break
+          case 'place':
+            bot.pathfinder.movements.exclusionAreasPlace.push(isExcluded)
+            break
+        } 
         // At 5. The bot avoids the area most of the time but can still move into and out of it.
         bot.pathfinder.movements.exclusionAreaPower = 5
         bot.pathfinder.setMovements(bot.pathfinder.movements)
