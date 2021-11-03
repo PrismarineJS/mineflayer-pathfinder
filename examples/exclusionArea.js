@@ -79,7 +79,7 @@ bot.once('spawn', () => {
           case 'place':
             bot.pathfinder.movements.exclusionAreasPlace.push(isExcluded)
             break
-        } 
+        }
         // At 5. The bot avoids the area most of the time but can still move into and out of it.
         bot.pathfinder.movements.exclusionAreaPower = 5
         bot.pathfinder.setMovements(bot.pathfinder.movements)
