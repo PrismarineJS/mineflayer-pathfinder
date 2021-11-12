@@ -392,12 +392,15 @@ function inject (bot) {
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
         fullStop()
-        bot.equip(tool, 'hand', function () {
-          bot.dig(block, function (err) {
-            lastNodeTime = performance.now()
-            if (err) resetPath('dig_error')
-            digging = false
-          })
+        bot.equip(tool, 'hand').then(function () {
+          bot.dig(block)
+            .catch(_ignoreError => {
+              resetPath('dig_error')
+            })
+            .then(function () {
+              lastNodeTime = performance.now()
+              digging = false
+            })
         })
       }
       return
@@ -425,23 +428,27 @@ function inject (bot) {
       }
       if (canPlace) {
         if (!lockEquipItem.tryAcquire()) return
-        bot.equip(block, 'hand', function () {
-          lockEquipItem.release()
-          const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
-          if (!lockPlaceBlock.tryAcquire()) return
-          bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), function (err) {
-            lockPlaceBlock.release()
-            placing = false
-            lastNodeTime = performance.now()
-            if (err) {
-              resetPath('place_error')
-            } else {
-              // Dont release Sneak if the block placement was not successful
-              if (!err) bot.setControlState('sneak', false)
-              if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
-            }
+        bot.equip(block, 'hand')
+          .then(function () {
+            lockEquipItem.release()
+            const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
+            if (!lockPlaceBlock.tryAcquire()) return
+            bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz))
+              .then(function () {
+                // Dont release Sneak if the block placement was not successful
+                bot.setControlState('sneak', false)
+                if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
+              })
+              .catch(_ignoreError => {
+                resetPath('place_error')
+              })
+              .then(() => {
+                lockPlaceBlock.release()
+                placing = false
+                lastNodeTime = performance.now()
+              })
           })
-        })
+          .catch(_ignoreError => {})
       }
       return
     }
