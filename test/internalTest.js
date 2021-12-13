@@ -12,6 +12,7 @@ const wait = require('util').promisify(setTimeout)
 const { Schematic } = require('prismarine-schematic')
 const { promises: fs } = require('fs')
 const path = require('path')
+const Physics = require('../lib/physics')
 
 const Version = '1.16.5'
 const ServerPort = 25567
@@ -644,4 +645,65 @@ describe('Parkour path test', function () {
       assert.ok(neighbors.length === 1, `getMoveParkourForward jump off gold block neighbors not right length (${neighbors.length} === 1)`)
     }
   })
+})
+
+describe('Physics test', function () {
+  const mcData = require('minecraft-data')(Version)
+
+  const spawnPos = new Vec3(8.5, 1, 8.5) // Center of the chunk & center of the block
+
+  /** @type { import('mineflayer').Bot & { pathfinder: import('mineflayer-pathfinder').Pathfinder }} */
+  let bot
+  /** @type { import('minecraft-protocol').Server } */
+  let server
+  /** @type { import('mineflayer-pathfinder').Movements } */
+  let defaultMovement
+
+  const parkourSpawn1 = new Vec3(0.5, 3, 12.5)
+  // const parkourSpawn2 = new Vec3(5.5, 3, 12.5)
+
+  before(async () => {
+    this.timeout(5000)
+    const chunk = await parkourMap(Version)
+    server = await newServer(server, chunk, spawnPos, Version, true)
+    bot = mineflayer.createBot({
+      username: 'player',
+      version: Version,
+      port: ServerPort
+    })
+    await once(bot, 'chunkColumnLoad')
+    defaultMovement = new Movements(bot, mcData)
+    bot.loadPlugin(pathfinder)
+    bot.pathfinder.setMovements(defaultMovement)
+  })
+  after(() => server.close())
+
+  it('simulateUntil', async function () {
+    this.slow(1000)
+    this.timeout(2000)
+    const ticksToSimulate = 10
+    const ticksPressForward = 5
+    const physics = new Physics(bot)
+
+    bot.entity.position = parkourSpawn1.clone()
+
+    const controller = (state, counter) => {
+      state.control.forward = counter <= ticksPressForward
+      state.control.jump = counter <= ticksPressForward
+    }
+    const state = physics.simulateUntil(() => false, controller, ticksToSimulate)
+    for (let i = 0; i < ticksToSimulate; i++) {
+      bot.setControlState('forward', i <= ticksPressForward)
+      bot.setControlState('jump', i <= ticksPressForward)
+      await once(bot, 'physicsTick')
+    }
+    await wait(0) // Wait for anything that might come after physicsTick to compute
+    bot.clearControlStates()
+    assert.ok(bot.entity.position.toString() === state.pos.toString())
+  })
+
+  // TODO: figure out how to write a test
+  // it('simulateUntilNextTick', async () => {
+
+  // })
 })
