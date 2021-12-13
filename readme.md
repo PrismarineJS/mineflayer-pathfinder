@@ -191,13 +191,13 @@ Don't get into the block, but get directly adjacent to it. Useful for chests.
  * `y` - Integer
  * `z` - Integer
 
-### GoalCompositeAny(Array?)
+### GoalCompositeAny(Array\<Goal>?)
 A composite of many goals, any one of which satisfies the composite.
 For example, a GoalCompositeAny of block goals for every oak log in loaded
 chunks would result in it pathing to the easiest oak log to get to
  * `Array` - Array of goals
 
-### GoalCompositeAll(Array?)
+### GoalCompositeAll(Array\<Goal>?)
 A composite of many goals, all of them needs to be satisfied.
  * `Array` - Array of goals
 
