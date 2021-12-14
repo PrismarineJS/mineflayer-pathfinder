@@ -124,6 +124,106 @@ How many ms per tick are allocated to thinking
 The search limiting radius, in blocks, if `-1` the search is not limited by distance.
  * `Default` - `-1`
 
+# Movement class
+This class configures how pathfinder plans its paths. It configures things like block breaking or different costs for moves. This class can be extended to add or change how pathfinder calculates its moves.
+
+## Usage
+Pathfinder instantiates the default movement class by itself if no instance is specified. If you want to change values you should create a new instance of the Movements class, change it's values and set it as pathfinders new movement class. 
+### Example:
+```js
+const { Movements } = require('mineflayer-pathfinder') // Import the Movements class from pathfinder
+
+bot.once('spawn', () => {
+  // Once we've spawn, it is safe to access mcData because we know the version
+  const mcData = require('minecraft-data')(bot.version)
+
+  // A new movement instance for specific behavior
+  const defaultMove = new Movements(bot, mcData)
+
+  defaultMove.allow1by1towers = false // Do not build 1x1 towers when going up
+  defaultMove.canDig = false // Disable breaking of blocks when pathing 
+  defaultMove.scafoldingBlocks.push(mcData.itemsByName['netherrack'].id) // Add nether rack to allowed scaffolding items
+  bot.pathfinder.setMovements(defaultMove) // Update the movement instance pathfinder uses
+
+  // Do pathfinder things
+  // ...
+})
+```
+
+## Movements class default properties
+Movement class properties and there default values.
+### canDig
+Boolean to allow breaking blocks
+* Default `true`
+
+### digCost
+Additional cost for breaking blocks.
+* Default - `1`
+
+### placeCost
+Additional cost for placing blocks.
+* Default - `1`
+
+### maxDropDown
+Max drop down distance. Only considers drops that have blocks to land on.
+* Default - `4`
+
+### liquidCost
+Additional cost for interacting with liquids.
+* Default - `1`
+
+### dontCreateFlow
+Do not break blocks that touch liquid blocks.
+* Default - `true`
+
+### allow1by1towers
+Allow pillaring up on 1x1 towers.
+* Default - `true`
+
+### allowFreeMotion
+Allow to walk to the next node/goal in a strait line if terrain allows it.
+* Default - `false`
+
+### allowParkour
+Allow parkour jumps like jumps over gaps bigger then 1 block
+* Default - `true`
+
+### allowSprinting
+Allow sprinting when moving.
+* Default - `true`
+
+### blocksCantBreak
+Set of block id's pathfinder cannot break. Includes chests wheat and all unbreakable blocks.
+* instance of `Set`
+
+### blocksToAvoid
+Set of block id's to avoid.
+* instance of `Set`
+
+### liquids
+Set of liquid block id's.
+* instance of `Set`
+
+### climbables
+Set of block id's that are climable. Note: Currently unused as pathfinder cannot use climables.
+* instance of `Set`
+
+### replaceables
+Set of block id's that can be replaced when placing blocks.
+* instance of `Set`
+
+### scafoldingBlocks
+Array of item id's that can be used as scaffolding blocks.
+* Default - `[<scaffoldingItems>]`
+
+### fences
+Set of block id's that are fences or blocks that have a collision box taler then 1 block.
+* instance of `Set`
+
+### carpets
+Set of all carpet block id's or blocks that have a collision box smaller then 0.1. These blocks are considered save to walk in.
+* instance of `Set`
+
 # Events:
 
 ### goal_reached
