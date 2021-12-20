@@ -682,10 +682,10 @@ describe('Physics test', function () {
     this.timeout(2000)
     const ticksToSimulate = 10
     const ticksPressForward = 5
-    
+
     bot.entity.position = parkourSpawn1.clone()
     bot.entity.velocity = new Vec3(0, 0, 0)
-    
+
     // Wait for the bot to be on the ground so bot.entity.onGround == true
     bot.clearControlStates()
     await once(bot, 'physicTick')
@@ -704,22 +704,22 @@ describe('Physics test', function () {
     const state = physics.simulateUntil(() => false, controller, ticksToSimulate)
     simulatedSteps.push(state.pos.toString() + ' Input:false')
 
-    // We have to be carful to not mess up the event scheduling. for await on(bot, 'physicTick') seams to work. 
+    // We have to be carful to not mess up the event scheduling. for await on(bot, 'physicTick') seams to work.
     // A for loop with just await once(bot, 'physicTick') does not always seam to work. What also works is attaching
     // a listener to bot with bot.on('physicTick', listener) but this is a lot nicer.
     let tick = 0
-    for await (const _event of on(bot, 'physicTick')) {
+    for await (const _ of on(bot, 'physicTick')) { // eslint-disable-line no-unused-vars
       bot.setControlState('forward', tick <= ticksPressForward)
       bot.setControlState('jump', tick <= ticksPressForward)
       realSteps.push(bot.entity.position.toString() + ' Input:' + String(tick <= ticksPressForward))
       tick++
       if (tick > ticksToSimulate) break
     }
-    
+
     bot.clearControlStates()
     // console.info(bot.entity.position.toString(), console.info(state.pos.toString()))
-    assert.ok(bot.entity.position.distanceSquared(state.pos) < 0.01, 
-      `Simulated states don't match Bot: ${bot.entity.position.toString()} !== Simulation: ${state.pos.toString()}` 
+    assert.ok(bot.entity.position.distanceSquared(state.pos) < 0.01,
+      `Simulated states don't match Bot: ${bot.entity.position.toString()} !== Simulation: ${state.pos.toString()}`
       // + '\nSimulated Steps:\n'
       // + simulatedSteps.join('\n') + '\n'
       // + 'Real steps:\n'
