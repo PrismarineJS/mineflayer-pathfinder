@@ -62,7 +62,7 @@ async function parkourMap (Version) {
 }
 
 /**
- *
+ * Create a new 1.16 server and handle when clients connect.
  * @param {import('minecraft-protocol').Server} server
  * @param {import('vec3').Vec3} spawnPos
  * @param {string} Version
@@ -384,7 +384,6 @@ describe('pathfinder util functions', function () {
       const slot = bot.inventory.firstEmptyHotbarSlot()
       bot.inventory.slots[slot] = item
     })
-    bot.inventory.firstEmptyContainerSlot()
     bot.loadPlugin(pathfinder)
     bot.pathfinder.setMovements(new Movements(bot, mcData))
   })
@@ -415,6 +414,23 @@ describe('pathfinder util functions', function () {
       bot.on('physicTick', foo)
     })
 
+    // Note: Ordering seams to matter when running the isBuilding test. If run after isMining isBuilding does not seam to work.
+    it('isBuilding', function (done) {
+      this.timeout(5000)
+      this.slow(1500)
+
+      bot.pathfinder.setGoal(new goals.GoalBlock(targetBlock.x, targetBlock.y + 2, targetBlock.z))
+      const foo = () => {
+        console.info(bot.entity.position.toString())
+        if (bot.pathfinder.isBuilding()) {
+          bot.removeListener('physicTick', foo)
+          bot.stopDigging()
+          done()
+        }
+      }
+      bot.on('physicTick', foo)
+    })
+
     it('isMining', function (done) {
       this.timeout(5000)
       this.slow(1500)
@@ -429,22 +445,6 @@ describe('pathfinder util functions', function () {
       }
       bot.on('physicTick', foo)
     })
-
-    // TODO: Fix this failing test
-    // it('isBuilding', function (done) {
-    //   this.timeout(5000)
-    //   this.slow(1500)
-
-    //   bot.pathfinder.setGoal(new goals.GoalBlock(spawnPos.x, spawnPos.y + 4, spawnPos.z))
-    //   const foo = () => {
-    //     if (bot.pathfinder.isBuilding()) {
-    //       bot.removeListener('physicTick', foo)
-    //       bot.removeAllListeners('path_update')
-    //       done()
-    //     }
-    //   }
-    //   bot.on('physicTick', foo)
-    // })
   })
 
   it('bestHarvestTool', function () {
