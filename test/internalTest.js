@@ -7,7 +7,7 @@ const mc = require('minecraft-protocol')
 const assert = require('assert')
 const { v4: uuidv4 } = require('uuid')
 const Entity = require('prismarine-entity')
-const { once } = require('events')
+const { once, on } = require('events')
 const wait = require('util').promisify(setTimeout)
 const { Schematic } = require('prismarine-schematic')
 const { promises: fs } = require('fs')
@@ -421,7 +421,6 @@ describe('pathfinder util functions', function () {
 
       bot.pathfinder.setGoal(new goals.GoalBlock(targetBlock.x, targetBlock.y + 2, targetBlock.z))
       const foo = () => {
-        console.info(bot.entity.position.toString())
         if (bot.pathfinder.isBuilding()) {
           bot.removeListener('physicTick', foo)
           bot.stopDigging()
@@ -683,27 +682,50 @@ describe('Physics test', function () {
     this.timeout(2000)
     const ticksToSimulate = 10
     const ticksPressForward = 5
+    
+    bot.entity.position = parkourSpawn1.clone()
+    bot.entity.velocity = new Vec3(0, 0, 0)
+    
+    // Wait for the bot to be on the ground so bot.entity.onGround == true
+    bot.clearControlStates()
+    await once(bot, 'physicTick')
+    await once(bot, 'physicTick')
+
     const physics = new Physics(bot)
 
-    bot.entity.position = parkourSpawn1.clone()
+    const simulatedSteps = []
+    const realSteps = []
 
     const controller = (state, counter) => {
       state.control.forward = counter <= ticksPressForward
       state.control.jump = counter <= ticksPressForward
+      simulatedSteps.push(state.pos.toString() + ' Input:' + String(counter <= ticksPressForward))
     }
     const state = physics.simulateUntil(() => false, controller, ticksToSimulate)
-    for (let i = 0; i < ticksToSimulate; i++) {
-      bot.setControlState('forward', i <= ticksPressForward)
-      bot.setControlState('jump', i <= ticksPressForward)
-      await once(bot, 'physicsTick')
+    simulatedSteps.push(state.pos.toString() + ' Input:false')
+
+    // We have to be carful to not mess up the event scheduling. for await on(bot, 'physicTick') seams to work. 
+    // A for loop with just await once(bot, 'physicTick') does not always seam to work. What also works is attaching
+    // a listener to bot with bot.on('physicTick', listener) but this is a lot nicer.
+    let tick = 0
+    for await (const _event of on(bot, 'physicTick')) {
+      bot.setControlState('forward', tick <= ticksPressForward)
+      bot.setControlState('jump', tick <= ticksPressForward)
+      realSteps.push(bot.entity.position.toString() + ' Input:' + String(tick <= ticksPressForward))
+      tick++
+      if (tick > ticksToSimulate) break
     }
-    await wait(0) // Wait for anything that might come after physicsTick to compute
+    
     bot.clearControlStates()
-    assert.ok(bot.entity.position.toString() === state.pos.toString())
+    // console.info(bot.entity.position.toString(), console.info(state.pos.toString()))
+    assert.ok(bot.entity.position.distanceSquared(state.pos) < 0.01, 
+      `Simulated states don't match Bot: ${bot.entity.position.toString()} !== Simulation: ${state.pos.toString()}` 
+      // + '\nSimulated Steps:\n'
+      // + simulatedSteps.join('\n') + '\n'
+      // + 'Real steps:\n'
+      // + realSteps.join('\n')
+    )
   })
 
-  // TODO: figure out how to write a test
-  // it('simulateUntilNextTick', async () => {
-
-  // })
+  // TODO: write test for simulateUntilNextTick
 })
