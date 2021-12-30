@@ -13,7 +13,7 @@
   "dependencies": {
     "minecraft-data": "^2.75.0",
     "prismarine-block": "^1.7.3",
-    "prismarine-entity": "^1.1.0",
+    "prismarine-entity": "^2.0.0",
     "prismarine-item": "^1.5.0",
     "prismarine-nbt": "^2.0.0",
     "prismarine-physics": "^1.2.2",
