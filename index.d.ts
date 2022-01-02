@@ -177,6 +177,7 @@ declare module 'mineflayer-pathfinder' {
 
 		public canDig: boolean;
 		public dontCreateFlow: boolean;
+		public dontMineUnderFallingBlock: boolean;
 		public allow1by1towers: boolean;
 		public allowFreeMotion: boolean;
 		public allowParkour: boolean;
@@ -185,6 +186,7 @@ declare module 'mineflayer-pathfinder' {
 		public blocksCantBreak: Set<number>;
 		public blocksToAvoid: Set<number>;
 		public liquids: Set<number>;
+		public gravityBlocks: Set<number>;
 		public scafoldingBlocks: number[];
 
 		public maxDropDown: number;
