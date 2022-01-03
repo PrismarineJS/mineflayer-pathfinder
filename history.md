@@ -1,6 +1,6 @@
 # History
 
-# 1.8.1
+# 1.9.0
 
 * [Fixed floor check](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/208)
 * [Avoid cobwebs](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/210)
