@@ -392,7 +392,8 @@ function inject (bot) {
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
         fullStop()
-        bot.equip(tool, 'hand').then(function () {
+
+        const digBlock = () => {
           bot.dig(block)
             .catch(_ignoreError => {
               resetPath('dig_error')
@@ -401,7 +402,15 @@ function inject (bot) {
               lastNodeTime = performance.now()
               digging = false
             })
-        })
+        }
+
+        if (!tool) {
+          digBlock()
+        } else {
+          bot.equip(tool, 'hand')
+            .catch(_ignoreError => {})
+            .then(() => digBlock())
+        }
       }
       return
     }
