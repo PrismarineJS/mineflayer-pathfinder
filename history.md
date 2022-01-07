@@ -1,5 +1,9 @@
 # History
 
+# 1.9.1
+
+* [Fixed unhandled promise rejection introduced in 1.0.0](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/235#event-5854609665)
+
 # 1.9.0
 
 * [Fixed floor check](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/208)
