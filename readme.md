@@ -176,6 +176,10 @@ Additional cost for interacting with liquids.
 Do not break blocks that touch liquid blocks.
 * Default - `true`
 
+### dontMineUnderFallingBlock
+Do not break blocks that have gravityBlock above.
+* Default - `true`
+
 ### allow1by1towers
 Allow pillaring up on 1x1 towers.
 * Default - `true`
@@ -215,6 +219,10 @@ Set of block id's that can be replaced when placing blocks.
 ### scafoldingBlocks
 Array of item id's that can be used as scaffolding blocks.
 * Default - `[<scaffoldingItems>]`
+
+### gravityBlocks
+Set of block id's that can fall on bot's head.
+* instance of `Set`
 
 ### fences
 Set of block id's that are fences or blocks that have a collision box taler then 1 block.
