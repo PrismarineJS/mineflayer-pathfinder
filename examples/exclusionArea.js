@@ -1,3 +1,21 @@
+/* Pathfinder Exclusion Area example
+
+This example shows the use of exclusion areas with the Movement Class.
+
+In Game Chat commands:
+come
+  - Path finds to the chatting player's position when in render distance.
+exclude this (break | step | place) <radius>
+  - Exclude a spherical area off size <radius> of type break, step or place at the chatting
+  player's position  when in render distance
+goto (x y z) | (x z) | y
+  - Goto a specific coordinate
+follow
+  - Follows the chatting player's entity until stop is chatted
+stop
+  - Stops the bot from following or path finding
+*/
+
 const mineflayer = require('mineflayer')
 const { pathfinder, Movements } = require('mineflayer-pathfinder')
 const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalFollow } = require('mineflayer-pathfinder').goals
@@ -26,7 +44,9 @@ bot.once('spawn', () => {
 
   bot.on('path_update', (r) => {
     const nodesPerTick = (r.visitedNodes * 50 / r.time).toFixed(2)
-    console.log(`I can get there in ${r.path.length} moves. Computation took ${r.time.toFixed(2)} ms (${r.visitedNodes} nodes, ${nodesPerTick} nodes/tick)`)
+    console.log(`I can get there in ${r.path.length} moves. ` +
+      `Computation took ${r.time.toFixed(2)} ms (${r.visitedNodes} nodes` +
+      `, ${nodesPerTick} nodes/tick)`)
   })
 
   bot.on('goal_reached', (goal) => {
@@ -57,15 +77,15 @@ bot.once('spawn', () => {
           return
         }
         const type = cmd[3].trim()
-        if (!['break', 'step', 'place'].includes(type.toLowerCase())) return bot.chat('type must be "break", "step" or "place"')
+        if (!['break', 'step', 'place'].includes(type.toLowerCase())) {
+          return bot.chat('type must be "break", "step" or "place"')
+        }
         const radius = Number(cmd[2])
         const center = target.position.floored()
         if (isNaN(radius)) return bot.chat('Radius must be a number')
+        // Import typings for intellisense
         /**
-         *
-         * @param {import('mineflayer-pathfinder').SafeBlock} block block
-         * @returns {boolean}
-         */
+         * @param {import('mineflayer-pathfinder').SafeBlock} block block */
         const isExcluded = (block) => {
           return block.position.distanceTo(center) <= radius
         }
@@ -84,6 +104,8 @@ bot.once('spawn', () => {
         bot.pathfinder.movements.exclusionAreaPower = 5
         bot.pathfinder.setMovements(bot.pathfinder.movements)
         bot.chat(`Added exclusion area circle around ${center.toString()} with radius ${radius}`)
+      } else {
+        bot.chat('Usage: exclude this (break | step | place) <radius>')
       }
     } else if (message.startsWith('goto')) {
       const cmd = message.split(' ')
@@ -110,7 +132,7 @@ bot.once('spawn', () => {
       // when reached, the goal will stay active and will not
       // emit an event
     } else if (message === 'stop') {
-      bot.pathfinder.stop()
+      bot.pathfinder.stop() // Also resets the current goal
     }
   })
 })
