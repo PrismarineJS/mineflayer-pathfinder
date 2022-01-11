@@ -32,6 +32,7 @@ function inject (bot) {
   const physics = new Physics(bot)
   const lockPlaceBlock = new Lock()
   const lockEquipItem = new Lock()
+  const lockUseBlock = new Lock()
 
   bot.pathfinder = {}
 
@@ -101,6 +102,7 @@ function inject (bot) {
     astarContext = null
     lockEquipItem.release()
     lockPlaceBlock.release()
+    lockUseBlock.release()
     if (clearStates) bot.clearControlStates()
     if (stopPathing) return stop()
   }
@@ -392,7 +394,8 @@ function inject (bot) {
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
         fullStop()
-        bot.equip(tool, 'hand').then(function () {
+
+        const digBlock = () => {
           bot.dig(block)
             .catch(_ignoreError => {
               resetPath('dig_error')
@@ -401,7 +404,15 @@ function inject (bot) {
               lastNodeTime = performance.now()
               digging = false
             })
-        })
+        }
+
+        if (!tool) {
+          digBlock()
+        } else {
+          bot.equip(tool, 'hand')
+            .catch(_ignoreError => {})
+            .then(() => digBlock())
+        }
       }
       return
     }
@@ -412,6 +423,19 @@ function inject (bot) {
         placing = true
         placingBlock = nextPoint.toPlace.shift()
         fullStop()
+      }
+
+      // Open gates or doors
+      if (placingBlock?.useOne) {
+        if (!lockUseBlock.tryAcquire()) return
+        bot.activateBlock(bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z))).then(() => {
+          lockUseBlock.release()
+          placingBlock = nextPoint.toPlace.shift()
+        }, err => {
+          console.error(err)
+          lockUseBlock.release()
+        })
+        return
       }
       const block = stateMovements.getScaffoldingItem()
       if (!block) {

@@ -1,5 +1,16 @@
 # History
 
+# 1.9.1
+
+* [Fixed unhandled promise rejection introduced in 1.0.0](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/235#event-5854609665)
+
+# 1.9.0
+
+* [Fixed floor check](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/208)
+* [Avoid cobwebs](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/210)
+* [Fixed diagonal move not considering collision height when jumping up diagonally](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/216)
+* [Fixed movements for older versions](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/226)
+
 # 1.8.0
 
 * Fixed placeBlock example
