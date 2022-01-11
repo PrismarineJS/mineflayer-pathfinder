@@ -232,6 +232,22 @@ Set of block id's that are fences or blocks that have a collision box taler then
 Set of all carpet block id's or blocks that have a collision box smaller then 0.1. These blocks are considered save to walk in.
 * instance of `Set`
 
+### exclusionAreasStep
+An array of functions that define an area or block to be step on excluded. Every function in the array is parsed the Block the bot is planing to step on. Each function should return a truthy or falsy result if step on for this block is allowed or not. The bot may still be able to path into step restricted areas if there is no other path leading out off or into a restricted area. To change this behavior change the `exclusionAreaPower` property.
+* Array of functions `(block: Block) => boolean`
+
+### exclusionAreasBreak
+An array of functions that define an area or block to be break excluded. Every function in the array is parsed the Block the bot is planing to break. Each function should return a truthy or falsy result if breaking for this block is allowed or not.
+* Array of functions `(block: Block) => boolean`
+
+### exclusionAreasPlace
+An array of functions that define an area to be block placement excluded. Every function in the array is parsed the current Block the bot is planing to place a block inside (should be air or a replaceable block most of the time). Each function should return a truthy or falsy result if block placement for this position is allowed or not.
+* Array of functions `(block: Block) => boolean`
+
+### exclusionAreaPower
+Defines the penalty for `exclusionAreasStep`. The default value of 8 permits the bot to path through an area restricted by `exclusionAreasStep` if the end and/or the starting nodes are inside a restricted area. Values higher then the default value will make it impossible for the bot to move in restricted areas. This can cause the bot to get trapped inside restricted areas when ending up in one. Values above `100` will make the AStar node not expandable which may help with path finding performance.
+* Default - `8`
+
 # Events:
 
 ### goal_reached
