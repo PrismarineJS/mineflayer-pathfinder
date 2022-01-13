@@ -168,6 +168,10 @@ Additional cost for placing blocks.
 Max drop down distance. Only considers drops that have blocks to land on.
 * Default - `4`
 
+### infiniteLiquidDropdownDistance
+Option to ignore maxDropDown distance when the landing position is in water.
+* Default - `true`
+
 ### liquidCost
 Additional cost for interacting with liquids.
 * Default - `1`
