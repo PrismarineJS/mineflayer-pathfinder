@@ -87,7 +87,7 @@ bot.once('spawn', () => {
         /**
          * @param {import('mineflayer-pathfinder').SafeBlock} block block */
         const isExcluded = (block) => {
-          return block.position.distanceTo(center) <= radius
+          return block.position.distanceTo(center) <= radius ? 0 : 100
         }
         switch (type.toLowerCase()) {
           case 'step':
