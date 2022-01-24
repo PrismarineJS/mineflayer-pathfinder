@@ -76,11 +76,11 @@ bot.once('spawn', () => {
           bot.chat('I can\'t see you')
           return
         }
-        const type = cmd[3].trim()
+        const type = cmd[2].trim()
         if (!['break', 'step', 'place'].includes(type.toLowerCase())) {
           return bot.chat('type must be "break", "step" or "place"')
         }
-        const radius = Number(cmd[2])
+        const radius = Number(cmd[3])
         const center = target.position.floored()
         if (isNaN(radius)) return bot.chat('Radius must be a number')
         // Import typings for intellisense
