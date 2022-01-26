@@ -11,6 +11,8 @@ declare module 'mineflayer-pathfinder' {
 
 	export interface Pathfinder {
 		thinkTimeout: number;
+		/** ms, amount of thinking per tick (max 50 ms) */
+		tickTimeout: number;
 		readonly goal: goals.Goal | null;
 		readonly movements: Movements;
 
