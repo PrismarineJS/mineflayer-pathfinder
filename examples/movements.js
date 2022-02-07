@@ -23,7 +23,7 @@ bot.once('spawn', () => {
   customMoves.blocksToAvoid.add(mcData.blocksByName.carrot.id)
 
   // To initialize the new movements use the .setMovements method.
-  bot.pathfinder.setMovements(defaultMove)
+  bot.pathfinder.setMovements(customMoves)
 
   bot.on('chat', function (username, message) {
     if (username === bot.username) return
