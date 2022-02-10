@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "mineflayer-pathfinder": "file:./",
-    "mineflayer": "^3.2.0",
+    "mineflayer": "^4.0.0",
     "standard": "^16.0.3"
   }
 }
