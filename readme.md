@@ -2,7 +2,9 @@
 
 [![npm version](https://badge.fury.io/js/mineflayer-pathfinder.svg)](https://badge.fury.io/js/mineflayer-pathfinder) ![npm](https://img.shields.io/npm/dt/mineflayer-pathfinder) [![Try it on gitpod](https://img.shields.io/badge/try-on%20gitpod-brightgreen.svg)](https://gitpod.io/#https://github.com/PrismarineJS/mineflayer-pathfinder) [![Issue Hunt](https://github.com/BoostIO/issuehunt-materials/blob/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/PrismarineJS/mineflayer-pathfinder)
 
-Pathfinding plugin. This is still a work in progress, feel free to contribute by making suggestions.
+Pathfinding plugin for the Minecraft Bot API [Mineflayer](https://github.com/PrismarineJS/mineflayer). Create static, dynamic or composite goals to navigate Minecraft terrain fully autonomously.
+
+Mostly stable. Feel free to contribute by making suggestions or posting issues.
 
 ## Install
 
@@ -62,6 +64,7 @@ bot.once('spawn', () => {
  * Automatically update path when environment change
  * Long distance paths
  * Can swim
+ * Modular and easily extendable with different behavior
 
 ## API
 Considering there are a lot of deep changes that are being worked on, it could take some time before it's done
