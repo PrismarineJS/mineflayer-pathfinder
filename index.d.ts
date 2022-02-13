@@ -198,6 +198,29 @@ declare module 'mineflayer-pathfinder' {
 		public digCost: number;
 		public placeCost: number;
 
+		/** Exclusion Area that adds extra cost or prevents the bot from stepping onto positions included.
+		 * @example
+		 * ```js
+			movements.exclusionAreas = [(block) => {
+				return block.type === someIdType ? 100 : 0 // Prevents the bot from breaking a specific block. By adding 100 to the cost.
+			},
+			(block) => {
+				return someVec3Pos.distanceTo(block.position) < 5 ? 100 : 0 // Prevents the bot from getting near to a specific location
+			}]
+			``` */
+		public exclusionAreasStep: [(block: SafeBlock) => number];
+		/**
+		 * Exclusion area for blocks to break. Works in the same way as {@link exclusionAreasStep} does. 
+		 */
+		public exclusionAreasBreak: [(block: SafeBlock) => number];
+		/**
+		 * Exclusion area for placing blocks. Note only works for positions not block values as placed blocks are determined by the bots inventory content. Works in the same way as {@link exclusionAreasStep} does. 
+		 */
+		public exclusionAreasPlace: [(block: SafeBlock) => number];
+
+		public exclusionPlace(block: SafeBlock): number;
+		public exclusionStep(block: SafeBlock): number;
+		public exclusionBreak(block: SafeBlock): number;
 		public countScaffoldingItems(): number;
 		public getScaffoldingItem(): Item | null;
 		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;

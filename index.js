@@ -159,7 +159,7 @@ function inject (bot) {
       }
     }
 
-    if (!bot.pathfinder.enablePathShortcut || path.length === 0) return path
+    if (!bot.pathfinder.enablePathShortcut || stateMovements.exclusionAreasStep.length === 0 || path.length === 0) return path
 
     const newPath = []
     let lastNode = bot.entity.position

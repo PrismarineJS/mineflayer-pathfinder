@@ -239,6 +239,18 @@ Set of block id's that are fences or blocks that have a collision box taler then
 Set of all carpet block id's or blocks that have a collision box smaller then 0.1. These blocks are considered save to walk in.
 * instance of `Set`
 
+### exclusionAreasStep
+An array of functions that define an area or block to be step on excluded. Every function in the array is parsed the Block the bot is planing to step on. Each function should return a positive number (includes 0) that defines extra cost for that specific Block. 0 means no extra cost, 100 means it is impossible for pathfinder to consider this move.
+* Array of functions `(block: Block) => number`
+
+### exclusionAreasBreak
+An array of functions that define an area or block to be break excluded. Every function in the array is parsed the Block the bot is planing to break. Each function should return a positive number (includes 0) that defines extra cost for that specific Block. 0 means no extra cost, 100 means it is impossible for pathfinder to consider this move.
+* Array of functions `(block: Block) => number`
+
+### exclusionAreasPlace
+An array of functions that define an area to be block placement excluded. Every function in the array is parsed the current Block the bot is planing to place a block inside (should be air or a replaceable block most of the time). Each function should return a positive number (includes 0) that defines extra cost for that specific Block. 0 means no extra cost, 100 means it is impossible for pathfinder to consider this move.
+* Array of functions `(block: Block) => number`
+
 # Events:
 
 ### goal_reached
