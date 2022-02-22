@@ -1,10 +1,10 @@
 const mineflayer = require('mineflayer')
 const { pathfinder, Movements } = require('mineflayer-pathfinder')
-const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalFollow, GoalPlaceBlock } = require('mineflayer-pathfinder').goals
+const { GoalNear, GoalBlock, GoalXZ, GoalY, GoalFollow, GoalPlaceBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals
 const Vec3 = require('vec3').Vec3
 
 if (process.argv.length > 6) {
-  console.log('Usage : node placeBlock.js [<host>] [<port>] [<name>] [<password>]')
+  console.log('Usage : node blockInteraction.js [<host>] [<port>] [<name>] [<password>]')
   process.exit(1)
 }
 
@@ -41,6 +41,10 @@ bot.once('spawn', () => {
 
       try {
         const rayBlock = rayTraceEntitySight(target)
+        if (!rayBlock) {
+          bot.chat('Block is out of reach')
+          return
+        }
         const face = directionToVector(rayBlock.face)
         await bot.pathfinder.goto(new GoalPlaceBlock(rayBlock.position.offset(face.x, face.y, face.z), bot.world, {
           range: 4
@@ -48,6 +52,25 @@ bot.once('spawn', () => {
         await bot.equip(itemsInInventory[0], 'hand')
         await bot.lookAt(rayBlock.position.offset(face.x * 0.5 + 0.5, face.y * 0.5 + 0.5, face.z * 0.5 + 0.5))
         await bot.placeBlock(rayBlock, face)
+      } catch (e) {
+        console.error(e)
+      }
+    } else if (message.startsWith('break')) {
+      if (!target) {
+        bot.chat('I can\'t see you')
+        return
+      }
+
+      try {
+        const rayBlock = rayTraceEntitySight(target)
+        if (!rayBlock) {
+          bot.chat('Block is out of reach')
+          return
+        }
+        await bot.pathfinder.goto(new GoalLookAtBlock(rayBlock.position, bot.world, { range: 4 }))
+        const bestHarvestTool = bot.pathfinder.bestHarvestTool(bot.blockAt(rayBlock.position))
+        if (bestHarvestTool) await bot.equip(bestHarvestTool, 'hand')
+        await bot.dig(bot.blockAt(rayBlock.position), true, 'raycast')
       } catch (e) {
         console.error(e)
       }
@@ -108,6 +131,9 @@ bot.once('spawn', () => {
     }
   }
 })
+
+bot.on('error', console.error)
+bot.on('kicked', console.error)
 
 function directionToVector (dir) {
   if (dir > 5 || dir < 0) return null
