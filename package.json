@@ -25,7 +25,6 @@
     "mineflayer-pathfinder": "file:./",
     "minecraft-wrap": "^1.2.1",
     "mineflayer": "^4.0.0",
-    "mineflayer-pathfinder": "file:./",
     "mocha": "^9.0.0",
     "prismarine-schematic": "^1.2.1",
     "standard": "^16.0.3"

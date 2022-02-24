@@ -6,7 +6,7 @@ const { Vec3 } = require('vec3')
 const mc = require('minecraft-protocol')
 const assert = require('assert')
 const { v4: uuidv4 } = require('uuid')
-const Entity = require('prismarine-entity')
+const PEntity = require('prismarine-entity')
 const { once, on } = require('events')
 const wait = require('util').promisify(setTimeout)
 const { Schematic } = require('prismarine-schematic')
@@ -262,6 +262,7 @@ describe('pathfinder Goals', function () {
       bot.entity.position = spawnPos.clone()
     })
     before((done) => {
+      const Entity = PEntity(Version)
       const chicken = new Entity(mcData.entitiesByName.chicken.id)
       const client = Object.values(server.clients)[0]
       client.write('spawn_entity', { // Might only work for 1.16
