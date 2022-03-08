@@ -340,13 +340,21 @@ Follows an entity
 ### GoalPlaceBlock(pos, world, options)
 Position the bot in order to place a block
  * `pos` - Vec3 the position of the placed block
- * `world` - the world of the bot
+ * `world` - the world of the bot (Can be accessed with `bot.world`)
  * `options` - object containing all optionals properties:
    * `range` - maximum distance from the clicked face
    * `faces` - the directions of the faces the player can click
    * `facing` - the direction the player must be facing
    * `facing3D` - boolean, facing is 3D (true) or 2D (false)
    * `half` - `top` or `bottom`, the half that must be clicked
-   
- ### GoalBreakBlock(x, y, z, bot, { range = 5 })
- Path into a position were a blockface of block at x y z is visible. Fourth argument is optional and contains options. `range` option defaults to 4.
+
+ ### GoalLookAtBlock(pos, world, options = {})
+ Path into a position were a blockface of block at pos is visible. Fourth argument is optional and contains extra options.
+  * `pos` - Vec3 the block position to look at
+  * `world` - the world of the bot (Can be accessed with `bot.world`)
+  * `options` - object containing all optionals properties:
+    * `range` - number maximum distance from the clicked face. Default `4.5`
+    * `entityHeight` - number Default is `1.6`
+
+ ### GoalBreakBlock(x, y, z, bot, options)
+ Deprecated. Wrapper for GoalLookAtBlock. Use GoalLookAtBlock instead.

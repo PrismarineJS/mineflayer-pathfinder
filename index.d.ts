@@ -159,13 +159,11 @@ declare module 'mineflayer-pathfinder' {
 		}
 		
 		export class GoalLookAtBlock  extends Goal {
-			public constructor(x: number, y: number, z: number, bot: Bot, options?: { reach?: number })
-
-			public x: number;
-			public y: number;
-			public z: number;
+			public constructor(pos: Vec3, world: World, options?: { reach?: number, entityHeight?: number })
 			
-			public bot: Bot;
+			public pos: Vec3
+
+			public world: World;
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
