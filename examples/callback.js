@@ -27,7 +27,7 @@ bot.once('spawn', () => {
       if (!target) return bot.chat("I don't see you !")
 
       // Await pathfinder to complete the goal, then move to bot.chat and print "I've arrived !"
-      bot.pathfinder.goto(new GoalNear(target.position.x, target.position.y, target.position.z, 1), announceArrived)
+      bot.pathfinder.goto(new GoalNear(target.position.x, target.position.y, target.position.z, 1)).then(announceArrived)
     }
   })
 

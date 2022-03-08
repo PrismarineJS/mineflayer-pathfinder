@@ -74,11 +74,9 @@ Also, **for now**, there is only the `pathfinder` module, `movements` and `goals
 
 # Functions:
 
-### bot.pathfinder.goto(goal, callback?)
-Returns a Promise. Resolves when the goal is reached. Rejects on error.
+### bot.pathfinder.goto(goal)
+Returns a Promise with the path result. Resolves when the goal is reached. Rejects on error.
  * `goal` - Goal instance
- * `callback` `<function>` - (Optional) The callback is passed two arguments `(err, result)`, where error is `null` on success.
-
 
 ### bot.pathfinder.bestHarvestTool(block)
 Returns the best harvest tool in the inventory for the specified block
