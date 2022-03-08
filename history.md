@@ -1,5 +1,25 @@
 # History
 
+# 1.10.0
+
+* [Add exclusion area mechanism](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/220)
+* [Add movement class example](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/247)
+* [Add infiniteLiquidDropdownDistance to movements](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/211)
+* [Added dontMineUnderFallingBlock to movements](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/239/files)
+* [Add ability to open fence gates](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/217)
+
+* [Bump mineflayer to 4.0.0](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/245)
+* [Throw error in goto when stop() is called](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/240)
+* [Update README.md](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/246)
+
+* Typing fixes: 
+  * [tickTimeout](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/241)
+  * [GoalLookAtBlock](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/238)
+
+* [Fix dynamic goals with entities](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/206)
+* [Fix default scaffolding blocks](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/243)
+* [Fix event handler when stop() is called](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/184)
+
 # 1.9.1
 
 * [Fixed unhandled promise rejection introduced in 1.0.0](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/235#event-5854609665)
