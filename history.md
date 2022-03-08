@@ -1,6 +1,6 @@
 # History
 
-# 1.9.2
+# 1.10.0
 
 * [Add exclusion area mechanism](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/220)
 * [Add movement class example](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/247)
