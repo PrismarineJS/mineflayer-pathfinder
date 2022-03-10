@@ -8,7 +8,6 @@ const assert = require('assert')
 const { v4: uuidv4 } = require('uuid')
 const PEntity = require('prismarine-entity')
 const { once, on } = require('events')
-const wait = require('util').promisify(setTimeout)
 const { Schematic } = require('prismarine-schematic')
 const { promises: fs } = require('fs')
 const path = require('path')
@@ -516,7 +515,6 @@ describe('pathfinder Movement', function () {
     this.afterAll(async () => {
       defaultMovement.canDig = true
       await bot.world.setBlock(targetBlock.offset(1, 0, 0), new Block(mcData.blocksByName.air.id, 0))
-      await wait()
     })
 
     it('safeToBreak', async function () {
@@ -525,7 +523,7 @@ describe('pathfinder Movement', function () {
       defaultMovement.canDig = false
       assert.ok(!defaultMovement.safeToBreak(block))
       defaultMovement.canDig = true
-      await bot.world.setBlock(targetBlock.offset(1, 0, 0), new Block(mcData.blocksByName.water.id, 0))
+      await bot.world.setBlock(targetBlock.offset(1, 0, 0), new Block(mcData.blocksByName.water.id, 0, 0))
       assert.ok(!defaultMovement.safeToBreak(block))
     })
   })
