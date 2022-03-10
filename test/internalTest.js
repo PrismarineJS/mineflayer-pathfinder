@@ -247,9 +247,9 @@ describe('pathfinder Goals', function () {
       assert.ok(goal.isEnd(bot.entity.position.floored()))
     })
 
-    it('GoalBreakBlock', () => {
+    it('GoalLookAtBlock', () => {
       const breakTarget = targetBlock.clone() // should be a gold block or any other block thats dig able
-      const goal = new goals.GoalBreakBlock(breakTarget.x, breakTarget.y, breakTarget.z, bot)
+      const goal = new goals.GoalLookAtBlock(breakTarget, bot.world, { reach: 3 })
       assert.ok(!goal.isEnd(bot.entity.position.floored()))
       bot.entity.position = targetBlock.offset(-2, 0, 0) // should now be close enough
       assert.ok(goal.isEnd(bot.entity.position.floored()))
