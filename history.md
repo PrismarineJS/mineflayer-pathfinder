@@ -1,5 +1,9 @@
 # History
 
+# 2.0.0
+* [Remove callbacks](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/248)
+* [Export GoalLookAtBlock and deprecate GoalBreakBlock](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/249)
+
 # 1.10.0
 
 * [Add exclusion area mechanism](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/220)
