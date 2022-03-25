@@ -61,14 +61,35 @@ function inject (bot) {
   }
 
   bot.pathfinder.getPathTo = (movements, goal, timeout) => {
-    const p = bot.entity.position
-    const dy = p.y - Math.floor(p.y)
-    const b = bot.blockAt(p)
-    const start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
-    astarContext = new AStar(start, movements, goal, timeout || bot.pathfinder.thinkTimeout, bot.pathfinder.tickTimeout, bot.pathfinder.searchRadius)
-    const result = astarContext.compute()
-    result.path = postProcessPath(result.path)
+    const generator = bot.pathfinder.getPathFromTo(movements, bot.entity.position, goal, { timeout })
+    const { value: { result, astarContext: context } } = generator.next()
+    astarContext = context
     return result
+  }
+
+  bot.pathfinder.getPathFromTo = function * (movements, startPos, goal, options = {}) {
+    const optimizePath = options.optimizePath ?? true
+    const timeout = options.timeout ?? bot.pathfinder.thinkTimeout
+    const tickTimeout = options.tickTimeout ?? bot.pathfinder.tickTimeout
+    const searchRadius = options.searchRadius ?? bot.pathfinder.searchRadius
+    let start
+    if (options.startMove) {
+      start = options.startMove
+    } else {
+      const p = startPos.floored()
+      const dy = p.y - Math.floor(p.y)
+      const b = bot.blockAt(p)
+      start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
+    }
+    const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius)
+    let result = astarContext.compute()
+    if (optimizePath) result.path = postProcessPath(result.path)
+    yield { result, astarContext }
+    while (result.status === 'partial') {
+      result = astarContext.compute()
+      if (optimizePath) result.path = postProcessPath(result.path)
+      yield { result, astarContext }
+    }
   }
 
   Object.defineProperties(bot.pathfinder, {
