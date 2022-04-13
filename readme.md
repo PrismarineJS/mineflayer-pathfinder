@@ -89,6 +89,20 @@ Returns the best harvest tool in the inventory for the specified block
  * `goal` - Goal instance
  * `timeout` - number (optional, default `bot.pathfinder.thinkTimeout`)
 
+### bot.pathfinder.getPathFromTo* (movements, startPos, goal, options = {})
+Returns a Generator. The generator computes the path for as longs as no full path is found or `options.timeout` is reached. 
+The generator will block the event loop until a path is found or `options.tickTimeout` (default to 50ms) is reached.
+ * `Returns` - A generator instance. See [MDN function*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*).
+ * `movements` - Movements instance
+ * `startPos` - A Vec3 instance. The starting position to base the path search from. 
+ * `goal` - Goal instance
+ * `options` - A optional options object contains:
+   * `optimizePath` - Boolean Optional. Optimize path for shortcuts like going to the next node in a strait line instead walking only diagonal or along axis.
+   * `timeout` - Number Optional. Total computation timeout.
+   * `tickTimeout` - Number Optional. Maximum amount off time before yielding.
+   * `searchRadius` - Number Optional. Max distance to search.
+   * `startMove` - instance of Move Optional. A optional starting position as a Move. Replaces `startPos` as the starting position.
+
 ### bot.pathfinder.setGoal(Goal, dynamic)
  * `goal` - Goal instance
  * `dynamic` - boolean (optional, default false)

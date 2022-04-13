@@ -5,6 +5,7 @@ import { Vec3 } from 'vec3';
 import { Block } from 'prismarine-block';
 import { Entity } from 'prismarine-entity';
 import { World } from 'prismarine-world'
+import AStar from './lib/astar';
 
 declare module 'mineflayer-pathfinder' {
 	export function pathfinder(bot: Bot): void;
@@ -22,6 +23,19 @@ declare module 'mineflayer-pathfinder' {
 			goal: goals.Goal,
 			timeout?: number
 		): ComputedPath;
+		getPathFromTo(
+			movements: Movements,
+			startPos: Vec3 | null, 
+			goal: goals.Goal, 
+			options?: {
+				optimizePath?: boolean,
+				timeout?: number,
+				tickTimeout?: number,
+				searchRadius?: number,
+				startMove?: Move
+			}
+		): IterableIterator<{ result: ComputedPath, astarContext: AStar }>
+
 		setGoal(goal: goals.Goal | null, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
 		goto(goal: goals.Goal, callback?: Callback): Promise<void>;
