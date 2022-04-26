@@ -1,5 +1,12 @@
 # History
 
+# 2.1.0
+* [Add automated tests](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/262)
+* [Add getPathFromTo function](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/255)
+* [Fix path optimization check](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/254)
+* [Bumb minecraft data to version 3.x](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/262)
+* [Add goal chaining example](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/256)
+
 # 2.0.0
 * [Remove callbacks](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/248)
 * [Export GoalLookAtBlock and deprecate GoalBreakBlock](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/249)
