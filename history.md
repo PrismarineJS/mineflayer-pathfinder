@@ -1,5 +1,8 @@
 # History
 
+# 2.1.1
+* Fix GitHub action for publishing
+
 # 2.1.0
 * [Add automated tests](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/262)
 * [Add getPathFromTo function](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/255)
