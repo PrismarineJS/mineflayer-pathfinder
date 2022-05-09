@@ -262,13 +262,20 @@ declare module 'mineflayer-pathfinder' {
 
 	type Callback = (error?: Error) => void;
 
-	export interface ComputedPath {
-		status: 'noPath' | 'timeout' | 'success';
+	interface PathBase {
 		cost: number;
 		time: number;
 		visitedNodes: number;
 		generatedNodes: number;
 		path: Move[];
+	}
+
+	export interface ComputedPath extends PathBase {
+		status: 'noPath' | 'timeout' | 'success';
+	}
+
+	export interface PartiallyComputedPath extends PathBase {
+		status: 'noPath' | 'timeout' | 'success' | 'partial';
 	}
 
 	export interface XZCoordinates {
@@ -299,6 +306,18 @@ declare module 'mineflayer-pathfinder' {
 }
 
 declare module 'mineflayer' {
+	interface BotEvents {
+		goal_reached: (goal: Goal) => void;
+		path_update: (path: PartiallyComputedPath) => void;
+		goal_updated: (goal: Goal, dynamic: boolean) => void;
+		path_reset: (
+			reason: 'goal_updated' | 'movements_updated' |
+				'block_updated' | 'chunk_loaded' | 'goal_moved' | 'dig_error' |
+				'no_scaffolding_blocks' | 'place_error' | 'stuck'
+		) => void;
+		path_stop: () => void;
+	}
+
 	interface Bot {
 		pathfinder: Pathfinder
 	}
