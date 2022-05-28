@@ -552,7 +552,7 @@ describe('pathfinder Movement', function () {
   })
 
   it('getMoveDiagonal', function () {
-    const dir = new Vec3(1, 0, 0)
+    const dir = { x: 1, z: 0, cards: [0, 0] }
     const neighbors = []
     defaultMovement.getMoveDiagonal(targetBlock, dir, neighbors)
     assert.ok(neighbors.length === 1, `getMoveDiagonal neighbors not right length (${neighbors.length} === 1)`)
