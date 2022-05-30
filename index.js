@@ -515,7 +515,7 @@ function inject (bot) {
       }
       path.shift()
       if (path.length === 0) { // done
-        // If the block the bot is standing on is not a full block only checking for the floored position can fail as 
+        // If the block the bot is standing on is not a full block only checking for the floored position can fail as
         // the distance to the goal can get greater then 0 when the vector is floored.
         if (!dynamicGoal && stateGoal && (stateGoal.isEnd(p.floored()) || stateGoal.isEnd(p.floored().offset(0, 1, 0)))) {
           bot.emit('goal_reached', stateGoal)
