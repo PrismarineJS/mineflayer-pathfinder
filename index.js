@@ -330,6 +330,7 @@ function inject (bot) {
   }
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
+    if (!oldBlock) return
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
       resetPath('block_updated', false)
     }
