@@ -38,7 +38,12 @@ declare module 'mineflayer-pathfinder' {
 
 		setGoal(goal: goals.Goal | null, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
-		goto(goal: goals.Goal, callback?: Callback): Promise<void>;
+		/**
+		 * @param goal The goal to complete
+		 * @param options goto options. See docs for more info.
+		 * @returns A Promise that resolves once the goal is completed
+		 */
+		goto(goal: goals.Goal, options?: GoToOptions): Promise<void>;
 		stop(): void;
 
 		isMoving(): boolean;
@@ -261,6 +266,15 @@ declare module 'mineflayer-pathfinder' {
 	}
 
 	type Callback = (error?: Error) => void;
+
+	interface GoToOptions {
+		/** setGoal's `dynamic` argument. Defaults to false. */
+		dynamic?: boolean
+		/** If true, the goal will be executed with the best found path. Defaults to false. */
+		allowPartial?: boolean
+		/** Do not reject on `goal_updated` and `path_stop` events. Defaults to false. */
+		silentPathCancel?: boolean
+	}
 
 	interface PathBase {
 		cost: number;

@@ -144,8 +144,8 @@ function inject (bot) {
   bot.pathfinder.isMining = () => digging
   bot.pathfinder.isBuilding = () => placing
 
-  bot.pathfinder.goto = (goal) => {
-    return gotoUtil(bot, goal)
+  bot.pathfinder.goto = (goal, options) => {
+    return gotoUtil(bot, goal, options)
   }
 
   bot.pathfinder.stop = () => {
