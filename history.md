@@ -1,5 +1,12 @@
 # History
 
+# 2.2.0
+* [Add events typings](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/266)
+* [Force look at blocks when breaking them](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/274)
+* [Fix bot sometimes not triggering path end correctly](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/268)
+* [Fix missing null check at block update](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/269)
+* [Bump mocha to 10.x](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/265)
+
 # 2.1.1
 * Fix GitHub action for publishing
 
