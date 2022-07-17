@@ -77,9 +77,11 @@ function inject (bot) {
       start = options.startMove
     } else {
       const p = startPos.floored()
-      const dy = p.y - Math.floor(p.y)
-      const b = bot.blockAt(p)
-      start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
+      const dy = startPos.y - p.y
+      const b = bot.blockAt(p) // The block we are standing in
+      // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
+      const offset = (b && dy > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
+      start = new Move(p.x, p.y + offset, p.z, movements.countScaffoldingItems(), 0)
     }
     const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius)
     let result = astarContext.compute()
