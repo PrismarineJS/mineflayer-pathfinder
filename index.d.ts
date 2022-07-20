@@ -198,6 +198,11 @@ declare module 'mineflayer-pathfinder' {
 		public allowFreeMotion: boolean;
 		public allowParkour: boolean;
 		public allowSprinting: boolean;
+ 		/**
+ 		 * Test for entities that may obstruct path or prevent block placement. Requests updated entities every new path
+ 		 * Intended to help for avoiding hostiles when cornered, normally the bot will try to walk straight through them
+ 		 */
+ 		public allowEntityDetection: boolean;
 		
 		public blocksCantBreak: Set<number>;
 		public blocksToAvoid: Set<number>;
@@ -209,6 +214,10 @@ declare module 'mineflayer-pathfinder' {
 		public infiniteLiquidDropdownDistance: boolean;
 		public digCost: number;
 		public placeCost: number;
+ 		/**
+ 		 * Extra cost multiplier for moving through an entity hitbox (besides items).
+ 		 */
+ 		public entityCost: number;
 
 		/** Exclusion Area that adds extra cost or prevents the bot from stepping onto positions included.
 		 * @example
@@ -229,12 +238,19 @@ declare module 'mineflayer-pathfinder' {
 		 * Exclusion area for placing blocks. Note only works for positions not block values as placed blocks are determined by the bots inventory content. Works in the same way as {@link exclusionAreasStep} does. 
 		 */
 		public exclusionAreasPlace: [(block: SafeBlock) => number];
+        
+ 		/**
+ 		 * Blocks containing bounding boxes. Contains the number of ents intersecting [y][x][z]
+ 		 * Updated automatically each tick
+ 		 */
+ 		public entIntersections: { [yCoord: number]: [xCoord: number]: [zCoord: number]: number};
 
 		public exclusionPlace(block: SafeBlock): number;
 		public exclusionStep(block: SafeBlock): number;
 		public exclusionBreak(block: SafeBlock): number;
 		public countScaffoldingItems(): number;
 		public getScaffoldingItem(): Item | null;
+		public getNumEntitiesAt(pos: Vec3, dx: number, dy: number, dz: number): number;
 		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;
 		public safeToBreak(block: SafeBlock): boolean;
 		public safeOrBreak(block: SafeBlock): number;

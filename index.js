@@ -110,6 +110,7 @@ function inject (bot) {
     bot.removeAllListeners('diggingAborted', detectDiggingStopped)
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
+
   function resetPath (reason, clearStates = true) {
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
     path = []
@@ -124,6 +125,7 @@ function inject (bot) {
     lockEquipItem.release()
     lockPlaceBlock.release()
     lockUseBlock.release()
+    stateMovements.entIntersections = {}
     if (clearStates) bot.clearControlStates()
     if (stopPathing) return stop()
   }
@@ -153,6 +155,37 @@ function inject (bot) {
   }
 
   bot.on('physicTick', monitorMovement)
+
+  /**
+   * Finds blocks intersected by entity bounding boxes
+   * and sets the number of ents intersecting in a dict
+   * @param {object} entIntersections Dict to write to. Follows d[y][x][z] = #ents
+   */
+  function updateCollisionIndex (entIntersections) {
+    for (const ent of Object.values(bot.entities)) {
+      // TODO: Maybe add a seperate modifier for hostiles or an 'entitiesToAvoid' list?
+      if (ent !== bot.entity && ent.name !== 'item') {
+        const entSquareRadius = ent.width / 2.0
+        const minY = Math.floor(ent.position.y)
+        const maxY = Math.ceil(ent.position.y + ent.height)
+        const minX = Math.floor(ent.position.x - entSquareRadius)
+        const maxX = Math.ceil(ent.position.x + entSquareRadius)
+        const minZ = Math.floor(ent.position.z - entSquareRadius)
+        const maxZ = Math.ceil(ent.position.z + entSquareRadius)
+
+        for (let y = minY; y < maxY; y++) {
+          entIntersections[y] = entIntersections[y] || {}
+          for (let x = minX; x < maxX; x++) {
+            entIntersections[y][x] = entIntersections[y][x] || {}
+            for (let z = minZ; z < maxZ; z++) {
+              entIntersections[y][x][z] = entIntersections[y][x][z] || 0
+              entIntersections[y][x][z]++ // More ents = more weight
+            }
+          }
+        }
+      }
+    }
+  }
 
   function postProcessPath (path) {
     for (let i = 0; i < path.length; i++) {
@@ -397,6 +430,9 @@ function inject (bot) {
             fullStop()
           }
         } else if (!pathUpdated) {
+          if (stateMovements.allowEntityDetection) {
+            updateCollisionIndex(stateMovements.entIntersections)
+          }
           const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
           bot.emit('path_update', results)
           path = results.path
