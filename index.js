@@ -11,6 +11,8 @@ const Vec3 = require('vec3').Vec3
 const Physics = require('./lib/physics')
 const nbt = require('prismarine-nbt')
 
+const passableEnts = require('./lib/passableEnts.json')
+
 function inject (bot) {
   const mcData = require('minecraft-data')(bot.version)
   const waterType = mcData.blocksByName.water.id
@@ -69,6 +71,7 @@ function inject (bot) {
 
   bot.pathfinder.getPathFromTo = function * (movements, startPos, goal, options = {}) {
     const optimizePath = options.optimizePath ?? true
+    const resetEntIntersects = options.resetEntIntersects ?? true
     const timeout = options.timeout ?? bot.pathfinder.thinkTimeout
     const tickTimeout = options.tickTimeout ?? bot.pathfinder.tickTimeout
     const searchRadius = options.searchRadius ?? bot.pathfinder.searchRadius
@@ -80,6 +83,12 @@ function inject (bot) {
       const dy = p.y - Math.floor(p.y)
       const b = bot.blockAt(p)
       start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
+    }
+    if (movements.allowEntityDetection) {
+      if (resetEntIntersects) {
+        stateMovements.entIntersections = {}
+      }
+      updateCollisionIndex(movements.entIntersections)
     }
     const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius)
     let result = astarContext.compute()
@@ -164,7 +173,7 @@ function inject (bot) {
   function updateCollisionIndex (entIntersections) {
     for (const ent of Object.values(bot.entities)) {
       // TODO: Maybe add a seperate modifier for hostiles or an 'entitiesToAvoid' list?
-      if (ent !== bot.entity && ent.name !== 'item') {
+      if (ent !== bot.entity && passableEnts.includes(ent.name)) {
         const entSquareRadius = ent.width / 2.0
         const minY = Math.floor(ent.position.y)
         const maxY = Math.ceil(ent.position.y + ent.height)
@@ -174,11 +183,11 @@ function inject (bot) {
         const maxZ = Math.ceil(ent.position.z + entSquareRadius)
 
         for (let y = minY; y < maxY; y++) {
-          entIntersections[y] = entIntersections[y] || {}
+          entIntersections[y] = entIntersections[y] ?? {}
           for (let x = minX; x < maxX; x++) {
-            entIntersections[y][x] = entIntersections[y][x] || {}
+            entIntersections[y][x] = entIntersections[y][x] ?? {}
             for (let z = minZ; z < maxZ; z++) {
-              entIntersections[y][x][z] = entIntersections[y][x][z] || 0
+              entIntersections[y][x][z] = entIntersections[y][x][z] ?? 0
               entIntersections[y][x][z]++ // More ents = more weight
             }
           }
@@ -430,9 +439,6 @@ function inject (bot) {
             fullStop()
           }
         } else if (!pathUpdated) {
-          if (stateMovements.allowEntityDetection) {
-            updateCollisionIndex(stateMovements.entIntersections)
-          }
           const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
           bot.emit('path_update', results)
           path = results.path

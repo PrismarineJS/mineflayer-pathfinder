@@ -43,8 +43,7 @@ function flatMap (Version) {
  */
 async function parkourMap (Version) {
   const pwd = path.join(__dirname, './schematics/parkour1.schem')
-  // parkour1.schem is a version 1.12 schematic. If other schematics are used the version has to change here too.
-  const readSchem = await Schematic.read(await fs.readFile(pwd), '1.12.2')
+  const readSchem = await Schematic.read(await fs.readFile(pwd), '1.18.2')
   const Block = require('prismarine-block')(Version)
   const Chunk = require('prismarine-chunk')(Version)
   const mcData = require('minecraft-data')(Version)
@@ -58,6 +57,33 @@ async function parkourMap (Version) {
     return new Block(blockVersion.id, 1, 0)
   })
   return chunk
+}
+
+function generateChunkPacket (chunk) {
+  const lights = chunk.dumpLight()
+  return {
+    x: 0,
+    z: 0,
+    groundUp: true,
+    biomes: chunk.dumpBiomes !== undefined ? chunk.dumpBiomes() : undefined,
+    heightmaps: {
+      type: 'compound',
+      name: '',
+      value: {
+        MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) }
+      }
+    }, // send fake heightmap
+    bitMap: chunk.getMask(),
+    chunkData: chunk.dump(),
+    blockEntities: [],
+    trustEdges: false,
+    skyLightMask: lights?.skyLightMask,
+    blockLightMask: lights?.blockLightMask,
+    emptySkyLightMask: lights?.emptySkyLightMask,
+    emptyBlockLightMask: lights?.emptyBlockLightMask,
+    skyLight: lights?.skyLight,
+    blockLight: lights?.blockLight
+  }
 }
 
 /**
@@ -99,22 +125,7 @@ async function newServer (server, chunk, spawnPos, Version, useLoginPacket) {
 
     client.write('login', loginPacket)
 
-    client.write('map_chunk', {
-      x: 0,
-      z: 0,
-      groundUp: true,
-      biomes: chunk.dumpBiomes !== undefined ? chunk.dumpBiomes() : undefined,
-      heightmaps: {
-        type: 'compound',
-        name: '',
-        value: {
-          MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) }
-        }
-      }, // send fake heightmap
-      bitMap: chunk.getMask(),
-      chunkData: chunk.dump(),
-      blockEntities: []
-    })
+    client.write('map_chunk', generateChunkPacket(chunk))
 
     client.write('position', {
       x: spawnPos.x,
@@ -128,6 +139,18 @@ async function newServer (server, chunk, spawnPos, Version, useLoginPacket) {
 
   await once(server, 'listening')
   return server
+}
+
+function add1x2Weight (entIntersections, posX, posY, posZ, weight = 1) {
+  entIntersections[posY] = entIntersections[posY] ?? {}
+  entIntersections[posY][posX] = entIntersections[posY][posX] ?? {}
+  entIntersections[posY][posX][posZ] = entIntersections[posY][posX][posZ] ?? 0
+  entIntersections[posY][posX][posZ] += weight
+
+  entIntersections[posY + 1] = entIntersections[posY + 1] ?? {}
+  entIntersections[posY + 1][posX] = entIntersections[posY + 1][posX] ?? {}
+  entIntersections[posY + 1][posX][posZ] = entIntersections[posY + 1][posX][posZ] ?? 0
+  entIntersections[posY + 1][posX][posZ] += weight
 }
 
 describe('pathfinder Goals', function () {
@@ -459,7 +482,7 @@ describe('pathfinder util functions', function () {
     assert.ok(path.visitedNodes < 5, `Generated path visited nodes to high (${path.visitedNodes} < 5)`)
     assert.ok(path.generatedNodes < 30, `Generated path nodes to high (${path.generatedNodes} < 30)`)
     assert.ok(path.path.length === 3, `Generated path length wrong (${path.path.length} === 3)`)
-    assert.ok(path.time < 50, `Generated path took to long (${path.time} < 50)`)
+    assert.ok(path.time < 50, `Generated path took too long (${path.time} < 50)`)
   })
 })
 
@@ -727,4 +750,472 @@ describe('Physics test', function () {
   })
 
   // TODO: write test for simulateUntilNextTick
+})
+
+describe('pathfinder entity avoidance test', function () {
+  const mcData = require('minecraft-data')(Version)
+
+  const patherOptions = { resetEntIntersects: false }
+  const maxPathTime = 50
+
+  const spawnPos = new Vec3(8.5, 1.0, 8.5) // Center of the chunk & center of the block
+
+  /** @type { import('mineflayer').Bot & { pathfinder: import('mineflayer-pathfinder').Pathfinder }} */
+  let bot
+  /** @type { import('minecraft-protocol').Server } */
+  let server
+  /** @type { import('prismarine-chunk').Chunk } */
+  let chunk
+
+  before(async () => {
+    chunk = await parkourMap(Version)
+    server = await newServer(server, chunk, spawnPos, Version, true)
+    bot = mineflayer.createBot({
+      username: 'player',
+      version: Version,
+      port: ServerPort
+    })
+    await once(bot, 'chunkColumnLoad')
+
+    bot.loadPlugin(pathfinder)
+    bot.pathfinder.setMovements(new Movements(bot, mcData))
+  })
+
+  after(() => {
+    bot.end()
+    bot = null
+    server.close()
+  })
+
+  /**
+  * Ensure algorithm does not impede performance when handling a large number of entities
+  */
+  it('entityIndexPerformance', () => {
+    const { performance } = require('perf_hooks')
+
+    const targetBlock = new Vec3(11.5, 2.0, 10.5) // a gold block away from the spawn position
+    const startPos = new Vec3(11.5, 2.0, 14.5) // Start point for test
+
+    const goal = new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z)
+
+    for (let i = 1; i <= 10000; i++) {
+      const pos = (i % 2) === 0 ? new Vec3(10.5, 2.0, 12.5) : new Vec3(12.5, 2.0, 12.5)
+      bot.entities[i] = { name: 'testEntity', position: pos, height: 2.0, width: 1.0 }
+    }
+
+    const beforeTime = performance.now()
+
+    const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal)
+    const { value: { result } } = generator.next()
+
+    const timeElapsed = performance.now() - beforeTime
+
+    bot.pathfinder.movements.entIntersections = {}
+    for (let i = 1; i <= 10000; i++) {
+      delete bot.entities[i]
+    }
+
+    assert.ok(timeElapsed < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+  })
+
+  /**
+   * Tests if bot will prefer a basic path with less entities
+   * The test course is a 3x3x2 with a divider in the center
+   * [O] = Open, [W] = Wall, [S] = Start, [E] = End
+   *    W E W
+   *  W O O O W
+   *  W O W O W
+   *  W O O O W
+   *    W S W
+   */
+  describe('Weighted Path Avoidance', () => {
+    const targetBlock = new Vec3(11.5, 2.0, 10.5) // a gold block away from the spawn position
+    const startPos = new Vec3(11.5, 2.0, 14.5) // Start point for test
+    const firstLeftNode = new Vec3(10.5, 2.0, 12.5)
+    const firstRightNode = new Vec3(12.5, 2.0, 12.5)
+
+    const goal = new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z)
+
+    beforeEach((done) => {
+      bot.pathfinder.movements.entIntersections = {}
+      setTimeout(done, 100)
+    })
+
+    /**
+     * By default, algorithm will favor the Left Path
+     * [X] = Ent, [O] = Open, [W] = Wall
+     *   O O O
+     *   O W O
+     *   O O O
+     */
+    it('defaultPath', () => {
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 3, `Generated path length wrong (${path.length} === 3)`)
+      assert.ok(leftBranch === true, `Generated path did not follow Left Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
+    })
+
+    /**
+     * Ensure path with weight is avoided
+     * [X] = Ent, [O] = Open, [W] = Wall
+     *   O O O
+     *   O W X
+     *   O O O
+     */
+    it('rightBranchObstructed', () => {
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 12)
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 3, `Generated path length wrong (${path.length} === 3)`)
+      assert.ok(leftBranch === true, `Generated path did not follow Left Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
+    })
+
+    /**
+     * Ensure path with more weight is avoided
+     * [X] = Ent, [O] = Open, [W] = Wall
+     *   O O O
+     *   X W X
+     *   X O O
+     */
+    it('leftBranchMoreObstructed', () => {
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 13)
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 3, `Generated path length wrong (${path.length} === 3)`)
+      assert.ok(rightBranch === true, `Generated path did not follow Right Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
+    })
+
+    /**
+     * Ensure blocks adjacent to diagonal nodes are detected
+     * [X] = Ent, [O] = Open, [W] = Wall
+     *   O O X
+     *   X W O
+     *   O O X
+     */
+    it('rightBranchDiagsClear', () => {
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 13)
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 11)
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 12)
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 3, `Generated path length wrong (${path.length} === 3)`)
+      assert.ok(leftBranch === true, `Generated path did not follow Left Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
+    })
+
+    /**
+     * Ensure blocks adjacent to diagonal nodes are detected
+     * [X] = Ent, [O] = Open, [W] = Wall
+     *   X O O
+     *   O W X
+     *   X O O
+     */
+    it('leftBranchDiagsClear', () => {
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 13)
+      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 11)
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 3, `Generated path length wrong (${path.length} === 3)`)
+      assert.ok(rightBranch === true, `Generated path did not follow Right Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
+    })
+  })
+
+  /**
+   * Tests if bot will try to path where they cannot build due to an entity and whether it will
+   * try to break a block that would potentially cause an entity to fall.
+   * The test course is a 2x2x4 pit where the start is at the bottom and the end is at the top
+   * [O] = Open, [W] = Wall, [S] = Start, [E] = End
+   *   W W W E
+   *   W O O W
+   *   W S O W
+   *   W W W W
+   */
+  describe('Construction Path Avoidance', () => {
+    const Item = require('prismarine-item')(Version)
+
+    const scaffoldItemId = mcData.itemsByName.dirt.id
+    const groundYPos = 2
+    const lidYPos = 5
+    const forwardPos = { x: 11, z: 6 }
+    const leftPos = { x: 10, z: 6 }
+    const rightPos = { x: 11, z: 7 }
+    const backPos = { x: 10, z: 7 }
+    const targetBlock = new Vec3(forwardPos.x + 1.5, lidYPos + 1.0, forwardPos.z - 0.5) // a gold block away from the spawn position
+    const startPos = new Vec3(backPos.x + 0.5, groundYPos, backPos.z + 0.5) // Start point for test
+    const firstLeftNode = new Vec3(leftPos.x + 0.5, groundYPos, leftPos.z + 0.5)
+    const firstRightNode = new Vec3(rightPos.x + 0.5, groundYPos, rightPos.z + 0.5)
+    const firstForwardNode = new Vec3(forwardPos.x + 0.5, groundYPos, forwardPos.z + 0.5)
+
+    const blockersToPlace = [forwardPos, leftPos, rightPos, backPos]
+    const goal = new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z)
+
+    /** @type { import('minecraft-protocol').Client } */
+    let serverClient
+    /** @type { number } */
+    let hotbarSlot
+
+    before(() => {
+      serverClient = Object.values(server.clients)[0]
+      hotbarSlot = bot.inventory.firstEmptyHotbarSlot()
+    })
+
+    beforeEach((done) => {
+      bot.pathfinder.movements.entIntersections = {}
+      bot.inventory.slots[hotbarSlot] = new Item(scaffoldItemId, 64)
+      setTimeout(done, 100)
+    })
+
+    afterEach(async () => {
+      blockersToPlace.forEach(hPos => {
+        const blockPos = { x: hPos.x, y: lidYPos, z: hPos.z }
+        serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.air.id })
+        chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.air.id)
+      })
+      serverClient.write('map_chunk', generateChunkPacket(chunk))
+      await once(bot, 'chunkColumnLoad')
+    })
+
+    /**
+     * By default, algorithm will favor the Left Path
+     * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
+     *   W W W W
+     *   W O O W
+     *   W O O W
+     *   W W W W
+     */
+    it('defaultPath', () => {
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
+      assert.ok(leftBranch === true, `Generated path did not follow Left Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+    })
+
+    /**
+     * Ensure bot finds a path when it cannot break left blocker with ent on top
+     * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
+     *   W W W W
+     *   W + O W
+     *   W O O W
+     *   W W W W
+     */
+    it('leftPathObstructed', async () => {
+      const blockPos = { x: leftPos.x, y: lidYPos, z: leftPos.z }
+      serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.dirt.id })
+      chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.dirt.id)
+      add1x2Weight(bot.pathfinder.movements.entIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
+
+      serverClient.write('map_chunk', generateChunkPacket(chunk))
+      await once(bot, 'chunkColumnLoad')
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
+      assert.ok(forwardBranch === true, `Generated path did not follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+    })
+
+    /**
+     * If there are blocks capping the pit with an entity above each block, ensure bot cannot path since
+     * there are no blocks that can be broken without potentially dropping an entity. Bot is expected
+     * to follow forward branch for as far as possible
+     * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
+     *   W W W W
+     *   W + + W
+     *   W + + W
+     *   W W W W
+     */
+    it('noPathsBreakingObstructed', async () => {
+      blockersToPlace.forEach(hPos => {
+        const blockPos = { x: hPos.x, y: lidYPos, z: hPos.z }
+        serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.dirt.id })
+        chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.dirt.id)
+        add1x2Weight(bot.pathfinder.movements.entIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
+      })
+      serverClient.write('map_chunk', generateChunkPacket(chunk))
+      await once(bot, 'chunkColumnLoad')
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'noPath')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 2, `Generated path length wrong (${path.length} === 2)`)
+      assert.ok(forwardBranch === true, `Generated path did not attempt to follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+    })
+
+    /**
+     * If there are blocks capping the pit with an entity above each block, ensure bot can path
+     * if allowed in the movements configuration
+     * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
+     *   W W W W
+     *   W + + W
+     *   W + + W
+     *   W W W W
+     */
+    it('canPathWithBreakingObstructed', async () => {
+      blockersToPlace.forEach(hPos => {
+        const blockPos = { x: hPos.x, y: lidYPos, z: hPos.z }
+        serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.dirt.id })
+        chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.dirt.id)
+        add1x2Weight(bot.pathfinder.movements.entIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
+      })
+      serverClient.write('map_chunk', generateChunkPacket(chunk))
+      await once(bot, 'chunkColumnLoad')
+
+      bot.pathfinder.movements.dontMineUnderFallingBlock = false
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+      bot.pathfinder.movements.dontMineUnderFallingBlock = true
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
+      assert.ok(forwardBranch === true, `Generated path did not follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+    })
+
+    /**
+     * If there are entities filling the entire build area, ensure bot cannot path since
+     * entities will prevent any block placement. Bot is expected to follow forward branch
+     * for as far as possible
+     * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
+     *   W W W W
+     *   W X X W
+     *   W X X W
+     *   W W W W
+     */
+    it('noPathsBuildingObstructed', () => {
+      blockersToPlace.forEach(hPos => {
+        add1x2Weight(bot.pathfinder.movements.entIntersections, hPos.x, groundYPos, hPos.z)
+      })
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      const leftBranch = path[0].equals(firstLeftNode)
+      const rightBranch = path[0].equals(firstRightNode)
+      const forwardBranch = path[0].equals(firstForwardNode)
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'noPath')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 1, `Generated path length wrong (${path.length} === 1)`)
+      assert.ok(forwardBranch === true, `Generated path did not attempt to follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+    })
+
+    /**
+     * If there are entities filling the entire build area except for one space, ensure bot finds a path
+     * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
+     *   W W W W
+     *   W X X W
+     *   W X O W
+     *   W W W W
+     */
+    it('singlePathUnobstructed', () => {
+      blockersToPlace.forEach(hPos => {
+        if ((hPos.x !== rightPos.x) || (hPos.z !== rightPos.z)) {
+          add1x2Weight(bot.pathfinder.movements.entIntersections, hPos.x, groundYPos, hPos.z)
+        }
+      })
+
+      const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
+      const { value: { result } } = generator.next()
+      const path = result.path
+
+      // Look at first and second nodes incase diagonal movements are used
+      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
+      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+
+      // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
+      assert.strictEqual(result.status, 'success')
+      assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
+      assert.ok(rightBranch === true, `Generated path did not follow Right Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+    })
+  })
 })
