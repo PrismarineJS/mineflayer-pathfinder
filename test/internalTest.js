@@ -142,15 +142,11 @@ async function newServer (server, chunk, spawnPos, Version, useLoginPacket) {
 }
 
 function add1x2Weight (entIntersections, posX, posY, posZ, weight = 1) {
-  entIntersections[posY] = entIntersections[posY] ?? {}
-  entIntersections[posY][posX] = entIntersections[posY][posX] ?? {}
-  entIntersections[posY][posX][posZ] = entIntersections[posY][posX][posZ] ?? 0
-  entIntersections[posY][posX][posZ] += weight
+  entIntersections[`${posX},${posY},${posZ}`] = entIntersections[`${posX},${posY},${posZ}`] ?? 0
+  entIntersections[`${posX},${posY + 1},${posZ}`] = entIntersections[`${posX},${posY + 1},${posZ}`] ?? 0
 
-  entIntersections[posY + 1] = entIntersections[posY + 1] ?? {}
-  entIntersections[posY + 1][posX] = entIntersections[posY + 1][posX] ?? {}
-  entIntersections[posY + 1][posX][posZ] = entIntersections[posY + 1][posX][posZ] ?? 0
-  entIntersections[posY + 1][posX][posZ] += weight
+  entIntersections[`${posX},${posY},${posZ}`] += weight
+  entIntersections[`${posX},${posY + 1},${posZ}`] += weight
 }
 
 describe('pathfinder Goals', function () {
@@ -991,11 +987,12 @@ describe('pathfinder entity avoidance test', function () {
     const leftPos = { x: 10, z: 6 }
     const rightPos = { x: 11, z: 7 }
     const backPos = { x: 10, z: 7 }
-    const targetBlock = new Vec3(forwardPos.x + 1.5, lidYPos + 1.0, forwardPos.z - 0.5) // a gold block away from the spawn position
+    const targetBlock = new Vec3(forwardPos.x + 1.5, lidYPos + 1.0, forwardPos.z - 0.5) // a gold block away from the spawn position. One block diagonal from forward
     const startPos = new Vec3(backPos.x + 0.5, groundYPos, backPos.z + 0.5) // Start point for test
     const firstLeftNode = new Vec3(leftPos.x + 0.5, groundYPos, leftPos.z + 0.5)
     const firstRightNode = new Vec3(rightPos.x + 0.5, groundYPos, rightPos.z + 0.5)
     const firstForwardNode = new Vec3(forwardPos.x + 0.5, groundYPos, forwardPos.z + 0.5)
+    const firstBackNode = startPos.clone().plus(new Vec3(-0.5, 1, -0.5)) // Jump up isn't going to half block and targets one block higher
 
     const blockersToPlace = [forwardPos, leftPos, rightPos, backPos]
     const goal = new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z)
@@ -1027,7 +1024,7 @@ describe('pathfinder entity avoidance test', function () {
     })
 
     /**
-     * By default, algorithm will favor the Left Path
+     * By default, algorithm will favor the Backward Path
      * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
      *   W W W W
      *   W O O W
@@ -1043,24 +1040,25 @@ describe('pathfinder entity avoidance test', function () {
       const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
       const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
       const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+      const backwardBranch = (path[0].equals(firstBackNode) || path[1].equals(firstBackNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
       assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
-      assert.ok(leftBranch === true, `Generated path did not follow Left Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+      assert.ok(backwardBranch === true, `Generated path did not follow Backward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}, Backward Branch: ${backwardBranch}]`)
     })
 
     /**
      * Ensure bot finds a path when it cannot break left blocker with ent on top
      * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
      *   W W W W
-     *   W + O W
      *   W O O W
+     *   W + O W
      *   W W W W
      */
-    it('leftPathObstructed', async () => {
-      const blockPos = { x: leftPos.x, y: lidYPos, z: leftPos.z }
+    it('backPathObstructed', async () => {
+      const blockPos = { x: backPos.x, y: lidYPos, z: backPos.z }
       serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.dirt.id })
       chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.dirt.id)
       add1x2Weight(bot.pathfinder.movements.entIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
@@ -1076,12 +1074,13 @@ describe('pathfinder entity avoidance test', function () {
       const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
       const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
       const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+      const backwardBranch = (path[0].equals(firstBackNode) || path[1].equals(firstBackNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
       assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
-      assert.ok(forwardBranch === true, `Generated path did not follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+      assert.ok(rightBranch === true, `Generated path did not follow Right Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}, Backward Branch: ${backwardBranch}]`)
     })
 
     /**
@@ -1112,12 +1111,13 @@ describe('pathfinder entity avoidance test', function () {
       const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
       const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
       const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+      const backwardBranch = (path[0].equals(firstBackNode) || path[1].equals(firstBackNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'noPath')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
       assert.ok(path.length === 2, `Generated path length wrong (${path.length} === 2)`)
-      assert.ok(forwardBranch === true, `Generated path did not attempt to follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+      assert.ok(forwardBranch === true, `Generated path did not attempt to follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}, Backward Branch: ${backwardBranch}]`)
     })
 
     /**
@@ -1149,12 +1149,13 @@ describe('pathfinder entity avoidance test', function () {
       const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
       const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
       const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+      const backwardBranch = (path[0].equals(firstBackNode) || path[1].equals(firstBackNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
       assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
-      assert.ok(forwardBranch === true, `Generated path did not follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+      assert.ok(forwardBranch === true, `Generated path did not follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}, Backward Branch: ${backwardBranch}]`)
     })
 
     /**
@@ -1179,25 +1180,26 @@ describe('pathfinder entity avoidance test', function () {
       const leftBranch = path[0].equals(firstLeftNode)
       const rightBranch = path[0].equals(firstRightNode)
       const forwardBranch = path[0].equals(firstForwardNode)
+      const backwardBranch = path[0].equals(firstBackNode)
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'noPath')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
       assert.ok(path.length === 1, `Generated path length wrong (${path.length} === 1)`)
-      assert.ok(forwardBranch === true, `Generated path did not attempt to follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+      assert.ok(forwardBranch === true, `Generated path did not attempt to follow Forward Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}, Backward Branch: ${backwardBranch}]`)
     })
 
     /**
      * If there are entities filling the entire build area except for one space, ensure bot finds a path
      * [X] = Ent Below, [+] = Ent Above a Block, [O] = Open, [W] = Wall
      *   W W W W
+     *   W O X W
      *   W X X W
-     *   W X O W
      *   W W W W
      */
     it('singlePathUnobstructed', () => {
       blockersToPlace.forEach(hPos => {
-        if ((hPos.x !== rightPos.x) || (hPos.z !== rightPos.z)) {
+        if ((hPos.x !== leftPos.x) || (hPos.z !== leftPos.z)) {
           add1x2Weight(bot.pathfinder.movements.entIntersections, hPos.x, groundYPos, hPos.z)
         }
       })
@@ -1210,12 +1212,13 @@ describe('pathfinder entity avoidance test', function () {
       const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
       const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
       const forwardBranch = (path[0].equals(firstForwardNode) || path[1].equals(firstForwardNode))
+      const backwardBranch = (path[0].equals(firstBackNode) || path[1].equals(firstBackNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
       assert.ok(path.length === 6, `Generated path length wrong (${path.length} === 6)`)
-      assert.ok(rightBranch === true, `Generated path did not follow Right Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}]`)
+      assert.ok(leftBranch === true, `Generated path did not follow Left Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}, Forward Branch: ${forwardBranch}, Backward Branch: ${backwardBranch}]`)
     })
   })
 })

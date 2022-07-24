@@ -29,6 +29,7 @@ declare module 'mineflayer-pathfinder' {
 			goal: goals.Goal, 
 			options?: {
 				optimizePath?: boolean,
+				resetEntIntersects?: boolean,
 				timeout?: number,
 				tickTimeout?: number,
 				searchRadius?: number,
@@ -240,10 +241,11 @@ declare module 'mineflayer-pathfinder' {
 		public exclusionAreasPlace: [(block: SafeBlock) => number];
         
  		/**
- 		 * Blocks containing bounding boxes. Contains the number of ents intersecting [y][x][z]
- 		 * Updated automatically each tick
+ 		 * Blocks containing bounding boxes. Contains the number of ents intersecting each block
+ 		 * Updated automatically each path
+ 		 * formatted entIntersections['x,y,z'] = #ents
  		 */
- 		public entIntersections: { [yCoord: number]: [xCoord: number]: [zCoord: number]: number};
+ 		public entIntersections: {string: number};
 
 		public exclusionPlace(block: SafeBlock): number;
 		public exclusionStep(block: SafeBlock): number;

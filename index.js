@@ -167,8 +167,9 @@ function inject (bot) {
 
   /**
    * Finds blocks intersected by entity bounding boxes
-   * and sets the number of ents intersecting in a dict
-   * @param {object} entIntersections Dict to write to. Follows d[y][x][z] = #ents
+   * and sets the number of ents intersecting in a dict.
+   * Ignores entities that do not affect block placement
+   * @param {object} entIntersections Dict to write to. Follows d['x,y,z'] = #ents
    */
   function updateCollisionIndex (entIntersections) {
     for (const ent of Object.values(bot.entities)) {
@@ -183,12 +184,10 @@ function inject (bot) {
         const maxZ = Math.ceil(ent.position.z + entSquareRadius)
 
         for (let y = minY; y < maxY; y++) {
-          entIntersections[y] = entIntersections[y] ?? {}
           for (let x = minX; x < maxX; x++) {
-            entIntersections[y][x] = entIntersections[y][x] ?? {}
             for (let z = minZ; z < maxZ; z++) {
-              entIntersections[y][x][z] = entIntersections[y][x][z] ?? 0
-              entIntersections[y][x][z]++ // More ents = more weight
+              entIntersections[`${x},${y},${z}`] = entIntersections[`${x},${y},${z}`] ?? 0
+              entIntersections[`${x},${y},${z}`]++ // More ents = more weight
             }
           }
         }
