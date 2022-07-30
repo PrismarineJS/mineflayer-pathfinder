@@ -806,7 +806,7 @@ describe('pathfinder entity avoidance test', function () {
 
     const timeElapsed = performance.now() - beforeTime
 
-    bot.pathfinder.movements.entIntersections = {}
+    bot.pathfinder.movements.clearCollisionIndex()
     for (let i = 1; i <= 10000; i++) {
       delete bot.entities[i]
     }
@@ -833,7 +833,7 @@ describe('pathfinder entity avoidance test', function () {
     const goal = new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z)
 
     beforeEach((done) => {
-      bot.pathfinder.movements.entIntersections = {}
+      bot.pathfinder.movements.clearCollisionIndex()
       setTimeout(done, 100)
     })
 
@@ -1008,7 +1008,7 @@ describe('pathfinder entity avoidance test', function () {
     })
 
     beforeEach((done) => {
-      bot.pathfinder.movements.entIntersections = {}
+      bot.pathfinder.movements.clearCollisionIndex()
       bot.inventory.slots[hotbarSlot] = new Item(scaffoldItemId, 64)
       setTimeout(done, 100)
     })

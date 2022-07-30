@@ -11,8 +11,6 @@ const Vec3 = require('vec3').Vec3
 const Physics = require('./lib/physics')
 const nbt = require('prismarine-nbt')
 
-const passableEnts = require('./lib/passableEnts.json')
-
 function inject (bot) {
   const mcData = require('minecraft-data')(bot.version)
   const waterType = mcData.blocksByName.water.id
@@ -86,9 +84,9 @@ function inject (bot) {
     }
     if (movements.allowEntityDetection) {
       if (resetEntIntersects) {
-        stateMovements.entIntersections = {}
+        movements.clearCollisionIndex()
       }
-      updateCollisionIndex(movements.entIntersections)
+      movements.updateCollisionIndex()
     }
     const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius)
     let result = astarContext.compute()
@@ -134,7 +132,7 @@ function inject (bot) {
     lockEquipItem.release()
     lockPlaceBlock.release()
     lockUseBlock.release()
-    stateMovements.entIntersections = {}
+    stateMovements.clearCollisionIndex()
     if (clearStates) bot.clearControlStates()
     if (stopPathing) return stop()
   }
@@ -164,36 +162,6 @@ function inject (bot) {
   }
 
   bot.on('physicTick', monitorMovement)
-
-  /**
-   * Finds blocks intersected by entity bounding boxes
-   * and sets the number of ents intersecting in a dict.
-   * Ignores entities that do not affect block placement
-   * @param {object} entIntersections Dict to write to. Follows d['x,y,z'] = #ents
-   */
-  function updateCollisionIndex (entIntersections) {
-    for (const ent of Object.values(bot.entities)) {
-      // TODO: Maybe add a seperate modifier for hostiles or an 'entitiesToAvoid' list?
-      if (ent !== bot.entity && passableEnts.includes(ent.name)) {
-        const entSquareRadius = ent.width / 2.0
-        const minY = Math.floor(ent.position.y)
-        const maxY = Math.ceil(ent.position.y + ent.height)
-        const minX = Math.floor(ent.position.x - entSquareRadius)
-        const maxX = Math.ceil(ent.position.x + entSquareRadius)
-        const minZ = Math.floor(ent.position.z - entSquareRadius)
-        const maxZ = Math.ceil(ent.position.z + entSquareRadius)
-
-        for (let y = minY; y < maxY; y++) {
-          for (let x = minX; x < maxX; x++) {
-            for (let z = minZ; z < maxZ; z++) {
-              entIntersections[`${x},${y},${z}`] = entIntersections[`${x},${y},${z}`] ?? 0
-              entIntersections[`${x},${y},${z}`]++ // More ents = more weight
-            }
-          }
-        }
-      }
-    }
-  }
 
   function postProcessPath (path) {
     for (let i = 0; i < path.length; i++) {

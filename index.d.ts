@@ -205,6 +205,18 @@ declare module 'mineflayer-pathfinder' {
  		 */
  		public allowEntityDetection: boolean;
 		
+		/**
+		 * Entity detection completely avoids these entities (by mcdata name)
+		 */
+		public entsToAvoid: Set<string>;
+		/**
+		 * Entity detection ignores these entities (by mcdata name)
+		 */
+		public passableEnts: Set<string>;
+		/**
+		 * Pathfinder will not attempt to place on these blocks (by mcdata name)
+		 */
+		public interactableBlocks: Set<string>;
 		public blocksCantBreak: Set<number>;
 		public blocksToAvoid: Set<number>;
 		public liquids: Set<number>;
@@ -245,13 +257,28 @@ declare module 'mineflayer-pathfinder' {
  		 * Updated automatically each path
  		 * formatted entIntersections['x,y,z'] = #ents
  		 */
- 		public entIntersections: {string: number};
+		public entIntersections: {string: number};
 
 		public exclusionPlace(block: SafeBlock): number;
 		public exclusionStep(block: SafeBlock): number;
 		public exclusionBreak(block: SafeBlock): number;
 		public countScaffoldingItems(): number;
 		public getScaffoldingItem(): Item | null;
+		public clearCollisionIndex(): void;
+		/**
+		 * Finds blocks intersected by entity bounding boxes
+		 * and sets the number of ents intersecting in a dict.
+		 * Ignores entities that do not affect block placement
+		 */
+		public updateCollisionIndex(): void;
+		/**
+		 * Gets number of entities who's bounding box intersects the node + offset
+		 * @param {import('vec3').Vec3} pos node position
+		 * @param {number} dx X axis offset
+		 * @param {number} dy Y axis offset
+		 * @param {number} dz Z axis offset
+		 * @returns {number} Number of entities intersecting block
+		 */
 		public getNumEntitiesAt(pos: Vec3, dx: number, dy: number, dz: number): number;
 		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;
 		public safeToBreak(block: SafeBlock): boolean;
