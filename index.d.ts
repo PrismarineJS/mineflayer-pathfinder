@@ -203,6 +203,13 @@ declare module 'mineflayer-pathfinder' {
 		public blocksToAvoid: Set<number>;
 		public liquids: Set<number>;
 		public gravityBlocks: Set<number>;
+		public climbables: Set<number>
+		public emptyBlocks: Set<number>
+		public replaceables: Set<number>
+		public fences: Set<number>
+		public carpets: Set<number>
+		public openable: Set<number>
+
 		public scafoldingBlocks: number[];
 
 		public maxDropDown: number;
