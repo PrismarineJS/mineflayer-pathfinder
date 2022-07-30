@@ -69,7 +69,7 @@ function inject (bot) {
 
   bot.pathfinder.getPathFromTo = function * (movements, startPos, goal, options = {}) {
     const optimizePath = options.optimizePath ?? true
-    const resetEntIntersects = options.resetEntIntersects ?? true
+    const resetEntityIntersects = options.resetEntityIntersects ?? true
     const timeout = options.timeout ?? bot.pathfinder.thinkTimeout
     const tickTimeout = options.tickTimeout ?? bot.pathfinder.tickTimeout
     const searchRadius = options.searchRadius ?? bot.pathfinder.searchRadius
@@ -83,7 +83,7 @@ function inject (bot) {
       start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
     }
     if (movements.allowEntityDetection) {
-      if (resetEntIntersects) {
+      if (resetEntityIntersects) {
         movements.clearCollisionIndex()
       }
       movements.updateCollisionIndex()

@@ -141,12 +141,12 @@ async function newServer (server, chunk, spawnPos, Version, useLoginPacket) {
   return server
 }
 
-function add1x2Weight (entIntersections, posX, posY, posZ, weight = 1) {
-  entIntersections[`${posX},${posY},${posZ}`] = entIntersections[`${posX},${posY},${posZ}`] ?? 0
-  entIntersections[`${posX},${posY + 1},${posZ}`] = entIntersections[`${posX},${posY + 1},${posZ}`] ?? 0
+function add1x2Weight (entityIntersections, posX, posY, posZ, weight = 1) {
+  entityIntersections[`${posX},${posY},${posZ}`] = entityIntersections[`${posX},${posY},${posZ}`] ?? 0
+  entityIntersections[`${posX},${posY + 1},${posZ}`] = entityIntersections[`${posX},${posY + 1},${posZ}`] ?? 0
 
-  entIntersections[`${posX},${posY},${posZ}`] += weight
-  entIntersections[`${posX},${posY + 1},${posZ}`] += weight
+  entityIntersections[`${posX},${posY},${posZ}`] += weight
+  entityIntersections[`${posX},${posY + 1},${posZ}`] += weight
 }
 
 describe('pathfinder Goals', function () {
@@ -751,7 +751,7 @@ describe('Physics test', function () {
 describe('pathfinder entity avoidance test', function () {
   const mcData = require('minecraft-data')(Version)
 
-  const patherOptions = { resetEntIntersects: false }
+  const patherOptions = { resetEntityIntersects: false }
   const maxPathTime = 50
 
   const spawnPos = new Vec3(8.5, 1.0, 8.5) // Center of the chunk & center of the block
@@ -868,7 +868,7 @@ describe('pathfinder entity avoidance test', function () {
      *   O O O
      */
     it('rightBranchObstructed', () => {
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 12, 2, 12)
 
       const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
       const { value: { result } } = generator.next()
@@ -893,9 +893,9 @@ describe('pathfinder entity avoidance test', function () {
      *   X O O
      */
     it('leftBranchMoreObstructed', () => {
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 12)
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 12)
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 13)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 12, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 10, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 10, 2, 13)
 
       const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
       const { value: { result } } = generator.next()
@@ -920,9 +920,9 @@ describe('pathfinder entity avoidance test', function () {
      *   O O X
      */
     it('rightBranchDiagsClear', () => {
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 13)
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 11)
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 12, 2, 13)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 12, 2, 11)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 10, 2, 12)
 
       const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
       const { value: { result } } = generator.next()
@@ -947,9 +947,9 @@ describe('pathfinder entity avoidance test', function () {
      *   X O O
      */
     it('leftBranchDiagsClear', () => {
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 12, 2, 12)
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 13)
-      add1x2Weight(bot.pathfinder.movements.entIntersections, 10, 2, 11)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 12, 2, 12)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 10, 2, 13)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, 10, 2, 11)
 
       const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
       const { value: { result } } = generator.next()
@@ -1061,7 +1061,7 @@ describe('pathfinder entity avoidance test', function () {
       const blockPos = { x: backPos.x, y: lidYPos, z: backPos.z }
       serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.dirt.id })
       chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.dirt.id)
-      add1x2Weight(bot.pathfinder.movements.entIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
+      add1x2Weight(bot.pathfinder.movements.entityIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
 
       serverClient.write('map_chunk', generateChunkPacket(chunk))
       await once(bot, 'chunkColumnLoad')
@@ -1098,7 +1098,7 @@ describe('pathfinder entity avoidance test', function () {
         const blockPos = { x: hPos.x, y: lidYPos, z: hPos.z }
         serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.dirt.id })
         chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.dirt.id)
-        add1x2Weight(bot.pathfinder.movements.entIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
+        add1x2Weight(bot.pathfinder.movements.entityIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
       })
       serverClient.write('map_chunk', generateChunkPacket(chunk))
       await once(bot, 'chunkColumnLoad')
@@ -1134,7 +1134,7 @@ describe('pathfinder entity avoidance test', function () {
         const blockPos = { x: hPos.x, y: lidYPos, z: hPos.z }
         serverClient.write('block_change', { location: blockPos, type: mcData.blocksByName.dirt.id })
         chunk.setBlockType(new Vec3(blockPos.x, blockPos.y, blockPos.z), mcData.blocksByName.dirt.id)
-        add1x2Weight(bot.pathfinder.movements.entIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
+        add1x2Weight(bot.pathfinder.movements.entityIntersections, blockPos.x, blockPos.y + 1, blockPos.z)
       })
       serverClient.write('map_chunk', generateChunkPacket(chunk))
       await once(bot, 'chunkColumnLoad')
@@ -1170,7 +1170,7 @@ describe('pathfinder entity avoidance test', function () {
      */
     it('noPathsBuildingObstructed', () => {
       blockersToPlace.forEach(hPos => {
-        add1x2Weight(bot.pathfinder.movements.entIntersections, hPos.x, groundYPos, hPos.z)
+        add1x2Weight(bot.pathfinder.movements.entityIntersections, hPos.x, groundYPos, hPos.z)
       })
 
       const generator = bot.pathfinder.getPathFromTo(bot.pathfinder.movements, startPos, goal, patherOptions)
@@ -1200,7 +1200,7 @@ describe('pathfinder entity avoidance test', function () {
     it('singlePathUnobstructed', () => {
       blockersToPlace.forEach(hPos => {
         if ((hPos.x !== leftPos.x) || (hPos.z !== leftPos.z)) {
-          add1x2Weight(bot.pathfinder.movements.entIntersections, hPos.x, groundYPos, hPos.z)
+          add1x2Weight(bot.pathfinder.movements.entityIntersections, hPos.x, groundYPos, hPos.z)
         }
       })
 

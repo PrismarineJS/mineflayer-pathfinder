@@ -29,7 +29,7 @@ declare module 'mineflayer-pathfinder' {
 			goal: goals.Goal, 
 			options?: {
 				optimizePath?: boolean,
-				resetEntIntersects?: boolean,
+				resetEntityIntersects?: boolean,
 				timeout?: number,
 				tickTimeout?: number,
 				searchRadius?: number,
@@ -200,21 +200,20 @@ declare module 'mineflayer-pathfinder' {
 		public allowParkour: boolean;
 		public allowSprinting: boolean;
  		/**
- 		 * Test for entities that may obstruct path or prevent block placement. Requests updated entities every new path
- 		 * Intended to help for avoiding hostiles when cornered, normally the bot will try to walk straight through them
+ 		 * Test for entities that may obstruct path or prevent block placement. Grabs updated entities every new path
  		 */
  		public allowEntityDetection: boolean;
 		
 		/**
-		 * Entity detection completely avoids these entities (by mcdata name)
+		 * Set of entities (by mcdata name) to completely avoid when using entity detection
 		 */
-		public entsToAvoid: Set<string>;
+		public entitiesToAvoid: Set<string>;
 		/**
-		 * Entity detection ignores these entities (by mcdata name)
+		 * Set of entities (by mcdata name) to ignore when using entity detection
 		 */
-		public passableEnts: Set<string>;
+		public passableEntities: Set<string>;
 		/**
-		 * Pathfinder will not attempt to place on these blocks (by mcdata name)
+		 * Set of blocks (by mcdata name) that pathfinder should not attempt to place blocks or 'right click' on
 		 */
 		public interactableBlocks: Set<string>;
 		public blocksCantBreak: Set<number>;
@@ -228,7 +227,7 @@ declare module 'mineflayer-pathfinder' {
 		public digCost: number;
 		public placeCost: number;
  		/**
- 		 * Extra cost multiplier for moving through an entity hitbox (besides items).
+ 		 * Extra cost multiplier for moving through an entity hitbox (besides passable ones).
  		 */
  		public entityCost: number;
 
@@ -253,11 +252,12 @@ declare module 'mineflayer-pathfinder' {
 		public exclusionAreasPlace: [(block: SafeBlock) => number];
         
  		/**
- 		 * Blocks containing bounding boxes. Contains the number of ents intersecting each block
- 		 * Updated automatically each path
- 		 * formatted entIntersections['x,y,z'] = #ents
+ 		 * A dictionary of the number of entities intersecting each floored block coordinate.
+ 		 * Updated automatically each path but, you may mix in your own entries before calculating a path if desired (generally for testing).
+ 		 * To prevent this from being cleared automatically before generating a path see getPathFromTo()
+ 		 * formatted entityIntersections['x,y,z'] = #ents
  		 */
-		public entIntersections: {string: number};
+		public entityIntersections: {string: number};
 
 		public exclusionPlace(block: SafeBlock): number;
 		public exclusionStep(block: SafeBlock): number;
