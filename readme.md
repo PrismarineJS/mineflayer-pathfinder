@@ -64,6 +64,7 @@ bot.once('spawn', () => {
  * Automatically update path when environment change
  * Long distance paths
  * Can swim
+ * Can avoid entities
  * Modular and easily extendable with different behavior
 
 ## API
@@ -98,6 +99,7 @@ The generator will block the event loop until a path is found or `options.tickTi
  * `goal` - Goal instance
  * `options` - A optional options object contains:
    * `optimizePath` - Boolean Optional. Optimize path for shortcuts like going to the next node in a strait line instead walking only diagonal or along axis.
+   * `resetEntityIntersects` - Boolean Optional. Reset the `entityIntersections` index for `movements`. Default: true
    * `timeout` - Number Optional. Total computation timeout.
    * `tickTimeout` - Number Optional. Maximum amount off time before yielding.
    * `searchRadius` - Number Optional. Max distance to search.
@@ -191,6 +193,10 @@ Option to ignore maxDropDown distance when the landing position is in water.
 Additional cost for interacting with liquids.
 * Default - `1`
 
+### entityCost
+Additional cost for moving through an entity hitbox (besides passable ones).
+* Default - `1`
+
 ### dontCreateFlow
 Do not break blocks that touch liquid blocks.
 * Default - `true`
@@ -214,6 +220,24 @@ Allow parkour jumps like jumps over gaps bigger then 1 block
 ### allowSprinting
 Allow sprinting when moving.
 * Default - `true`
+
+### allowEntityDetection
+Test for entities that may obstruct path or prevent block placement. Grabs updated entities every new path
+* Default - `true`
+
+### entitiesToAvoid
+Set of entities (by mcdata name) to completely avoid when using entity detection
+* instance of `Set`
+
+### passableEntities
+Set of entities (by mcdata name) to ignore when using entity detection
+* instance of `Set`
+* Default - See lib/passableEntities.json
+
+### interactableBlocks
+Set of blocks (by mcdata name) that pathfinder should not attempt to place blocks or 'right click' on
+* instance of `Set`
+* Default - See lib/interactable.json
 
 ### blocksCantBreak
 Set of block id's pathfinder cannot break. Includes chests wheat and all unbreakable blocks.
@@ -262,6 +286,11 @@ An array of functions that define an area or block to be break excluded. Every f
 ### exclusionAreasPlace
 An array of functions that define an area to be block placement excluded. Every function in the array is parsed the current Block the bot is planing to place a block inside (should be air or a replaceable block most of the time). Each function should return a positive number (includes 0) that defines extra cost for that specific Block. 0 means no extra cost, 100 means it is impossible for pathfinder to consider this move.
 * Array of functions `(block: Block) => number`
+
+### entityIntersections
+A dictionary of the number of entities intersecting each floored block coordinate. Updated automatically each path but, you may mix in your own entries before calculating a path if desired (generally for testing). To prevent this from being cleared automatically before generating a path see the [path gen options](#botpathfindergetpathfromto-movements-startpos-goal-options--). 
+* Formatted entityIntersections['x,y,z'] = #ents
+* Dictionary of costs `{string: number}`
 
 # Events:
 

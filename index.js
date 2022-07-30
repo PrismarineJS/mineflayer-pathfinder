@@ -69,6 +69,7 @@ function inject (bot) {
 
   bot.pathfinder.getPathFromTo = function * (movements, startPos, goal, options = {}) {
     const optimizePath = options.optimizePath ?? true
+    const resetEntityIntersects = options.resetEntityIntersects ?? true
     const timeout = options.timeout ?? bot.pathfinder.thinkTimeout
     const tickTimeout = options.tickTimeout ?? bot.pathfinder.tickTimeout
     const searchRadius = options.searchRadius ?? bot.pathfinder.searchRadius
@@ -82,6 +83,12 @@ function inject (bot) {
       // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
       const offset = (b && dy > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
       start = new Move(p.x, p.y + offset, p.z, movements.countScaffoldingItems(), 0)
+    }
+    if (movements.allowEntityDetection) {
+      if (resetEntityIntersects) {
+        movements.clearCollisionIndex()
+      }
+      movements.updateCollisionIndex()
     }
     const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius)
     let result = astarContext.compute()
@@ -112,6 +119,7 @@ function inject (bot) {
     bot.removeAllListeners('diggingAborted', detectDiggingStopped)
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
+
   function resetPath (reason, clearStates = true) {
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
     path = []
@@ -126,6 +134,7 @@ function inject (bot) {
     lockEquipItem.release()
     lockPlaceBlock.release()
     lockUseBlock.release()
+    stateMovements.clearCollisionIndex()
     if (clearStates) bot.clearControlStates()
     if (stopPathing) return stop()
   }

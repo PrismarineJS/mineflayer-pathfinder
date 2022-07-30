@@ -29,6 +29,7 @@ declare module 'mineflayer-pathfinder' {
 			goal: goals.Goal, 
 			options?: {
 				optimizePath?: boolean,
+				resetEntityIntersects?: boolean,
 				timeout?: number,
 				tickTimeout?: number,
 				searchRadius?: number,
@@ -198,7 +199,23 @@ declare module 'mineflayer-pathfinder' {
 		public allowFreeMotion: boolean;
 		public allowParkour: boolean;
 		public allowSprinting: boolean;
+ 		/**
+ 		 * Test for entities that may obstruct path or prevent block placement. Grabs updated entities every new path
+ 		 */
+ 		public allowEntityDetection: boolean;
 		
+		/**
+		 * Set of entities (by mcdata name) to completely avoid when using entity detection
+		 */
+		public entitiesToAvoid: Set<string>;
+		/**
+		 * Set of entities (by mcdata name) to ignore when using entity detection
+		 */
+		public passableEntities: Set<string>;
+		/**
+		 * Set of blocks (by mcdata name) that pathfinder should not attempt to place blocks or 'right click' on
+		 */
+		public interactableBlocks: Set<string>;
 		public blocksCantBreak: Set<number>;
 		public blocksToAvoid: Set<number>;
 		public liquids: Set<number>;
@@ -216,6 +233,10 @@ declare module 'mineflayer-pathfinder' {
 		public infiniteLiquidDropdownDistance: boolean;
 		public digCost: number;
 		public placeCost: number;
+ 		/**
+ 		 * Extra cost multiplier for moving through an entity hitbox (besides passable ones).
+ 		 */
+ 		public entityCost: number;
 
 		/** Exclusion Area that adds extra cost or prevents the bot from stepping onto positions included.
 		 * @example
@@ -236,12 +257,36 @@ declare module 'mineflayer-pathfinder' {
 		 * Exclusion area for placing blocks. Note only works for positions not block values as placed blocks are determined by the bots inventory content. Works in the same way as {@link exclusionAreasStep} does. 
 		 */
 		public exclusionAreasPlace: [(block: SafeBlock) => number];
+        
+ 		/**
+ 		 * A dictionary of the number of entities intersecting each floored block coordinate.
+ 		 * Updated automatically each path but, you may mix in your own entries before calculating a path if desired (generally for testing).
+ 		 * To prevent this from being cleared automatically before generating a path see getPathFromTo()
+ 		 * formatted entityIntersections['x,y,z'] = #ents
+ 		 */
+		public entityIntersections: {string: number};
 
 		public exclusionPlace(block: SafeBlock): number;
 		public exclusionStep(block: SafeBlock): number;
 		public exclusionBreak(block: SafeBlock): number;
 		public countScaffoldingItems(): number;
 		public getScaffoldingItem(): Item | null;
+		public clearCollisionIndex(): void;
+		/**
+		 * Finds blocks intersected by entity bounding boxes
+		 * and sets the number of ents intersecting in a dict.
+		 * Ignores entities that do not affect block placement
+		 */
+		public updateCollisionIndex(): void;
+		/**
+		 * Gets number of entities who's bounding box intersects the node + offset
+		 * @param {import('vec3').Vec3} pos node position
+		 * @param {number} dx X axis offset
+		 * @param {number} dy Y axis offset
+		 * @param {number} dz Z axis offset
+		 * @returns {number} Number of entities intersecting block
+		 */
+		public getNumEntitiesAt(pos: Vec3, dx: number, dy: number, dz: number): number;
 		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;
 		public safeToBreak(block: SafeBlock): boolean;
 		public safeOrBreak(block: SafeBlock): number;
