@@ -1,5 +1,11 @@
 # History
 
+# 2.3.0
+* [Add entity Avoidance Feature](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/281)
+* [Fix bugs in movements.js](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/276)
+* [Update Dependencies](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/277)
+* [Fix issue with starting paths](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/280)
+
 # 2.2.0
 * [Add events typings](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/266)
 * [Force look at blocks when breaking them](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/274)
