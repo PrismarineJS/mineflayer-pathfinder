@@ -75,13 +75,9 @@ Also, **for now**, there is only the `pathfinder` module, `movements` and `goals
 
 # Functions:
 
-### bot.pathfinder.goto(goal, options={})
+### bot.pathfinder.goto(goal)
 Returns a Promise with the path result. Resolves when the goal is reached. Rejects on error.
  * `goal` - Goal instance
- * `options` - Object. Optional.
-   * `dynamic` - Boolean. setGoal's `dynamic` argument. Defaults to false.
-   * `allowPartial` - Boolean. If true, the goal will be executed with the best found path. Defaults to false.
-   * `silentPathCancel` - Boolean. Do not reject on `goal_updated` and `path_stop` events. Defaults to false.
 
 ### bot.pathfinder.bestHarvestTool(block)
 Returns the best harvest tool in the inventory for the specified block
