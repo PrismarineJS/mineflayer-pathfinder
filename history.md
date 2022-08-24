@@ -1,5 +1,8 @@
 # History
 
+# 2.3.2
+* Revert broken goto implementation update. 
+
 # 2.3.1
 * Fix reference error in `getNumEntitiesAt` (https://github.com/PrismarineJS/mineflayer-pathfinder/commit/2e7b3daff2ee5fa0aaf52db4553f769189b8d03f)
 
