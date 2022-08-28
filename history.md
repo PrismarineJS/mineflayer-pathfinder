@@ -1,5 +1,8 @@
 # History
 
+# 2.3.3
+* [Add missing types on GoalPlaceBlock and GoalLookAtBlock (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/289)
+
 # 2.3.2
 * Revert broken goto implementation update. 
 
