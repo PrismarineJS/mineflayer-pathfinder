@@ -167,6 +167,13 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalPlaceBlock extends Goal {
+			public options: {
+				range: number;
+				LOS: boolean;
+				faces: [Vec3, Vec3, Vec3, Vec3, Vec3, Vec3];
+				facing: number;
+				half: boolean;
+			}
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
@@ -176,9 +183,11 @@ declare module 'mineflayer-pathfinder' {
 		export class GoalLookAtBlock  extends Goal {
 			public constructor(pos: Vec3, world: World, options?: { reach?: number, entityHeight?: number })
 			
-			public pos: Vec3
-
+			public pos: Vec3;
+			public reach: number;
+			public entityHeight: number;
 			public world: World;
+
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
