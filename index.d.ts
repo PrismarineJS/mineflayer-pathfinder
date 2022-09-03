@@ -29,6 +29,7 @@ declare module 'mineflayer-pathfinder' {
 			goal: goals.Goal, 
 			options?: {
 				optimizePath?: boolean,
+				resetEntityIntersects?: boolean,
 				timeout?: number,
 				tickTimeout?: number,
 				searchRadius?: number,
@@ -166,6 +167,13 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalPlaceBlock extends Goal {
+			public options: {
+				range: number;
+				LOS: boolean;
+				faces: [Vec3, Vec3, Vec3, Vec3, Vec3, Vec3];
+				facing: number;
+				half: boolean;
+			}
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
@@ -175,9 +183,11 @@ declare module 'mineflayer-pathfinder' {
 		export class GoalLookAtBlock  extends Goal {
 			public constructor(pos: Vec3, world: World, options?: { reach?: number, entityHeight?: number })
 			
-			public pos: Vec3
-
+			public pos: Vec3;
+			public reach: number;
+			public entityHeight: number;
 			public world: World;
+
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
@@ -198,17 +208,44 @@ declare module 'mineflayer-pathfinder' {
 		public allowFreeMotion: boolean;
 		public allowParkour: boolean;
 		public allowSprinting: boolean;
+ 		/**
+ 		 * Test for entities that may obstruct path or prevent block placement. Grabs updated entities every new path
+ 		 */
+ 		public allowEntityDetection: boolean;
 		
+		/**
+		 * Set of entities (by mcdata name) to completely avoid when using entity detection
+		 */
+		public entitiesToAvoid: Set<string>;
+		/**
+		 * Set of entities (by mcdata name) to ignore when using entity detection
+		 */
+		public passableEntities: Set<string>;
+		/**
+		 * Set of blocks (by mcdata name) that pathfinder should not attempt to place blocks or 'right click' on
+		 */
+		public interactableBlocks: Set<string>;
 		public blocksCantBreak: Set<number>;
 		public blocksToAvoid: Set<number>;
 		public liquids: Set<number>;
 		public gravityBlocks: Set<number>;
+		public climbables: Set<number>
+		public emptyBlocks: Set<number>
+		public replaceables: Set<number>
+		public fences: Set<number>
+		public carpets: Set<number>
+		public openable: Set<number>
+
 		public scafoldingBlocks: number[];
 
 		public maxDropDown: number;
 		public infiniteLiquidDropdownDistance: boolean;
 		public digCost: number;
 		public placeCost: number;
+ 		/**
+ 		 * Extra cost multiplier for moving through an entity hitbox (besides passable ones).
+ 		 */
+ 		public entityCost: number;
 
 		/** Exclusion Area that adds extra cost or prevents the bot from stepping onto positions included.
 		 * @example
@@ -229,12 +266,36 @@ declare module 'mineflayer-pathfinder' {
 		 * Exclusion area for placing blocks. Note only works for positions not block values as placed blocks are determined by the bots inventory content. Works in the same way as {@link exclusionAreasStep} does. 
 		 */
 		public exclusionAreasPlace: [(block: SafeBlock) => number];
+        
+ 		/**
+ 		 * A dictionary of the number of entities intersecting each floored block coordinate.
+ 		 * Updated automatically each path but, you may mix in your own entries before calculating a path if desired (generally for testing).
+ 		 * To prevent this from being cleared automatically before generating a path see getPathFromTo()
+ 		 * formatted entityIntersections['x,y,z'] = #ents
+ 		 */
+		public entityIntersections: {string: number};
 
 		public exclusionPlace(block: SafeBlock): number;
 		public exclusionStep(block: SafeBlock): number;
 		public exclusionBreak(block: SafeBlock): number;
 		public countScaffoldingItems(): number;
 		public getScaffoldingItem(): Item | null;
+		public clearCollisionIndex(): void;
+		/**
+		 * Finds blocks intersected by entity bounding boxes
+		 * and sets the number of ents intersecting in a dict.
+		 * Ignores entities that do not affect block placement
+		 */
+		public updateCollisionIndex(): void;
+		/**
+		 * Gets number of entities who's bounding box intersects the node + offset
+		 * @param {import('vec3').Vec3} pos node position
+		 * @param {number} dx X axis offset
+		 * @param {number} dy Y axis offset
+		 * @param {number} dz Z axis offset
+		 * @returns {number} Number of entities intersecting block
+		 */
+		public getNumEntitiesAt(pos: Vec3, dx: number, dy: number, dz: number): number;
 		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;
 		public safeToBreak(block: SafeBlock): boolean;
 		public safeOrBreak(block: SafeBlock): number;
@@ -262,13 +323,20 @@ declare module 'mineflayer-pathfinder' {
 
 	type Callback = (error?: Error) => void;
 
-	export interface ComputedPath {
-		status: 'noPath' | 'timeout' | 'success';
+	interface PathBase {
 		cost: number;
 		time: number;
 		visitedNodes: number;
 		generatedNodes: number;
 		path: Move[];
+	}
+
+	export interface ComputedPath extends PathBase {
+		status: 'noPath' | 'timeout' | 'success';
+	}
+
+	export interface PartiallyComputedPath extends PathBase {
+		status: 'noPath' | 'timeout' | 'success' | 'partial';
 	}
 
 	export interface XZCoordinates {
@@ -299,6 +367,18 @@ declare module 'mineflayer-pathfinder' {
 }
 
 declare module 'mineflayer' {
+	interface BotEvents {
+		goal_reached: (goal: Goal) => void;
+		path_update: (path: PartiallyComputedPath) => void;
+		goal_updated: (goal: Goal, dynamic: boolean) => void;
+		path_reset: (
+			reason: 'goal_updated' | 'movements_updated' |
+				'block_updated' | 'chunk_loaded' | 'goal_moved' | 'dig_error' |
+				'no_scaffolding_blocks' | 'place_error' | 'stuck'
+		) => void;
+		path_stop: () => void;
+	}
+
 	interface Bot {
 		pathfinder: Pathfinder
 	}

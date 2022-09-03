@@ -69,6 +69,7 @@ function inject (bot) {
 
   bot.pathfinder.getPathFromTo = function * (movements, startPos, goal, options = {}) {
     const optimizePath = options.optimizePath ?? true
+    const resetEntityIntersects = options.resetEntityIntersects ?? true
     const timeout = options.timeout ?? bot.pathfinder.thinkTimeout
     const tickTimeout = options.tickTimeout ?? bot.pathfinder.tickTimeout
     const searchRadius = options.searchRadius ?? bot.pathfinder.searchRadius
@@ -77,9 +78,17 @@ function inject (bot) {
       start = options.startMove
     } else {
       const p = startPos.floored()
-      const dy = p.y - Math.floor(p.y)
-      const b = bot.blockAt(p)
-      start = new Move(p.x, p.y + (b && dy > 0.001 && bot.entity.onGround && b.type !== 0 ? 1 : 0), p.z, movements.countScaffoldingItems(), 0)
+      const dy = startPos.y - p.y
+      const b = bot.blockAt(p) // The block we are standing in
+      // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
+      const offset = (b && dy > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
+      start = new Move(p.x, p.y + offset, p.z, movements.countScaffoldingItems(), 0)
+    }
+    if (movements.allowEntityDetection) {
+      if (resetEntityIntersects) {
+        movements.clearCollisionIndex()
+      }
+      movements.updateCollisionIndex()
     }
     const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius)
     let result = astarContext.compute()
@@ -110,6 +119,7 @@ function inject (bot) {
     bot.removeAllListeners('diggingAborted', detectDiggingStopped)
     bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
   }
+
   function resetPath (reason, clearStates = true) {
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
     path = []
@@ -124,6 +134,7 @@ function inject (bot) {
     lockEquipItem.release()
     lockPlaceBlock.release()
     lockUseBlock.release()
+    stateMovements.clearCollisionIndex()
     if (clearStates) bot.clearControlStates()
     if (stopPathing) return stop()
   }
@@ -257,6 +268,10 @@ function inject (bot) {
     return block.position.plus(p)
   }
 
+  /**
+   * Stop the bot's movement and recenter to the center off the block when the bot's hitbox is partially beyond the
+   * current blocks dimensions.
+   */
   function fullStop () {
     bot.clearControlStates()
 
@@ -326,6 +341,7 @@ function inject (bot) {
   }
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
+    if (!oldBlock) return
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
       resetPath('block_updated', false)
     }
@@ -418,7 +434,7 @@ function inject (bot) {
         fullStop()
 
         const digBlock = () => {
-          bot.dig(block)
+          bot.dig(block, true)
             .catch(_ignoreError => {
               resetPath('dig_error')
             })
@@ -511,7 +527,9 @@ function inject (bot) {
       }
       path.shift()
       if (path.length === 0) { // done
-        if (!dynamicGoal && stateGoal && stateGoal.isEnd(p.floored())) {
+        // If the block the bot is standing on is not a full block only checking for the floored position can fail as
+        // the distance to the goal can get greater then 0 when the vector is floored.
+        if (!dynamicGoal && stateGoal && (stateGoal.isEnd(p.floored()) || stateGoal.isEnd(p.floored().offset(0, 1, 0)))) {
           bot.emit('goal_reached', stateGoal)
           stateGoal = null
         }

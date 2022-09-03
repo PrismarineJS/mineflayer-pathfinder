@@ -1,5 +1,37 @@
 # History
 
+# 2.3.3
+* [Add missing types on GoalPlaceBlock and GoalLookAtBlock (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/289)
+
+# 2.3.2
+* Revert broken goto implementation update. 
+
+# 2.3.1
+* Fix reference error in `getNumEntitiesAt` (https://github.com/PrismarineJS/mineflayer-pathfinder/commit/2e7b3daff2ee5fa0aaf52db4553f769189b8d03f)
+
+# 2.3.0
+* [Add entity Avoidance Feature](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/281)
+* [Fix bugs in movements.js](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/276)
+* [Update Dependencies](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/277)
+* [Fix issue with starting paths](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/280)
+
+# 2.2.0
+* [Add events typings](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/266)
+* [Force look at blocks when breaking them](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/274)
+* [Fix bot sometimes not triggering path end correctly](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/268)
+* [Fix missing null check at block update](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/269)
+* [Bump mocha to 10.x](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/265)
+
+# 2.1.1
+* Fix GitHub action for publishing
+
+# 2.1.0
+* [Add automated tests](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/262)
+* [Add getPathFromTo function](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/255)
+* [Fix path optimization check](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/254)
+* [Bumb minecraft data to version 3.x](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/262)
+* [Add goal chaining example](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/256)
+
 # 2.0.0
 * [Remove callbacks](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/248)
 * [Export GoalLookAtBlock and deprecate GoalBreakBlock](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/249)
