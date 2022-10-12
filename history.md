@@ -1,5 +1,8 @@
 # History
 
+# 2.4.0
+* mcData to registry refactoring
+
 # 2.3.3
 * [Add missing types on GoalPlaceBlock and GoalLookAtBlock (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/289)
 
