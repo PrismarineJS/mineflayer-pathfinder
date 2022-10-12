@@ -22,8 +22,6 @@ const bot = mineflayer.createBot({
 bot.loadPlugin(pathfinder)
 
 bot.once('spawn', () => {
-  const mcData = require('minecraft-data')(bot.version)
-
   /*
    * pathfinder comes with default moves preinitialized (a instance of the movement class)
    * the moves come with default logic, like how much it can fall
@@ -31,13 +29,13 @@ bot.once('spawn', () => {
    */
 
   // To get started create a instance of the Movements class
-  const customMoves = new Movements(bot, mcData)
+  const customMoves = new Movements(bot)
   // To make changes to the behaviour, customize the properties of the instance
   customMoves.canDig = false
   customMoves.allow1by1towers = false
-  customMoves.scafoldingBlocks.push(mcData.itemsByName.stone.id)
+  customMoves.scafoldingBlocks.push(bot.registry.itemsByName.stone.id)
   // Thing to note scaffoldingBlocks are an array while other namespaces are usually sets
-  customMoves.blocksToAvoid.add(mcData.blocksByName.carrot.id)
+  customMoves.blocksToAvoid.add(bot.registry.blocksByName.carrot.id)
 
   // To initialize the new movements use the .setMovements method.
   bot.pathfinder.setMovements(customMoves)

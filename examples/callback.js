@@ -10,9 +10,8 @@ const bot = mineflayer.createBot({ username: 'Player' })
 bot.loadPlugin(pathfinder)
 
 bot.once('spawn', () => {
-  // Require MCData and set pathfinder movements
-  const mcData = require('minecraft-data')(bot.version)
-  const defaultMove = new Movements(bot, mcData)
+  // Set pathfinder movements
+  const defaultMove = new Movements(bot)
   bot.pathfinder.setMovements(defaultMove)
 
   bot.on('chat', async (username, message) => {

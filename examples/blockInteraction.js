@@ -19,9 +19,7 @@ bot.once('spawn', () => {
   console.info('Joined the server')
 
   bot.loadPlugin(pathfinder)
-
-  const mcData = require('minecraft-data')(bot.version)
-  const defaultMove = new Movements(bot, mcData)
+  const defaultMove = new Movements(bot)
   bot.pathfinder.setMovements(defaultMove)
 
   bot.on('chat', async (username, message) => {

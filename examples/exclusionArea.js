@@ -35,11 +35,8 @@ const bot = mineflayer.createBot({
 bot.loadPlugin(pathfinder)
 
 bot.once('spawn', () => {
-  // Once we've spawn, it is safe to access mcData because we know the version
-  const mcData = require('minecraft-data')(bot.version)
-
   // We create different movement generators for different type of activity
-  const defaultMove = new Movements(bot, mcData)
+  const defaultMove = new Movements(bot)
   bot.pathfinder.setMovements(defaultMove)
 
   bot.on('path_update', (r) => {

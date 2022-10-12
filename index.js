@@ -12,11 +12,10 @@ const Physics = require('./lib/physics')
 const nbt = require('prismarine-nbt')
 
 function inject (bot) {
-  const mcData = require('minecraft-data')(bot.version)
-  const waterType = mcData.blocksByName.water.id
-  const ladderId = mcData.blocksByName.ladder.id
-  const vineId = mcData.blocksByName.vine.id
-  let stateMovements = new Movements(bot, mcData)
+  const waterType = bot.registry.blocksByName.water.id
+  const ladderId = bot.registry.blocksByName.ladder.id
+  const vineId = bot.registry.blocksByName.vine.id
+  let stateMovements = new Movements(bot)
   let stateGoal = null
   let astarContext = null
   let astartTimedout = false
