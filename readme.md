@@ -31,10 +31,7 @@ const bot = mineflayer.createBot({ username: 'Player' })
 bot.loadPlugin(pathfinder)
 
 bot.once('spawn', () => {
-
-  const mcData = require('minecraft-data')(bot.version)
-
-  const defaultMove = new Movements(bot, mcData)
+  const defaultMove = new Movements(bot)
   
   bot.on('chat', function(username, message) {
   
@@ -151,15 +148,12 @@ Pathfinder instantiates the default movement class by itself if no instance is s
 const { Movements } = require('mineflayer-pathfinder') // Import the Movements class from pathfinder
 
 bot.once('spawn', () => {
-  // Once we've spawn, it is safe to access mcData because we know the version
-  const mcData = require('minecraft-data')(bot.version)
-
   // A new movement instance for specific behavior
-  const defaultMove = new Movements(bot, mcData)
+  const defaultMove = new Movements(bot)
 
   defaultMove.allow1by1towers = false // Do not build 1x1 towers when going up
   defaultMove.canDig = false // Disable breaking of blocks when pathing 
-  defaultMove.scafoldingBlocks.push(mcData.itemsByName['netherrack'].id) // Add nether rack to allowed scaffolding items
+  defaultMove.scafoldingBlocks.push(bot.registry.itemsByName['netherrack'].id) // Add nether rack to allowed scaffolding items
   bot.pathfinder.setMovements(defaultMove) // Update the movement instance pathfinder uses
 
   // Do pathfinder things
@@ -226,16 +220,16 @@ Test for entities that may obstruct path or prevent block placement. Grabs updat
 * Default - `true`
 
 ### entitiesToAvoid
-Set of entities (by mcdata name) to completely avoid when using entity detection
+Set of entities (by bot.registry name) to completely avoid when using entity detection
 * instance of `Set`
 
 ### passableEntities
-Set of entities (by mcdata name) to ignore when using entity detection
+Set of entities (by bot.registry name) to ignore when using entity detection
 * instance of `Set`
 * Default - See lib/passableEntities.json
 
 ### interactableBlocks
-Set of blocks (by mcdata name) that pathfinder should not attempt to place blocks or 'right click' on
+Set of blocks (by bot.registry name) that pathfinder should not attempt to place blocks or 'right click' on
 * instance of `Set`
 * Default - See lib/interactable.json
 

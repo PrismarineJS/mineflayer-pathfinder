@@ -25,9 +25,7 @@ const createTime = performance.now()
 bot.once('spawn', () => {
   console.log('Spawning took ' + (performance.now() - createTime).toFixed(2) + ' ms.')
 
-  const mcData = require('minecraft-data')(bot.version)
-
-  const defaultMove = new Movements(bot, mcData)
+  const defaultMove = new Movements(bot)
   const goal = new GoalXZ(bot.entity.position.x + 100, bot.entity.position.z)
   const results = bot.pathfinder.getPathTo(defaultMove, goal, 10000)
   console.log('I can get there in ' + results.path.length + ' moves. Computation took ' + results.time.toFixed(2) + ' ms.')
