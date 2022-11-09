@@ -318,6 +318,24 @@ Called when the path is reset, with a reason:
 
 # Goals:
 
+### Goal
+Abstract Goal class. Do not instantiate this class. Instead extend it to make a new Goal class.
+
+Has abstract methods:
+ - `heuristic(node)`
+   * `node` - A path node
+   * Returns a heuristic number value for a given node. Must be admissible – meaning that it never overestimates the actual cost to get to the goal.
+ - `isEnd(node)`
+   * `node`
+   * Returns a boolean value if the given node is a end node. 
+
+Implements default methods for:
+ - `isValid()`
+   * Always returns `true`
+ - `hasChanged(node)`
+   * `node` - A path node
+   * Always returns `false`
+
 ### GoalBlock(x, y, z)
 One specific block that the player should stand inside at foot level
  * `x` - Integer
