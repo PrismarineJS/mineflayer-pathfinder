@@ -1,7 +1,10 @@
 # History
 
+# 2.4.1
+* [Made some Goal methods none abstract (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/298)
+
 # 2.4.0
-* mcData to registry refactoring
+* [mcData to registry refactoring (@Epirito)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/293)
 
 # 2.3.3
 * [Add missing types on GoalPlaceBlock and GoalLookAtBlock (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/289)
