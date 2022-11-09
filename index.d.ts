@@ -51,7 +51,8 @@ declare module 'mineflayer-pathfinder' {
 		export abstract class Goal {
 			public abstract heuristic(node: Move): number;
 			public abstract isEnd(node: Move): boolean;
-			public abstract hasChanged(): boolean;
+			public hasChanged(): boolean;
+			public isValid(): boolean;
 		}
 
 		export class GoalBlock extends Goal {
