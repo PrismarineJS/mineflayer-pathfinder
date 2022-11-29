@@ -125,8 +125,8 @@ declare module 'mineflayer-pathfinder' {
 			public hasChanged(): boolean;
 		}
 
-		export class GoalCompositeAny extends Goal {
-			public goals: Goal[];
+		export class GoalCompositeAny<T extends Goal> extends Goal {
+			public goals: T[];
 			
 			public push(goal: Goal): void;
 			public heuristic(node: Move): number;
@@ -134,8 +134,8 @@ declare module 'mineflayer-pathfinder' {
 			public hasChanged(): boolean;
 		}
 
-		export class GoalCompositeAll extends Goal {
-			public goals: Goal[];
+		export class GoalCompositeAll<T extends Goal> extends Goal {
+			public goals: T[];
 
 			public push(goal: Goal): void;
 			public heuristic(node: Move): number;
