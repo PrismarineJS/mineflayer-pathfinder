@@ -406,7 +406,7 @@ Position the bot in order to place a block
   * `pos` - Vec3 the block position to look at
   * `world` - the world of the bot (Can be accessed with `bot.world`)
   * `options` - object containing all optionals properties:
-    * `range` - number maximum distance from the clicked face. Default `4.5`
+    * `reach` - number maximum distance from the clicked face. Default `4.5`
     * `entityHeight` - number Default is `1.6`
 
  ### GoalBreakBlock(x, y, z, bot, options)
