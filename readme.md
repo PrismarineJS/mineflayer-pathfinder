@@ -234,7 +234,7 @@ Set of blocks (by bot.registry name) that pathfinder should not attempt to place
 * Default - See lib/interactable.json
 
 ### blocksCantBreak
-Set of block id's pathfinder cannot break. Includes chests wheat and all unbreakable blocks.
+Set of block id's pathfinder cannot break. Includes chests and all unbreakable blocks.
 * instance of `Set`
 
 ### blocksToAvoid
