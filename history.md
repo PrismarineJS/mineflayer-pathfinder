@@ -1,5 +1,12 @@
 # History
 
+# 2.4.2
+* Fix pathfinder trying to make a parkour jump that fails most times
+* Fix pathfinder not going below level 0
+* [Fix wheat not being break able (@maximmasiutin)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/303)
+* [Add parameter typing to Composite goals (@Ic3Tank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/302)
+* [Fix GoalLookAtBlock documentation (@Ic3Tank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/301)
+
 # 2.4.1
 * [Made some Goal methods none abstract (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/298)
 
