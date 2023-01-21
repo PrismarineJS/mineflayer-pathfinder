@@ -198,7 +198,7 @@ declare module 'mineflayer-pathfinder' {
 	}
 
 	export class Movements {
-		public constructor(bot: Bot, mcData: IndexedData);
+		public constructor(bot: Bot);
 
 		public bot: Bot;
 
