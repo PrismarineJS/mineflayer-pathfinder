@@ -126,6 +126,7 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalCompositeAny<T extends Goal> extends Goal {
+			public constructor(goals: T[] = []);
 			public goals: T[];
 			
 			public push(goal: Goal): void;
@@ -135,6 +136,7 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalCompositeAll<T extends Goal> extends Goal {
+			public constructor(goals: T[] = []);
 			public goals: T[];
 
 			public push(goal: Goal): void;
