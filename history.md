@@ -1,5 +1,12 @@
 # History
 
+# 2.4.3
+* [Change canOpenDoors default value to false because its buggy (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/318)
+* [Added missing constructor definitions for GoalCompositeAny and GoalCompositeAll (@rutexd)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/315)
+* [Added "sneak" on interact blocks to avoid open it (@sefirosweb)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/314)
+* [Block face position fix (@WhoTho)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/312)
+* [Remove mcData param in movements.js (@rtm516)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/311)
+
 # 2.4.2
 * Fix pathfinder trying to make a parkour jump that fails most times
 * Fix pathfinder not going below level 0
