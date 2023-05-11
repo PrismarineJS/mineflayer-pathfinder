@@ -286,6 +286,10 @@ A dictionary of the number of entities intersecting each floored block coordinat
 * Formatted entityIntersections['x,y,z'] = #ents
 * Dictionary of costs `{string: number}`
 
+### canOpenDoors
+Enable feature to open Fence Gates. Unreliable and known to be buggy.
+* Default - `false`
+
 # Events:
 
 ### goal_reached

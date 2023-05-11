@@ -205,6 +205,7 @@ declare module 'mineflayer-pathfinder' {
 		public bot: Bot;
 
 		public canDig: boolean;
+		public canOpenDoors: boolean;
 		public dontCreateFlow: boolean;
 		public dontMineUnderFallingBlock: boolean;
 		public allow1by1towers: boolean;
