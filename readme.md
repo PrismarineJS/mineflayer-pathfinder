@@ -12,7 +12,7 @@ Mostly stable. Feel free to contribute by making suggestions or posting issues.
 npm install mineflayer-pathfinder
 ```
 
-## Video Tutorial
+## Video Tutorials
 
 For a video tutorial explaining the usage of mineflayer-pathfinder, you can watch the following Youtube videos:
 
@@ -77,7 +77,7 @@ Returns a Promise with the path result. Resolves when the goal is reached. Rejec
  * `goal` - Goal instance
 
 ### bot.pathfinder.bestHarvestTool(block)
-Returns the best harvest tool in the inventory for the specified block
+Returns the best harvesting tool in the inventory for the specified block.
  * `Returns` - `Item` instance or `null`
  * `block` - Block instance
 
@@ -107,11 +107,11 @@ The generator will block the event loop until a path is found or `options.tickTi
  * `dynamic` - boolean (optional, default false)
  
 ### bot.pathfinder.setMovements(movements)
-Assigns the movements config
+Assigns the movements config.
  * `movements` - Movements instance
 
 ### bot.pathfinder.stop()
-Stops path finding when its save to stop or after the bot encountered an error while path finding. To force stop use bot.pathfinder.setGoal(null). Emits `path_stop` when stopped.
+Stops pathfinding when its safe to stop or after the bot encountered an error while pathfinding. To force stop use bot.pathfinder.setGoal(null). Emits `path_stop` when stopped.
 
 ### bot.pathfinder.isMoving()
 A function that checks if the bot is currently moving.
@@ -127,11 +127,11 @@ A function that checks if the bot is currently placing blocks.
 
 # Properties:
 ### bot.pathfinder.thinkTimeout
-Think Timeout in milliseconds
+Think Timeout in milliseconds.
  * `Default` - `5000`
 
 ### bot.pathfinder.tickTimeout
-How many ms per tick are allocated to thinking
+How many milliseconds per tick are allocated to thinking.
  * `Default` - `40`
 
 ### bot.pathfinder.searchRadius
@@ -162,9 +162,9 @@ bot.once('spawn', () => {
 ```
 
 ## Movements class default properties
-Movement class properties and there default values.
+Movement class properties and their default values.
 ### canDig
-Boolean to allow breaking blocks
+Boolean to allow breaking blocks.
 * Default `true`
 
 ### digCost
@@ -196,7 +196,7 @@ Do not break blocks that touch liquid blocks.
 * Default - `true`
 
 ### dontMineUnderFallingBlock
-Do not break blocks that have gravityBlock above.
+Do not break blocks that have a gravityBlock above.
 * Default - `true`
 
 ### allow1by1towers
@@ -204,11 +204,11 @@ Allow pillaring up on 1x1 towers.
 * Default - `true`
 
 ### allowFreeMotion
-Allow to walk to the next node/goal in a strait line if terrain allows it.
+Allow to walk to the next node/goal in a straight line if terrain allows it.
 * Default - `false`
 
 ### allowParkour
-Allow parkour jumps like jumps over gaps bigger then 1 block
+Allow parkour jumps like jumps over gaps bigger then 1 block.
 * Default - `true`
 
 ### allowSprinting
@@ -216,20 +216,20 @@ Allow sprinting when moving.
 * Default - `true`
 
 ### allowEntityDetection
-Test for entities that may obstruct path or prevent block placement. Grabs updated entities every new path
+Test for entities that may obstruct path or prevent block placement. Grabs updated entities every new path.
 * Default - `true`
 
 ### entitiesToAvoid
-Set of entities (by bot.registry name) to completely avoid when using entity detection
+Set of entities (by bot.registry name) to completely avoid when using entity detection.
 * instance of `Set`
 
 ### passableEntities
-Set of entities (by bot.registry name) to ignore when using entity detection
+Set of entities (by bot.registry name) to ignore when using entity detection.
 * instance of `Set`
 * Default - See lib/passableEntities.json
 
 ### interactableBlocks
-Set of blocks (by bot.registry name) that pathfinder should not attempt to place blocks or 'right click' on
+Set of blocks (by bot.registry name) that pathfinder should not attempt to place blocks or 'right click' on.
 * instance of `Set`
 * Default - See lib/interactable.json
 
@@ -262,11 +262,11 @@ Set of block id's that can fall on bot's head.
 * instance of `Set`
 
 ### fences
-Set of block id's that are fences or blocks that have a collision box taler then 1 block.
+Set of block id's that are fences or blocks that have a collision box taller then 1 block.
 * instance of `Set`
 
 ### carpets
-Set of all carpet block id's or blocks that have a collision box smaller then 0.1. These blocks are considered save to walk in.
+Set of all carpet block id's or blocks that have a collision box smaller then 0.1. These blocks are considered safe to walk in.
 * instance of `Set`
 
 ### exclusionAreasStep
@@ -278,11 +278,11 @@ An array of functions that define an area or block to be break excluded. Every f
 * Array of functions `(block: Block) => number`
 
 ### exclusionAreasPlace
-An array of functions that define an area to be block placement excluded. Every function in the array is parsed the current Block the bot is planing to place a block inside (should be air or a replaceable block most of the time). Each function should return a positive number (includes 0) that defines extra cost for that specific Block. 0 means no extra cost, 100 means it is impossible for pathfinder to consider this move.
+An array of functions that define an area to be block placement excluded. Every function in the array is parsed the current Block the bot is planing to place a block inside (should be air or a replaceable block most of the time). Each function should return a positive number (includes 0) that defines extra cost for that specific Block. 0 means no extra cost, 100 makes it impossible for pathfinder to consider this move.
 * Array of functions `(block: Block) => number`
 
 ### entityIntersections
-A dictionary of the number of entities intersecting each floored block coordinate. Updated automatically each path but, you may mix in your own entries before calculating a path if desired (generally for testing). To prevent this from being cleared automatically before generating a path see the [path gen options](#botpathfindergetpathfromto-movements-startpos-goal-options--). 
+A dictionary of the number of entities intersecting each floored block coordinate. Updated automatically for each path, but you may mix in your own entries before calculating a path if desired (generally for testing). To prevent this from being cleared automatically before generating a path,s see the [path gen options](#botpathfindergetpathfromto-movements-startpos-goal-options--). 
 * Formatted entityIntersections['x,y,z'] = #ents
 * Dictionary of costs `{string: number}`
 
@@ -293,7 +293,7 @@ Enable feature to open Fence Gates. Unreliable and known to be buggy.
 # Events:
 
 ### goal_reached
-Called when the goal has been reached. Is not called for dynamic goals.
+Called when the goal has been reached. Not called for dynamic goals.
 
 ### path_update
 Called whenever the path is recalculated. Status may be:
@@ -359,13 +359,13 @@ Useful for long-range goals that don't have a specific Y level
  * `z` - Integer
 
 ### GoalNearXZ(x, z, range)
-Useful for finding builds that you don't have an exact Y level for, just an approximate X and Z level
+Useful for finding builds that you don't have an exact Y level for, just an approximate X and Z level.
  * `x` - Integer
  * `z` - Integer
  * `range` - Integer
 
 ### GoalY(y)
-Get to y level
+Get to a Y level.
  * `y` - Integer
 
 
@@ -378,24 +378,24 @@ Don't get into the block, but get directly adjacent to it. Useful for chests.
 ### GoalCompositeAny(Array\<Goal>?)
 A composite of many goals, any one of which satisfies the composite.
 For example, a GoalCompositeAny of block goals for every oak log in loaded
-chunks would result in it pathing to the easiest oak log to get to
+chunks would result in it pathing to the easiest oak log to get to.
  * `Array` - Array of goals
 
 ### GoalCompositeAll(Array\<Goal>?)
-A composite of many goals, all of them needs to be satisfied.
+A composite of multiple goals, requiring all of them to be satisfied.
  * `Array` - Array of goals
 
 ### GoalInvert(goal)
-Inverts the goal
+Inverts the goal.
  * `goal` - Goal to invert
 
 ### GoalFollow(entity, range)
-Follows an entity
+Follows an entity.
  * `entity` - Entity instance
  * `range` - Integer
 
 ### GoalPlaceBlock(pos, world, options)
-Position the bot in order to place a block
+Position the bot in order to place a block.
  * `pos` - Vec3 the position of the placed block
  * `world` - the world of the bot (Can be accessed with `bot.world`)
  * `options` - object containing all optionals properties:
