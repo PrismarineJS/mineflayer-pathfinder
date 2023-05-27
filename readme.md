@@ -81,7 +81,7 @@ Returns the best harvesting tool in the inventory for the specified block.
  * `Returns` - `Item` instance or `null`
  * `block` - Block instance
 
-### bot.pathfinder.getPathTo(movements, goal, done, timeout)
+### bot.pathfinder.getPathTo(movements, goal, timeout)
  * `Returns` - The path
  * `movements` - Movements instance
  * `goal` - Goal instance
