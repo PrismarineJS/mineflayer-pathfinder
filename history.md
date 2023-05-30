@@ -1,5 +1,11 @@
 # History
 
+# 2.4.4
+* [Update readme.md (@Vinciepincie)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/320)
+* Fix file linting (@IceTank)
+* Fix possible reference error for block updates (@IceTank)
+* [Fix a bunch of spelling/grammar errors (@182exe)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/316)
+
 # 2.4.3
 * [Change canOpenDoors default value to false because its buggy (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/318)
 * [Added missing constructor definitions for GoalCompositeAny and GoalCompositeAll (@rutexd)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/315)
