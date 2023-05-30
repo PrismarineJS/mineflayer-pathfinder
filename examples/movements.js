@@ -1,4 +1,3 @@
-
 /*
  * This example demonstrates how easy it is to change the default movement
  *
