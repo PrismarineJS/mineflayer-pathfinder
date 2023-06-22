@@ -163,7 +163,7 @@ function inject (bot) {
     stopPathing = true
   }
 
-  bot.on('physicTick', monitorMovement)
+  bot.on('physicsTick', monitorMovement)
 
   function postProcessPath (path) {
     for (let i = 0; i < path.length; i++) {
