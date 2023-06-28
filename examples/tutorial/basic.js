@@ -1,15 +1,15 @@
 /*
  * This example shows the usage of the GoalBlock
- * goal for mineflayer-pathfinder 
- * 
+ * goal for mineflayer-pathfinder
+ *
  * See a more detailed explanation here:
- * https://example.com/
+ * https://github.com/PrismarineJS/mineflayer-pathfinder/blob/master/examples/tutorial/goalsExplained.md
  *
  * Made by Jovan04 06/07/2023
 */
 
 const mineflayer = require('mineflayer') // import mineflayer, pathfinder, the Movements class, and our goal(s)
-const { pathfinder, Movements, goals:{ GoalBlock } } = require('mineflayer-pathfinder')
+const { pathfinder, Movements, goals: { GoalBlock } } = require('mineflayer-pathfinder')
 
 const bot = mineflayer.createBot({ // create our bot
   host: 'localhost',

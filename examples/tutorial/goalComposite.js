@@ -1,26 +1,25 @@
 /*
- * This example shows the usage of the 
+ * This example shows the usage of the
  * GoalCompositeAny and GoalCompositeAll
- * goals for mineflayer-pathfinder 
- * 
+ * goals for mineflayer-pathfinder
+ *
  * See a more detailed explanation here:
- * https://example.com/
+ * https://github.com/PrismarineJS/mineflayer-pathfinder/blob/master/examples/tutorial/goalsExplained.md
  *
  * Made by Jovan04 06/07/2023
 */
 
-
 // import mineflayer & related libraries
 const mineflayer = require('mineflayer')
-const { pathfinder, Movements, goals:{ GoalNear, GoalCompositeAny, GoalCompositeAll } } = require('mineflayer-pathfinder')
+const { pathfinder, Movements, goals: { GoalNear, GoalCompositeAny, GoalCompositeAll } } = require('mineflayer-pathfinder')
 
-//create mineflayer bot
+// create mineflayer bot
 const bot = mineflayer.createBot({
   host: 'localhost',
   port: 25565,
   version: '1.18.2',
   auth: 'offline',
-  username: 'biffed',
+  username: 'biffed'
 })
 
 // load pathfinder plugin and set our bot's Movements
@@ -38,7 +37,7 @@ bot.on('chat', async (username, message) => {
   const DiamondGoal = new GoalNear(-3, 1, -2, 5)
 
   const goalsArray = [LapisGoal, GoldGoal, DiamondGoal]
-  
+
   if (message === 'GoalCompositeAny') {
     bot.chat('Traveling with GoalCompositeAny')
     // create a new GoalCompositeAny: see documentation for a more detailed explanation
