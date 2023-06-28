@@ -6,13 +6,13 @@
 This page is an explanation about goals in mineflayer-pathfinder. A `Goal` is an instance of a class that allows the user to specify a location that they want a mineflayer bot to go to. Goals are the backbone of mineflayer because they provide an easy way to control your mineflayer bot with mineflayer-pathfinder.  
 
 ### General Goals
-It's useful to think about goals in pathfinder as conditions that need to be fulfilled. For example, one of the most common goals is `GoalBlock`. As the [documentation](https://example.com/) for the `GoalBlock` goal says:
+It's useful to think about goals in pathfinder as conditions that need to be fulfilled. For example, one of the most common goals is `GoalBlock`. As the [documentation](../../readme.md#goals) for the `GoalBlock` goal says:
 
 > One specific block that the player should stand inside at foot level
 
 Thus, we have our condition. In order to complete the `GoalBlock` goal, our bot needs to get its feet inside the specified block. Simple as that.  
 That's great and all, but how do we use it?  
-[Here's](https://example.com/) a quick example. Let's walk through everything it does.
+[Here's](./basic.js) a quick example. Let's walk through everything it does.
 
 First, we need to import mineflayer, as well as pathfinder and things related to it:  
 ```js
@@ -88,9 +88,9 @@ bot.on('chat', async (username, message) => {
 })
 ```
 
-And now we're done! We can type `go` in chat, and the bot will walk to the coordinates we specified. Remember that `GoalBlock` makes the bot put its feet in the block we specified. You can view and download the full example script [here](https://example.com/).
+And now we're done! We can type `go` in chat, and the bot will walk to the coordinates we specified. Remember that `GoalBlock` makes the bot put its feet in the block we specified. You can view and download the full example script [here](./basic.js).
 
-And, there you have it. That's how you use the `GoalBlock` goal! Most of the other goals are used in a similar way, but with different arguments. You can look at [the documentation](https://example.com/) for those. However, there are a few goals that are a little confusing.  
+And, there you have it. That's how you use the `GoalBlock` goal! Most of the other goals are used in a similar way, but with different arguments. You can look at [the documentation](../../readme.md#goals) for those. However, there are a few goals that are a little confusing.  
 
 ### Composite Goals
 The Composite goals, `GoalCompositeAny` and `GoalCompositeAll`, are both quite different from most other goals. Instead of being standalone goals themselves, they allow you to combine other goals in interesting ways. They're called *compos*ite goals because they're *compos*ed of (or made up of) other goals. But before we can talk about the composite goals in more detail, we should talk about the `GoalNear` goal. The composite goals are made up of other goals, and `GoalNear` is a good example.  
@@ -99,7 +99,7 @@ The Composite goals, `GoalCompositeAny` and `GoalCompositeAll`, are both quite d
 
 Now, let's set up our program to use composite goals.  
 
-In the [composite goal example](https://example.com/), we make three goals: `LapisGoal`, `GoldGoal`, and `DiamondGoal`. They correspond to standing within 5 blocks of a Lapis block, a Gold block, and a Diamond block, respectively (see picture below):  
+In the [composite goal example](./goalComposite.js), we make three goals: `LapisGoal`, `GoldGoal`, and `DiamondGoal`. They correspond to standing within 5 blocks of a Lapis block, a Gold block, and a Diamond block, respectively (see picture below):  
 ```js
   const LapisGoal = new GoalNear(0, 1, 3, 5) // our bot needs to stand within 5 blocks of the point (0, 1, 3) in order to satisfy this goal (blue circle below)
   const GoldGoal = new GoalNear(3, 1, -2, 5) // our bot needs to stand within 5 blocks of the point (3, 1, -2) in order to satisfy this goal (yellow circle below)
@@ -137,4 +137,6 @@ Now, just like any other goal, we can tell pathfinder to `goto` our new `GoalCom
 ```js
 await bot.pathfinder.goto(goalAll)
 ```
-The `GoalCompositeAll` is completed when the bot completes all of the goals it was created with. For our example above, `goalAll` will be completed when the bot completes all of `LapisGoal`, `GoldGoal`, or `DiamondGoal`. In other words, `goalAll` will be completed when the bot's location is inside the blue circle *and* the yellow circle *and* the white circle (see image above). It's important to clarify that the bot needs to be in all three circles at the same time. Going from one circle to another to the last is not a valid path to complete the goal.
+The `GoalCompositeAll` is completed when the bot completes all of the goals it was created with. For our example above, `goalAll` will be completed when the bot completes all of `LapisGoal`, `GoldGoal`, or `DiamondGoal`. In other words, `goalAll` will be completed when the bot's location is inside the blue circle *and* the yellow circle *and* the white circle (see image above). It's important to clarify that the bot needs to be in all three circles at the same time. Going from one circle to another to the last is not a valid path to complete the goal.  
+
+And there you have it! That's a basic introduction to using goals in mineflayer-pathfinder. If any of this was confusing, or you'd like help with something more complicated, feel free to join the [PrismarineJS Discord server](https://discord.gg/GsEFRM8). We're always happy to provide help for mineflayer and other PrismarineJS libraries.
