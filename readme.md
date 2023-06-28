@@ -12,6 +12,10 @@ Mostly stable. Feel free to contribute by making suggestions or posting issues.
 npm install mineflayer-pathfinder
 ```
 
+## Tutorial & Explanation
+
+For a basic explanation of how to use mineflayer-pathfinder, you can read [this tutorial](./examples/tutorial/goalsExplained.md).
+
 ## Video Tutorials
 
 For a video tutorial explaining the usage of mineflayer-pathfinder, you can watch the following Youtube videos:
