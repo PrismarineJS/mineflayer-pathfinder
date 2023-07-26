@@ -115,7 +115,8 @@ Assigns the movements config.
  * `movements` - Movements instance
 
 ### bot.pathfinder.stop()
-Stops pathfinding when its safe to stop or after the bot encountered an error while pathfinding. To force stop use bot.pathfinder.setGoal(null). Emits `path_stop` when stopped.
+Stops pathfinding as soon as the bot has reached the next node in the path (this prevents the bot from stopping mid-air). Emits `path_stop` when called.
+Note: to force stop immediately, use `bot.pathfinder.setGoal(null)`
 
 ### bot.pathfinder.isMoving()
 A function that checks if the bot is currently moving.
