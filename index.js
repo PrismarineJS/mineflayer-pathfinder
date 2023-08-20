@@ -235,13 +235,68 @@ function inject (bot) {
   }
 
   function isPositionNearPath (pos, path) {
+    let prevNode = null
     for (const node of path) {
-      const dx = Math.abs(node.x - pos.x - 0.5)
-      const dy = Math.abs(node.y - pos.y - 0.5)
-      const dz = Math.abs(node.z - pos.z - 0.5)
+      let comparisonPoint = null
+      if (
+        prevNode === null ||
+        (
+          Math.abs(prevNode.x - node.x) <= 2 &&
+          Math.abs(prevNode.y - node.y) <= 2 &&
+          Math.abs(prevNode.z - node.z) <= 2
+        )
+      ) {
+        // Unoptimized path, or close enough to last point
+        // to just check against the current point
+        comparisonPoint = node
+      } else {
+        // Optimized path - the points are far enough apart
+        //   that we need to check the space between them too
+
+        // First, a quick check - if point it outside the path
+        // segment's AABB, then it isn't near.
+        const minBound = prevNode.min(node)
+        const maxBound = prevNode.max(node)
+        if (
+          pos.x - 0.5 < minBound.x - 1 ||
+          pos.x - 0.5 > maxBound.x + 1 ||
+          pos.y - 0.5 < minBound.y - 2 ||
+          pos.y - 0.5 > maxBound.y + 2 ||
+          pos.z - 0.5 < minBound.z - 1 ||
+          pos.z - 0.5 > maxBound.z + 1
+        ) {
+          continue
+        }
+
+        comparisonPoint = closestPointOnLineSegment(pos, prevNode, node)
+      }
+
+      const dx = Math.abs(comparisonPoint.x - pos.x - 0.5)
+      const dy = Math.abs(comparisonPoint.y - pos.y - 0.5)
+      const dz = Math.abs(comparisonPoint.z - pos.z - 0.5)
       if (dx <= 1 && dy <= 2 && dz <= 1) return true
+
+      prevNode = node
     }
+
     return false
+  }
+
+  function closestPointOnLineSegment (point, segmentStart, segmentEnd) {
+    const segmentLength = segmentEnd.minus(segmentStart).norm()
+
+    if (segmentLength === 0) {
+      return segmentStart
+    }
+
+    // t is like an interpolation from segmentStart to segmentEnd
+    //  for the closest point on the line
+    let t = (point.minus(segmentStart)).dot(segmentEnd.minus(segmentStart)) / segmentLength
+
+    // bound t to be on the segment
+    t = Math.max(0, Math.min(1, t))
+
+    return segmentStart.plus(segmentEnd.minus(segmentStart).scaled(t))
   }
 
   // Return the average x/z position of the highest standing positions
