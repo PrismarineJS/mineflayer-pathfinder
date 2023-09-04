@@ -1,5 +1,11 @@
 # History
 
+# 2.4.5
+* [Fix block update resets for optimized paths (@m000z0rz)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/330)
+* [reword .stop() for more clarity (@Jovan-04)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/327)
+* [add more detailed tutorial for mineflayer-pathfinder goals (@Jovan-04)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/326)
+* [Fixed typo: "physicsTick" (@FreezeEngine)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/324)
+
 # 2.4.4
 * [Update readme.md (@Vinciepincie)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/320)
 * Fix file linting (@IceTank)
@@ -30,7 +36,7 @@
 * [Add missing types on GoalPlaceBlock and GoalLookAtBlock (@IceTank)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/289)
 
 # 2.3.2
-* Revert broken goto implementation update. 
+* Revert broken goto implementation update.
 
 # 2.3.1
 * Fix reference error in `getNumEntitiesAt` (https://github.com/PrismarineJS/mineflayer-pathfinder/commit/2e7b3daff2ee5fa0aaf52db4553f769189b8d03f)
@@ -74,7 +80,7 @@
 * [Throw error in goto when stop() is called](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/240)
 * [Update README.md](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/246)
 
-* Typing fixes: 
+* Typing fixes:
   * [tickTimeout](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/241)
   * [GoalLookAtBlock](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/238)
 
