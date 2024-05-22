@@ -611,11 +611,11 @@ function inject (bot) {
     if (bot.entity.isInWater) {
       bot.setControlState('jump', true)
       bot.setControlState('sprint', false)
-    } else if (stateMovements.allowSprinting && physics.canStraightLine(path, true)) {
-      bot.setControlState('jump', false)
-      bot.setControlState('sprint', true)
     } else if (stateMovements.allowSprinting && physics.canSprintJump(path)) {
       bot.setControlState('jump', true)
+      bot.setControlState('sprint', true)
+    } else if (stateMovements.allowSprinting && physics.canStraightLine(path, true)) {
+      bot.setControlState('jump', false)
       bot.setControlState('sprint', true)
     } else if (physics.canStraightLine(path)) {
       bot.setControlState('jump', false)
