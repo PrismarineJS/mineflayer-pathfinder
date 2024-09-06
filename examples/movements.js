@@ -32,7 +32,7 @@ bot.once('spawn', () => {
   // To make changes to the behaviour, customize the properties of the instance
   customMoves.canDig = false
   customMoves.allow1by1towers = false
-  customMoves.scafoldingBlocks.push(bot.registry.itemsByName.stone.id)
+  customMoves.scaffoldingBlocks.push(bot.registry.itemsByName.stone.id)
   // Thing to note scaffoldingBlocks are an array while other namespaces are usually sets
   customMoves.blocksToAvoid.add(bot.registry.blocksByName.carrot.id)
 

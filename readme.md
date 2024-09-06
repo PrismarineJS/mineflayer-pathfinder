@@ -158,7 +158,7 @@ bot.once('spawn', () => {
 
   defaultMove.allow1by1towers = false // Do not build 1x1 towers when going up
   defaultMove.canDig = false // Disable breaking of blocks when pathing 
-  defaultMove.scafoldingBlocks.push(bot.registry.itemsByName['netherrack'].id) // Add nether rack to allowed scaffolding items
+  defaultMove.scaffoldingBlocks.push(bot.registry.itemsByName['netherrack'].id) // Add nether rack to allowed scaffolding items
   bot.pathfinder.setMovements(defaultMove) // Update the movement instance pathfinder uses
 
   // Do pathfinder things
@@ -258,7 +258,7 @@ Set of block id's that are climable. Note: Currently unused as pathfinder cannot
 Set of block id's that can be replaced when placing blocks.
 * instance of `Set`
 
-### scafoldingBlocks
+### scaffoldingBlocks
 Array of item id's that can be used as scaffolding blocks.
 * Default - `[<scaffoldingItems>]`
 

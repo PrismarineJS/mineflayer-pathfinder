@@ -240,7 +240,7 @@ declare module 'mineflayer-pathfinder' {
 		public carpets: Set<number>
 		public openable: Set<number>
 
-		public scafoldingBlocks: number[];
+		public scaffoldingBlocks: number[];
 
 		public maxDropDown: number;
 		public infiniteLiquidDropdownDistance: boolean;
