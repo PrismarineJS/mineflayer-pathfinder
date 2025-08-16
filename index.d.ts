@@ -157,6 +157,16 @@ declare module 'mineflayer-pathfinder' {
 			public hasChanged(): boolean;
 		}
 
+		export class GoalCompositeAllSequential<T extends Goal> extends Goal {
+			public constructor(goals?: T[]);
+			public goals: T[];
+
+			public push(goal: Goal): void;
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+		}
+
 		export class GoalInvert extends Goal {
 			public constructor(goal: Goal);
 			
@@ -179,6 +189,23 @@ declare module 'mineflayer-pathfinder' {
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
+		}
+
+		export class GoalFollowSticky extends Goal {
+			public constructor(entity: Entity, range: number, fallbackRadius?: number, memoryMs?: number);
+
+			public x: number;
+			public y: number;
+			public z: number;
+			public entity: Entity;
+			public rangeSq: number;
+			public fallbackRadius: number;
+			public memoryMs: number;
+
+			public heuristic(node: Move): number;
+			public isEnd(node: Move): boolean;
+			public hasChanged(): boolean;
+			public isValid(): boolean;
 		}
 
 		export class GoalPlaceBlock extends Goal {

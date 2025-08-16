@@ -10,8 +10,6 @@ const Vec3 = require('vec3').Vec3
 
 const Physics = require('./lib/physics')
 const nbt = require('prismarine-nbt')
-const interactableBlocks = require('./lib/interactable.json')
-
 function inject (bot) {
   const waterType = bot.registry.blocksByName.water.id
   const ladderId = bot.registry.blocksByName.ladder.id
@@ -26,6 +24,17 @@ function inject (bot) {
   let digging = false
   let placing = false
   let placingBlock = null
+  let activeStep = null // { kind: 'dig' | 'place' | 'move', startedAt: number }
+  let pendingReset = null
+  const REPLAN_DEBOUNCE_MS = 200
+  let replanTimer = null
+  /** @type {Array<{reason:string,pos?:Vec3, cx?:number, cz?:number}>} */
+  const replanBuffer = []
+  let expectingJumpImpulse = false
+  let lastVy = 0
+  let parkourAttemptsWindowStart = 0
+  let parkourAttempts = 0
+  let parkourCooldownUntil = 0
   let lastNodeTime = performance.now()
   let returningPos = null
   let stopPathing = false
@@ -132,6 +141,7 @@ function inject (bot) {
       bot.stopDigging()
     }
     placing = false
+    activeStep = null
     pathUpdated = false
     astarContext = null
     lockEquipItem.release()
@@ -302,6 +312,84 @@ function inject (bot) {
     return segmentStart.plus(segmentEnd.minus(segmentStart).scaled(t))
   }
 
+  function gatedReset (reason, urgent = false) {
+    if (activeStep && !urgent) {
+      pendingReset = reason
+      return
+    }
+    resetPath(reason, false)
+  }
+
+  function enqueueReplan (reason, payload = {}) {
+    replanBuffer.push({ reason, ...payload })
+    if (replanTimer == null) {
+      replanTimer = setTimeout(maybeReplan, REPLAN_DEBOUNCE_MS)
+    }
+  }
+
+  function intersectsRemainingPath (pos) {
+    if (!pos) return false
+    if (path.length === 0) return false
+    return isPositionNearPath(pos, path)
+  }
+
+  function isUrgentForPrefix (pos) {
+    if (!pos) return false
+    if (path.length === 0) return false
+    const prefix = path.slice(0, Math.min(2, path.length))
+    return isPositionNearPath(pos, prefix)
+  }
+
+  function maybeReplan () {
+    replanTimer = null
+    if (replanBuffer.length === 0) return
+
+    // Coalesce: if none of the buffered changes touch our remaining path, skip.
+    let shouldResetBlock = false
+    let urgent = false
+    for (const ev of replanBuffer) {
+      if (ev.reason === 'block_updated') {
+        if (intersectsRemainingPath(ev.pos)) {
+          shouldResetBlock = true
+          urgent = urgent || isUrgentForPrefix(ev.pos)
+        }
+      } else if (ev.reason === 'goal_moved') {
+        // goal moved is always urgent
+        shouldResetBlock = true
+        urgent = true
+      }
+    }
+
+    // Chunk loads: keep your existing adjacency rule, and also ignore far chunks
+    let shouldResetChunk = false
+    const chunkEvents = replanBuffer.filter(e => e.reason === 'chunk_loaded')
+    if (chunkEvents.length && astarContext) {
+      const p = bot.entity.position
+      for (const ev of chunkEvents) {
+        const cx = ev.cx
+        const cz = ev.cz
+        const adj = astarContext.visitedChunks.has(`${cx - 1},${cz}`) ||
+                    astarContext.visitedChunks.has(`${cx},${cz - 1}`) ||
+                    astarContext.visitedChunks.has(`${cx + 1},${cz}`) ||
+                    astarContext.visitedChunks.has(`${cx},${cz + 1}`)
+        if (adj) {
+          // Distance gate: ignore very distant chunk loads
+          const chunkCenterX = cx * 16 + 8
+          const chunkCenterZ = cz * 16 + 8
+          const approxPathLen = path.length || 0
+          const manhattan = Math.abs(chunkCenterX - p.x) + Math.abs(chunkCenterZ - p.z)
+          if (manhattan <= approxPathLen + 8) {
+            shouldResetChunk = true
+          }
+        }
+      }
+    }
+
+    replanBuffer.length = 0
+    if (shouldResetBlock) return gatedReset('block_updated', urgent)
+    if (shouldResetChunk) return gatedReset('chunk_loaded', false)
+  }
+
   // Return the average x/z position of the highest standing positions
   // in the block.
   function getPositionOnTopOf (block) {
@@ -400,26 +488,23 @@ function inject (bot) {
 
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (!oldBlock || !newBlock) return
-    if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
-      resetPath('block_updated', false)
-    }
+    if (oldBlock.type === newBlock.type) return
+    enqueueReplan('block_updated', { pos: oldBlock.position })
   })
 
   bot.on('chunkColumnLoad', (chunk) => {
-    // Reset only if the new chunk is adjacent to a visited chunk
-    if (astarContext) {
-      const cx = chunk.x >> 4
-      const cz = chunk.z >> 4
-      if (astarContext.visitedChunks.has(`${cx - 1},${cz}`) ||
-          astarContext.visitedChunks.has(`${cx},${cz - 1}`) ||
-          astarContext.visitedChunks.has(`${cx + 1},${cz}`) ||
-          astarContext.visitedChunks.has(`${cx},${cz + 1}`)) {
-        resetPath('chunk_loaded', false)
-      }
-    }
+    const cx = chunk.x >> 4
+    const cz = chunk.z >> 4
+    enqueueReplan('chunk_loaded', { cx, cz })
   })
 
   function monitorMovement () {
+    // parkour cool-down re-enable
+    if (parkourCooldownUntil && performance.now() > parkourCooldownUntil) {
+      parkourCooldownUntil = 0
+      if (stateMovements) stateMovements.allowParkour = true
+    }
+
     // Test freemotion
     if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity) {
       const target = stateGoal.entity
@@ -438,7 +523,7 @@ function inject (bot) {
       if (!stateGoal.isValid()) {
         stop()
       } else if (stateGoal.hasChanged()) {
-        resetPath('goal_moved', false)
+        enqueueReplan('goal_moved')
       }
     }
 
@@ -486,6 +571,7 @@ function inject (bot) {
     if (digging || nextPoint.toBreak.length > 0) {
       if (!digging && bot.entity.onGround) {
         digging = true
+        activeStep = { kind: 'dig', startedAt: performance.now() }
         const b = nextPoint.toBreak.shift()
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
@@ -494,11 +580,16 @@ function inject (bot) {
         const digBlock = () => {
           bot.dig(block, true)
             .catch(_ignoreError => {
-              resetPath('dig_error')
+              gatedReset('dig_error', true)
             })
             .then(function () {
               lastNodeTime = performance.now()
               digging = false
+              activeStep = null
+              if (pendingReset) {
+                const r = pendingReset; pendingReset = null
+                resetPath(r, false)
+              }
             })
         }
 
@@ -517,25 +608,31 @@ function inject (bot) {
     if (placing || nextPoint.toPlace.length > 0) {
       if (!placing) {
         placing = true
+        activeStep = { kind: 'place', startedAt: performance.now() }
         placingBlock = nextPoint.toPlace.shift()
         fullStop()
       }
 
       // Open gates or doors
       if (placingBlock?.useOne) {
-        if (!lockUseBlock.tryAcquire()) return
-        bot.activateBlock(bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z))).then(() => {
-          lockUseBlock.release()
+        const ref = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z))
+        openPassThrough(ref).then(() => {
           placingBlock = nextPoint.toPlace.shift()
-        }, err => {
-          console.error(err)
-          lockUseBlock.release()
+        }).catch(() => {
+          // If opening failed, try to continue anyway – planner will re-evaluate
+        }).finally(() => {
+          placing = false
+          activeStep = null
+          if (pendingReset) {
+            const r = pendingReset; pendingReset = null
+            resetPath(r, false)
+          }
         })
         return
       }
       const block = stateMovements.getScaffoldingItem()
       if (!block) {
-        resetPath('no_scaffolding_blocks')
+        gatedReset('no_scaffolding_blocks', true)
         return
       }
       if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.y === bot.entity.position.floored().y - 1 && placingBlock.dy === 0) {
@@ -553,22 +650,34 @@ function inject (bot) {
             lockEquipItem.release()
             const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
             if (!lockPlaceBlock.tryAcquire()) return
-            if (interactableBlocks.includes(refBlock.name)) {
+            const targetPos = new Vec3(
+              placingBlock.x + placingBlock.dx,
+              placingBlock.y + placingBlock.dy,
+              placingBlock.z + placingBlock.dz
+            )
+            if (stateMovements.interactableBlocks.has(refBlock.name)) {
               bot.setControlState('sneak', true)
             }
-            bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz))
-              .then(function () {
-                // Dont release Sneak if the block placement was not successful
+            placeWithAck(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), targetPos, 3)
+              .then((ok) => {
+                // Release sneak only if placement seems successful or after final attempt
                 bot.setControlState('sneak', false)
-                if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
+                if (ok && bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.returnPos) {
+                  returningPos = placingBlock.returnPos.clone()
+                }
               })
-              .catch(_ignoreError => {
-                resetPath('place_error')
+              .catch(() => {
+                gatedReset('place_error', true)
               })
-              .then(() => {
+              .finally(() => {
                 lockPlaceBlock.release()
                 placing = false
+                activeStep = null
                 lastNodeTime = performance.now()
+                if (pendingReset) {
+                  const r = pendingReset; pendingReset = null
+                  resetPath(r, false)
+                }
               })
           })
           .catch(_ignoreError => {})
@@ -579,6 +688,7 @@ function inject (bot) {
     let dx = nextPoint.x - p.x
     const dy = nextPoint.y - p.y
     let dz = nextPoint.z - p.z
+    lastVy = bot.entity.velocity.y
     if (Math.abs(dx) <= 0.35 && Math.abs(dz) <= 0.35 && Math.abs(dy) < 1) {
       // arrived at next point
       lastNodeTime = performance.now()
@@ -595,17 +705,26 @@ function inject (bot) {
           stateGoal = null
         }
         fullStop()
+        activeStep = null
+        if (pendingReset) {
+          const r = pendingReset; pendingReset = null
+          resetPath(r, false)
+        }
         return
       }
       // not done yet
       nextPoint = path[0]
       if (nextPoint.toBreak.length > 0 || nextPoint.toPlace.length > 0) {
         fullStop()
+        activeStep = null
         return
       }
       dx = nextPoint.x - p.x
       dz = nextPoint.z - p.z
     }
+
+    // Movement step commit
+    if (!activeStep) activeStep = { kind: 'move', startedAt: performance.now() }
 
     bot.look(Math.atan2(-dx, -dz), 0)
     bot.setControlState('forward', true)
@@ -620,21 +739,131 @@ function inject (bot) {
     } else if (stateMovements.allowSprinting && physics.canSprintJump(path)) {
       bot.setControlState('jump', true)
       bot.setControlState('sprint', true)
+      if (nextPoint.parkour) expectingJumpImpulse = true
     } else if (physics.canStraightLine(path)) {
       bot.setControlState('jump', false)
       bot.setControlState('sprint', false)
     } else if (physics.canWalkJump(path)) {
       bot.setControlState('jump', true)
       bot.setControlState('sprint', false)
+      if (nextPoint.parkour) expectingJumpImpulse = true
     } else {
       bot.setControlState('forward', false)
       bot.setControlState('sprint', false)
     }
 
+    // Parkour jump impulse verification & bounded retries
+    if (nextPoint.parkour) {
+      if (expectingJumpImpulse) {
+        // next tick we expect vy to increase
+        if (bot.entity.velocity.y > lastVy + 0.08) {
+          // observed jump impulse
+          expectingJumpImpulse = false
+        } else {
+          expectingJumpImpulse = false
+          const now = performance.now()
+          if (now - parkourAttemptsWindowStart > 5000) {
+            parkourAttemptsWindowStart = now
+            parkourAttempts = 0
+          }
+          parkourAttempts++
+          if (parkourAttempts >= 2) {
+            // temporarily disable parkour and replan
+            if (stateMovements) stateMovements.allowParkour = false
+            parkourCooldownUntil = now + 5000
+            gatedReset('stuck', true)
+            return
+          }
+        }
+      }
+    }
+
     // check for futility
     if (performance.now() - lastNodeTime > 3500) {
       // should never take this long to go to the next node
-      resetPath('stuck')
+      gatedReset('stuck', true)
+    }
+  }
+
+  // ------------ helpers: ack-based actions ---------------
+  function waitForBlockChangeAt (pos, timeoutMs = 250) {
+    return new Promise((resolve, reject) => {
+      let done = false
+      const timer = setTimeout(() => {
+        if (done) return
+        done = true
+        bot.removeListener('blockUpdate', onUpdate)
+        reject(new Error('timeout'))
+      }, timeoutMs)
+      function onUpdate (oldBlock, newBlock) {
+        if (!newBlock) return
+        if (newBlock.position && newBlock.position.x === pos.x && newBlock.position.y === pos.y && newBlock.position.z === pos.z) {
+          if (done) return
+          done = true
+          clearTimeout(timer)
+          bot.removeListener('blockUpdate', onUpdate)
+          resolve(newBlock)
+        }
+      }
+      bot.on('blockUpdate', onUpdate)
+    })
+  }
+
+  async function placeWithAck (refBlock, faceVector, targetPos, attempts = 3) {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        await bot.lookAt(refBlock.position.offset(0.5, 0.5, 0.5), false)
+      } catch {}
+      try {
+        await bot.placeBlock(refBlock, faceVector)
+      } catch {
+        // fall through; try again
+      }
+      try {
+        await waitForBlockChangeAt(targetPos, 300)
+        return true
+      } catch {
+        // retry
+      }
+    }
+    return false
+  }
+
+  async function activateWithAck (block) {
+    const before = block
+    await bot.activateBlock(block)
+    try {
+      const updated = await waitForBlockChangeAt(before.position, 300)
+      return !!updated // Not perfect – but indicates server acknowledged the toggle
+    } catch {
+      return false
+    }
+  }
+
+  async function openPassThrough (refBlock) {
+    if (!refBlock) return
+    await lockUseBlock.acquire()
+    try {
+      bot.setControlState('sneak', true)
+      try { await bot.lookAt(refBlock.position.offset(0.5, 0.5, 0.5), false) } catch {}
+      await activateWithAck(refBlock)
+      // handle double fence gates by opening neighbor of same name
+      const name = refBlock.name
+      const nbors = [
+        refBlock.position.offset(1, 0, 0),
+        refBlock.position.offset(-1, 0, 0),
+        refBlock.position.offset(0, 0, 1),
+        refBlock.position.offset(0, 0, -1)
+      ]
+      for (const p of nbors) {
+        const b = bot.blockAt(p, false)
+        if (b && b.name === name) {
+          try { await activateWithAck(b) } catch {}
+        }
+      }
+    } finally {
+      bot.setControlState('sneak', false)
+      lockUseBlock.release()
     }
   }
 }

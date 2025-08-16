@@ -19,7 +19,7 @@ describe('Block and Entity Lists', () => {
     it('should contain no duplicates', () => {
       const interactableSet = new Set(interactableJson)
       assert.strictEqual(interactableSet.size, interactableJson.length, 'interactable.json has duplicates')
-      
+
       const passableSet = new Set(passableJson)
       assert.strictEqual(passableSet.size, passableJson.length, 'passableEntities.json has duplicates')
     })
@@ -31,7 +31,7 @@ describe('Block and Entity Lists', () => {
         /gey/, // should be gray/grey
         /purpel/, // should be purple
         /diamon/, // should be diamond
-        /emrald/, // should be emerald
+        /emrald/ // should be emerald
       ]
 
       for (const name of interactableJson) {
@@ -44,7 +44,7 @@ describe('Block and Entity Lists', () => {
     it('should be alphabetically sorted', () => {
       const sortedInteractable = [...interactableJson].sort()
       const sortedPassable = [...passableJson].sort()
-      
+
       assert.deepStrictEqual(interactableJson, sortedInteractable, 'interactable.json is not sorted')
       assert.deepStrictEqual(passableJson, sortedPassable, 'passableEntities.json is not sorted')
     })
@@ -60,10 +60,10 @@ describe('Block and Entity Lists', () => {
     })
 
     it('should build valid interactable set', () => {
-      const set = buildInteractableSet(mockBot)
+      const set = buildInteractableSet(data)
       assert(set instanceof Set, 'Should return a Set')
       assert(set.size > 0, 'Should contain blocks')
-      
+
       // Verify some expected blocks exist
       assert(set.has('oak_door'), 'Should include oak_door')
       assert(set.has('chest'), 'Should include chest')
@@ -74,14 +74,14 @@ describe('Block and Entity Lists', () => {
       const set = buildPassableEntities(mockBot)
       assert(set instanceof Set, 'Should return a Set')
       assert(set.size > 0, 'Should contain entities')
-      
+
       // Verify some expected entities exist
       assert(set.has('arrow'), 'Should include arrow')
       assert(set.has('item'), 'Should include item')
     })
 
     it('should only include blocks that exist in the version', () => {
-      const set = buildInteractableSet(mockBot)
+      const set = buildInteractableSet(data)
       for (const blockName of set) {
         assert(data.blocksByName[blockName], `Block ${blockName} doesn't exist in 1.20.4`)
       }
@@ -103,10 +103,10 @@ describe('Block and Entity Lists', () => {
         try {
           const data = mcData(version)
           const mockBot = { registry: data, mcData: data }
-          
-          const blockSet = buildInteractableSet(mockBot)
+
+          const blockSet = buildInteractableSet(data)
           const entitySet = buildPassableEntities(mockBot)
-          
+
           assert(blockSet.size > 50, `${version} should have many interactable blocks`)
           assert(entitySet.size > 10, `${version} should have many passable entities`)
         } catch (e) {

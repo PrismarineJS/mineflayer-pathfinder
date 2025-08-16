@@ -44,7 +44,7 @@ const PASSABLE_ENTITIES = [
   'wind_charge', 'breeze_wind_charge'
 ]
 
-function getInteractablesForVersion(version) {
+function getInteractablesForVersion (version) {
   const data = mcData(version)
   const blockExists = (name) => !!data.blocksByName[name]
   const itemExists = (name) => !!data.itemsByName[name]
@@ -56,7 +56,7 @@ function getInteractablesForVersion(version) {
       const name = `${wood}_${suffix}`
       if (blockExists(name)) set.add(name)
     }
-    
+
     // Boats and chest boats (items, but included in interactables for consistency)
     // Skip nether woods which don't have boats
     if (!['crimson', 'warped'].includes(wood)) {
@@ -92,13 +92,13 @@ function getInteractablesForVersion(version) {
   return set
 }
 
-function getPassableEntitiesForVersion(version) {
+function getPassableEntitiesForVersion (version) {
   const data = mcData(version)
   const exists = (name) => !!data.entitiesByName[name]
   return new Set(PASSABLE_ENTITIES.filter(exists))
 }
 
-function unionSets(sets) {
+function unionSets (sets) {
   const result = new Set()
   for (const set of sets) {
     for (const item of set) {
