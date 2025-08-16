@@ -8,7 +8,9 @@
     "mocha_debug": "mocha --inspect-brk --reporter spec --exit",
     "lint": "standard",
     "fix": "standard --fix",
-    "test": "npm run lint && npm run mocha_test"
+    "test": "npm run lint && npm run mocha_test",
+    "test:lists": "mocha test/lists.test.js --reporter spec --exit",
+    "generate": "node scripts/generate-lists.js"
   },
   "author": "Karang",
   "license": "MIT",
@@ -24,7 +26,6 @@
   "devDependencies": {
     "minecraft-wrap": "^1.2.1",
     "mineflayer": "^4.3.0",
-    "mineflayer-pathfinder": "file:./",
     "mocha": "^11.0.1",
     "prismarine-schematic": "^1.2.3",
     "standard": "^17.0.0"
