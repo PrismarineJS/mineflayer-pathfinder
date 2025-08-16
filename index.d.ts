@@ -367,6 +367,9 @@ declare module 'mineflayer-pathfinder' {
 		toPlace: Move[];
 		parkour: boolean;
 		hash: string;
+		/** Optional: marks this step as a climb (ladder/vine). */
+		climb?: boolean; 
+		climbDir?: { x: number, z: number };
 	}
 
 	type Callback = (error?: Error) => void;

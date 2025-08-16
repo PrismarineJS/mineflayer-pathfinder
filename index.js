@@ -730,7 +730,18 @@ function inject (bot) {
     bot.setControlState('forward', true)
     bot.setControlState('jump', false)
 
-    if (bot.entity.isInWater) {
+    // Dedicated handling for climb moves (ladder/vine).
+    if (nextPoint.climb) {
+      // Face the climb surface if we know it; otherwise keep current yaw
+      const cdx = nextPoint.climbDir ? nextPoint.climbDir.x : Math.sign(nextPoint.x - Math.floor(p.x))
+      const cdz = nextPoint.climbDir ? nextPoint.climbDir.z : Math.sign(nextPoint.z - Math.floor(p.z))
+      if (cdx !== 0 || cdz !== 0) {
+        bot.look(Math.atan2(-cdx, -cdz), 0)
+      }
+      bot.setControlState('jump', false)
+      bot.setControlState('sprint', false)
+      bot.setControlState('forward', true)
+    } else if (bot.entity.isInWater) {
       bot.setControlState('jump', true)
       bot.setControlState('sprint', false)
     } else if (stateMovements.allowSprinting && physics.canStraightLine(path, true)) {
