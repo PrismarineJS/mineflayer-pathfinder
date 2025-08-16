@@ -77,8 +77,11 @@ function inject (bot) {
     if (options.startMove) {
       start = options.startMove
     } else {
-      const p = startPos.floored()
-      const dy = startPos.y - p.y
+      // Accept null startPos by falling back to the bot's current position
+      const effectiveStart = startPos ?? bot.entity.position
+      // startPos is expected to be a Vec3-like object
+      const p = effectiveStart.floored()
+      const dy = effectiveStart.y - p.y
       const b = bot.blockAt(p) // The block we are standing in
       // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
       const offset = (b && dy > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
