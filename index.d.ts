@@ -1,10 +1,9 @@
 import { Bot } from 'mineflayer';
-import { IndexedData } from 'minecraft-data';
 import { Item } from 'prismarine-item';
 import { Vec3 } from 'vec3';
 import { Block } from 'prismarine-block';
 import { Entity } from 'prismarine-entity';
-import { World } from 'prismarine-world'
+// Note: avoid importing prismarine-world types to keep this package self-contained.
 import AStar from './lib/astar';
 
 declare module 'mineflayer-pathfinder' {
@@ -14,6 +13,12 @@ declare module 'mineflayer-pathfinder' {
 		thinkTimeout: number;
 		/** ms, amount of thinking per tick (max 50 ms) */
 		tickTimeout: number;
+		/** search limiting radius (in blocks); -1 disables the limit */
+		searchRadius: number;
+		/** enable path shortcutting post-processing (off by default due to edge cases) */
+		enablePathShortcut: boolean;
+		/** enforce line of sight when placing blocks directly beneath the bot */
+		LOSWhenPlacingBlocks: boolean;
 		readonly goal: goals.Goal | null;
 		readonly movements: Movements;
 
@@ -25,8 +30,8 @@ declare module 'mineflayer-pathfinder' {
 		): ComputedPath;
 		getPathFromTo(
 			movements: Movements,
-			startPos: Vec3 | null, 
-			goal: goals.Goal, 
+			startPos: Vec3 | null,
+			goal: goals.Goal,
 			options?: {
 				optimizePath?: boolean,
 				resetEntityIntersects?: boolean,
@@ -45,6 +50,13 @@ declare module 'mineflayer-pathfinder' {
 		isMoving(): boolean;
 		isMining(): boolean;
 		isBuilding(): boolean;
+	}
+
+	// Minimal "world-like" contract used by GoalPlaceBlock/GoalLookAtBlock to avoid depending
+	// on prismarine-world type declarations in consumer projects.
+	interface WorldLike {
+		getBlock(pos: Vec3): Block | null;
+		raycast(from: Vec3, dir: Vec3, maxDistance: number): { position: Vec3, face: number } | null | undefined;
 	}
 
 	export namespace goals {
@@ -126,7 +138,7 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalCompositeAny<T extends Goal> extends Goal {
-			public constructor(goals: T[] = []);
+			public constructor(goals?: T[]);
 			public goals: T[];
 			
 			public push(goal: Goal): void;
@@ -136,7 +148,7 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalCompositeAll<T extends Goal> extends Goal {
-			public constructor(goals: T[] = []);
+			public constructor(goals?: T[]);
 			public goals: T[];
 
 			public push(goal: Goal): void;
@@ -170,26 +182,32 @@ declare module 'mineflayer-pathfinder' {
 		}
 
 		export class GoalPlaceBlock extends Goal {
+			/** Resolved internal options (facing normalized to a number, defaults applied). */
 			public options: {
 				range: number;
 				LOS: boolean;
-				faces: [Vec3, Vec3, Vec3, Vec3, Vec3, Vec3];
-				facing: number;
-				half: boolean;
-			}
+				faces: Vec3[];      // the directions of the faces the player can click
+				facing: number;     // normalized to 0..5 internally
+				facing3D?: boolean; // whether facing is 3D (true) or 2D (false)
+				half?: 'top' | 'bottom';
+			};
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
 			public hasChanged(): boolean;
-			public constructor(pos: Vec3, world: World, options: GoalPlaceBlockOptions)
+			public constructor(pos: Vec3, world: WorldLike, options: GoalPlaceBlockOptions)
 		}
 		
 		export class GoalLookAtBlock  extends Goal {
-			public constructor(pos: Vec3, world: World, options?: { reach?: number, entityHeight?: number })
+			public constructor(
+				pos: Vec3,
+				world: WorldLike,
+				options?: { reach?: number, entityHeight?: number }
+			)
 			
 			public pos: Vec3;
 			public reach: number;
 			public entityHeight: number;
-			public world: World;
+			public world: WorldLike;
 
 			public heuristic(node: Move): number;
 			public isEnd(node: Move): boolean;
@@ -212,6 +230,7 @@ declare module 'mineflayer-pathfinder' {
 		public allowFreeMotion: boolean;
 		public allowParkour: boolean;
 		public allowSprinting: boolean;
+		public liquidCost: number;
  		/**
  		 * Test for entities that may obstruct path or prevent block placement. Grabs updated entities every new path
  		 */
@@ -261,15 +280,15 @@ declare module 'mineflayer-pathfinder' {
 				return someVec3Pos.distanceTo(block.position) < 5 ? 100 : 0 // Prevents the bot from getting near to a specific location
 			}]
 			``` */
-		public exclusionAreasStep: [(block: SafeBlock) => number];
+		public exclusionAreasStep: Array<(block: SafeBlock) => number>;
 		/**
 		 * Exclusion area for blocks to break. Works in the same way as {@link exclusionAreasStep} does. 
 		 */
-		public exclusionAreasBreak: [(block: SafeBlock) => number];
+		public exclusionAreasBreak: Array<(block: SafeBlock) => number>;
 		/**
 		 * Exclusion area for placing blocks. Note only works for positions not block values as placed blocks are determined by the bots inventory content. Works in the same way as {@link exclusionAreasStep} does. 
 		 */
-		public exclusionAreasPlace: [(block: SafeBlock) => number];
+		public exclusionAreasPlace: Array<(block: SafeBlock) => number>;
         
  		/**
  		 * A dictionary of the number of entities intersecting each floored block coordinate.
@@ -277,7 +296,7 @@ declare module 'mineflayer-pathfinder' {
  		 * To prevent this from being cleared automatically before generating a path see getPathFromTo()
  		 * formatted entityIntersections['x,y,z'] = #ents
  		 */
-		public entityIntersections: {string: number};
+		public entityIntersections: Record<string, number>;
 
 		public exclusionPlace(block: SafeBlock): number;
 		public exclusionStep(block: SafeBlock): number;
@@ -303,12 +322,10 @@ declare module 'mineflayer-pathfinder' {
 		public getBlock(pos: Vec3, dx: number, dy: number, dz: number): SafeBlock;
 		public safeToBreak(block: SafeBlock): boolean;
 		public safeOrBreak(block: SafeBlock): number;
-		public getMoveJumpUp(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
 		public getMoveForward(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
 		public getMoveDiagonal(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
 		public getMoveDropDown(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
 		public getMoveParkourForward(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
-		public getMoveJumpUp(node: Move, dir: XZCoordinates, neighbors: Move[]): void;
 		public getMoveUp(node: Move, neighbors: Move[]): void;
 		public getMoveDown(node: Move, neighbors: Move[]): void;
 		public getLandingBlock(node: Move, dir: XZCoordinates): SafeBlock;
@@ -363,18 +380,26 @@ declare module 'mineflayer-pathfinder' {
 	}
 
 	export interface GoalPlaceBlockOptions {
-		range: number;
-		LOS: boolean;
-		faces: Vec3[];
-		facing: 'north' | 'east' | 'south' | 'west' | 'up' | 'down';
+		/** maximum distance from the clicked face (default 5 in impl) */
+		range?: number;
+		/** require line of sight to the placement face (default true) */
+		LOS?: boolean;
+		/** which faces the player can click; defaults to the 6 axis-aligned faces */
+		faces?: Vec3[];
+		/** direction the player must be facing; normalized to a number internally */
+		facing?: 'north' | 'east' | 'south' | 'west' | 'up' | 'down';
+		/** whether facing is 3D (true) or 2D (false) */
+		facing3D?: boolean;
+		/** require clicking the 'top' or 'bottom' half of the face */
+		half?: 'top' | 'bottom';
 	}
 }
 
 declare module 'mineflayer' {
 	interface BotEvents {
-		goal_reached: (goal: Goal) => void;
-		path_update: (path: PartiallyComputedPath) => void;
-		goal_updated: (goal: Goal, dynamic: boolean) => void;
+		goal_reached: (goal: import('mineflayer-pathfinder').goals.Goal) => void;
+		path_update: (path: import('mineflayer-pathfinder').PartiallyComputedPath) => void;
+		goal_updated: (goal: import('mineflayer-pathfinder').goals.Goal, dynamic: boolean) => void;
 		path_reset: (
 			reason: 'goal_updated' | 'movements_updated' |
 				'block_updated' | 'chunk_loaded' | 'goal_moved' | 'dig_error' |
@@ -384,6 +409,6 @@ declare module 'mineflayer' {
 	}
 
 	interface Bot {
-		pathfinder: Pathfinder
+		pathfinder: import('mineflayer-pathfinder').Pathfinder
 	}
 }
