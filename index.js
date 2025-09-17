@@ -563,10 +563,10 @@ function inject (bot) {
                 resetPath('place_error')
               })
               .then(() => {
-                lockPlaceBlock.release()
                 placing = false
                 lastNodeTime = performance.now()
               })
+            lockPlaceBlock.release()
           })
           .catch(_ignoreError => {})
       }
