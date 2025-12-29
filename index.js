@@ -541,7 +541,7 @@ function inject (bot) {
       let canPlace = true
       if (placingBlock.jump) {
         bot.setControlState('jump', true)
-        canPlace = placingBlock.y + 1 < bot.entity.position.y
+        canPlace = placingBlock.y + 2.1 < bot.entity.position.y
       }
       if (canPlace) {
         if (!lockEquipItem.tryAcquire()) return
@@ -553,7 +553,7 @@ function inject (bot) {
             if (interactableBlocks.includes(refBlock.name)) {
               bot.setControlState('sneak', true)
             }
-            bot.placeBlock(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz))
+            bot._placeBlockWithOptions(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), { swingArm: 'right', forceLook: true })
               .then(function () {
                 // Dont release Sneak if the block placement was not successful
                 bot.setControlState('sneak', false)
