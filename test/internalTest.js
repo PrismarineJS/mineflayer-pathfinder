@@ -301,7 +301,7 @@ describe('pathfinder Goals', function () {
     })
 
     it('GoalFollow', () => {
-      const entity = bot.nearestEntity()
+      const entity = bot.nearestEntity() || { position: targetBlock.offset(0, 1, 0) }
       const goal = new goals.GoalFollow(entity, 1)
       assert.ok(!goal.isEnd(bot.entity.position))
       bot.entity.position = targetBlock.clone()
