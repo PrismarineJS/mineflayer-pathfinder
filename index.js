@@ -418,8 +418,8 @@ function inject (bot) {
 
   function monitorMovement () {
     // Workaround for Minecraft 1.21.x server-side collision sweep bug.
-    // By slightly increasing the client's physical half-width, the client stops just barely 
-    // short of perfectly aligning with walls. This leaves a micro-gap on the server, 
+    // By slightly increasing the client's physical half-width, the client stops just barely
+    // short of perfectly aligning with walls. This leaves a micro-gap on the server,
     // bypassing the floating-point edge case that causes movement rejection.
     if (bot.physics && bot.physics.playerHalfWidth === 0.3) {
       bot.physics.playerHalfWidth = 0.30001
