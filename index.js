@@ -16,6 +16,11 @@ function inject (bot) {
   const waterType = bot.registry.blocksByName.water.id
   const ladderId = bot.registry.blocksByName.ladder.id
   const vineId = bot.registry.blocksByName.vine.id
+  // Work around the Minecraft 1.21.x server-side collision sweep edge case before
+  // any Movements instance snapshots the bot's physical dimensions.
+  if (bot.physics && bot.physics.playerHalfWidth === 0.3) {
+    bot.physics.playerHalfWidth = 0.301
+  }
   let stateMovements = new Movements(bot)
   let stateGoal = null
   let astarContext = null
@@ -417,14 +422,6 @@ function inject (bot) {
   })
 
   function monitorMovement () {
-    // Workaround for Minecraft 1.21.x server-side collision sweep bug.
-    // By slightly increasing the client's physical half-width, the client stops just barely
-    // short of perfectly aligning with walls. This leaves a micro-gap on the server,
-    // bypassing the floating-point edge case that causes movement rejection.
-    if (bot.physics && bot.physics.playerHalfWidth === 0.3) {
-      bot.physics.playerHalfWidth = 0.301
-    }
-
     // Test freemotion
     if (stateMovements && stateMovements.allowFreeMotion && stateGoal && stateGoal.entity) {
       const target = stateGoal.entity
