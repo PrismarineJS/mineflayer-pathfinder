@@ -346,6 +346,11 @@ describe('pathfinder events', function () {
       listeners.forEach(l => bot.removeAllListeners(l))
     })
 
+    it('preserves player dimensions when the plugin loads', () => {
+      assert.strictEqual(bot.physics.playerHalfWidth, 0.3)
+      assert.strictEqual(bot.physics.playerHeight, 1.8)
+    })
+
     it('goal_reached', function (done) {
       this.timeout(3000)
       this.slow(1000)

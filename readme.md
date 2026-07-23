@@ -12,6 +12,14 @@ Mostly stable. Feel free to contribute by making suggestions or posting issues.
 npm install mineflayer-pathfinder
 ```
 
+### Minecraft 1.21.x step-ascent compatibility
+
+A repeatable one-block step-ascent deadlock on Minecraft 1.21.4 was initially worked around by changing `bot.physics.playerHalfWidth` from `0.3` to `0.301`. A wider sweep showed that this was not a geometric threshold: `0.30025` passed the reproducer while the larger `0.3005` failed.
+
+Tick-level traces instead isolated an exact-contact rounding defect in `prismarine-physics`. A reconstructed AABB can land infinitesimally inside a block face, causing local physics to miss the contact and predict a position that the server repeatedly corrects. The durable fix is a small contact epsilon in `AABB.computeOffsetX/Y/Z`, with the player's normal `0.6 m` width left unchanged.
+
+This branch no longer mutates Mineflayer's shared physics dimensions. Consumers testing the fix must resolve Mineflayer and pathfinder to the corrected `prismarine-physics` implementation. See [pathfinder PR #364](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/364) and [Mineflayer issue #3911](https://github.com/PrismarineJS/mineflayer/issues/3911) for the upstream discussion.
+
 ## Tutorial & Explanation
 
 For a basic explanation of how to use mineflayer-pathfinder, you can read [this tutorial](./examples/tutorial/goalsExplained.md).

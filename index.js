@@ -16,11 +16,6 @@ function inject (bot) {
   const waterType = bot.registry.blocksByName.water.id
   const ladderId = bot.registry.blocksByName.ladder.id
   const vineId = bot.registry.blocksByName.vine.id
-  // Work around the Minecraft 1.21.x server-side collision sweep edge case before
-  // any Movements instance snapshots the bot's physical dimensions.
-  if (bot.physics && bot.physics.playerHalfWidth === 0.3) {
-    bot.physics.playerHalfWidth = 0.301
-  }
   let stateMovements = new Movements(bot)
   let stateGoal = null
   let astarContext = null
