@@ -423,7 +423,6 @@ function inject (bot) {
     // bypassing the floating-point edge case that causes movement rejection.
     if (bot.physics && bot.physics.playerHalfWidth === 0.3) {
       bot.physics.playerHalfWidth = 0.301
-      bot.physics.playerHeight = 1.80001
     }
 
     // Test freemotion
