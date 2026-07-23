@@ -422,7 +422,7 @@ function inject (bot) {
     // short of perfectly aligning with walls. This leaves a micro-gap on the server,
     // bypassing the floating-point edge case that causes movement rejection.
     if (bot.physics && bot.physics.playerHalfWidth === 0.3) {
-      bot.physics.playerHalfWidth = 0.30001
+      bot.physics.playerHalfWidth = 0.301
       bot.physics.playerHeight = 1.80001
     }
 
