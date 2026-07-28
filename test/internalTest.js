@@ -427,6 +427,29 @@ describe('pathfinder util functions', function () {
       await bot.pathfinder.goto(new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z))
     })
 
+    it('gotoBest follows the highest-scoring reachable path within a node budget', async function () {
+      this.timeout(5000)
+      this.slow(2000)
+      const origin = bot.entity.position.clone()
+      const result = await bot.pathfinder.gotoBest(bot.pathfinder.movements, {
+        heuristic () { return 0 },
+        isEnd () { return false },
+        hasChanged () { return false },
+        isValid () { return true }
+      }, {
+        maxVisitedNodes: 12,
+        timeout: 500,
+        tickTimeout: 10,
+        executionTimeout: 3000,
+        nodeEvaluator: node => Math.hypot(node.x - origin.x, node.z - origin.z)
+      })
+
+      assert.strictEqual(result.status, 'budget')
+      assert.ok(result.objectiveScore > 0)
+      assert.ok(result.path.length > 0)
+      assert.ok(bot.entity.position.distanceTo(origin) > 0.5)
+    })
+
     it('isMoving', function (done) {
       bot.pathfinder.setGoal(new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z))
       const foo = () => {

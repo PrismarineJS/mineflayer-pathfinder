@@ -93,11 +93,11 @@ Returns the best harvesting tool in the inventory for the specified block.
  * `Returns` - `Item` instance or `null`
  * `block` - Block instance
 
-### bot.pathfinder.getPathTo(movements, goal, timeout)
+### bot.pathfinder.getPathTo(movements, goal, timeoutOrOptions)
  * `Returns` - The path
  * `movements` - Movements instance
  * `goal` - Goal instance
- * `timeout` - number (optional, default `bot.pathfinder.thinkTimeout`)
+ * `timeoutOrOptions` - number or path options object (optional, default `bot.pathfinder.thinkTimeout`)
 
 ### bot.pathfinder.getPathFromTo* (movements, startPos, goal, options = {})
 Returns a Generator. The generator computes the path for as longs as no full path is found or `options.timeout` is reached. 
@@ -113,6 +113,26 @@ The generator will block the event loop until a path is found or `options.tickTi
    * `tickTimeout` - Number Optional. Maximum amount off time before yielding.
    * `searchRadius` - Number Optional. Max distance to search.
    * `startMove` - instance of Move Optional. A optional starting position as a Move. Replaces `startPos` as the starting position.
+   * `maxVisitedNodes` - Number Optional. Stop after expanding this many nodes and return the best discovered path with status `budget`.
+   * `nodeEvaluator` - Function Optional. Scores each reachable node. Higher values select the best path returned on `partial`, `timeout`, `budget`, or `noPath` without changing A* exploration order.
+
+### bot.pathfinder.planPathFromTo(movements, startPos, goal, options = {})
+Asynchronously consumes `getPathFromTo` across event-loop turns until planning reaches a terminal status. This preserves `tickTimeout` responsiveness while applying the total time and expanded-node budgets.
+ * `Returns` - A Promise resolving to a computed path.
+
+### bot.pathfinder.planPathTo(movements, goal, options = {})
+Equivalent to `planPathFromTo` with the bot's current position.
+ * `Returns` - A Promise resolving to a computed path.
+
+### bot.pathfinder.followPath(path, options = {})
+Executes an already-computed reachable path without searching for it again.
+ * `path` - An array of computed Move instances.
+ * `options.movements` - Movements instance Optional. Defaults to the active movements.
+ * `options.timeout` - Number Optional. Maximum execution time.
+
+### bot.pathfinder.gotoBest(movements, goal, options = {})
+Plans under the supplied budgets, follows the best discovered path, and returns the planning result. Unlike `goto`, terminal planning statuses with a non-empty best path are useful results rather than discarded timeout errors.
+ * `options.executionTimeout` - Number Optional. Maximum time to follow the computed path.
 
 ### bot.pathfinder.setGoal(Goal, dynamic)
  * `goal` - Goal instance

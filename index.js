@@ -60,8 +60,9 @@ function inject (bot) {
     return bestTool
   }
 
-  bot.pathfinder.getPathTo = (movements, goal, timeout) => {
-    const generator = bot.pathfinder.getPathFromTo(movements, bot.entity.position, goal, { timeout })
+  bot.pathfinder.getPathTo = (movements, goal, timeoutOrOptions) => {
+    const options = typeof timeoutOrOptions === 'object' ? timeoutOrOptions : { timeout: timeoutOrOptions }
+    const generator = bot.pathfinder.getPathFromTo(movements, bot.entity.position, goal, options)
     const { value: { result, astarContext: context } } = generator.next()
     astarContext = context
     return result
@@ -90,7 +91,10 @@ function inject (bot) {
       }
       movements.updateCollisionIndex()
     }
-    const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius)
+    const astarContext = new AStar(start, movements, goal, timeout, tickTimeout, searchRadius, {
+      maxVisitedNodes: options.maxVisitedNodes,
+      nodeEvaluator: options.nodeEvaluator
+    })
     let result = astarContext.compute()
     if (optimizePath) result.path = postProcessPath(result.path)
     yield { result, astarContext }
@@ -99,6 +103,20 @@ function inject (bot) {
       if (optimizePath) result.path = postProcessPath(result.path)
       yield { result, astarContext }
     }
+  }
+
+  bot.pathfinder.planPathFromTo = async (movements, startPos, goal, options = {}) => {
+    const generator = bot.pathfinder.getPathFromTo(movements, startPos, goal, options)
+    while (true) {
+      const { value, done } = generator.next()
+      if (done) throw new Error('Path planning ended without a result')
+      if (value.result.status !== 'partial') return value.result
+      await new Promise(resolve => setImmediate(resolve))
+    }
+  }
+
+  bot.pathfinder.planPathTo = (movements, goal, options = {}) => {
+    return bot.pathfinder.planPathFromTo(movements, bot.entity.position, goal, options)
   }
 
   Object.defineProperties(bot.pathfinder, {
@@ -157,6 +175,79 @@ function inject (bot) {
 
   bot.pathfinder.goto = (goal) => {
     return gotoUtil(bot, goal)
+  }
+
+  bot.pathfinder.followPath = (computedPath, options = {}) => {
+    if (!Array.isArray(computedPath) || computedPath.length === 0) return Promise.resolve()
+    const nextPath = computedPath.slice()
+    const endpoint = nextPath[nextPath.length - 1]
+    const endpointGoal = {
+      heuristic (node) {
+        return Math.abs(Math.floor(endpoint.x) - node.x) +
+          Math.abs(Math.floor(endpoint.y) - node.y) +
+          Math.abs(Math.floor(endpoint.z) - node.z)
+      },
+      isEnd (node) {
+        return node.x === Math.floor(endpoint.x) &&
+          node.y === Math.floor(endpoint.y) &&
+          node.z === Math.floor(endpoint.z)
+      },
+      hasChanged () { return false },
+      isValid () { return true }
+    }
+
+    resetPath('goal_updated')
+    stateMovements = options.movements || stateMovements
+    stateGoal = endpointGoal
+    dynamicGoal = false
+    astarContext = null
+    astartTimedout = false
+    stopPathing = false
+    path = nextPath
+    pathUpdated = true
+    lastNodeTime = performance.now()
+
+    return new Promise((resolve, reject) => {
+      let timer = null
+      const cleanup = (err) => {
+        bot.removeListener('goal_reached', onGoalReached)
+        bot.removeListener('goal_updated', onGoalUpdated)
+        bot.removeListener('path_reset', onPathReset)
+        bot.removeListener('path_stop', onPathStop)
+        if (timer) clearTimeout(timer)
+        if (err && stateGoal === endpointGoal) {
+          stateGoal = null
+          resetPath('follow_path_failed')
+        }
+        if (err) reject(err)
+        else resolve()
+      }
+      const onGoalReached = goal => {
+        if (goal === endpointGoal) cleanup()
+      }
+      const onGoalUpdated = goal => {
+        if (goal !== endpointGoal) cleanup(new Error('The goal changed while following a computed path'))
+      }
+      const onPathReset = reason => cleanup(new Error(`The computed path was reset: ${reason || 'unknown'}`))
+      const onPathStop = () => cleanup(new Error('Path following stopped before reaching the computed endpoint'))
+      bot.on('goal_reached', onGoalReached)
+      bot.on('goal_updated', onGoalUpdated)
+      bot.on('path_reset', onPathReset)
+      bot.on('path_stop', onPathStop)
+      if (Number.isFinite(options.timeout) && options.timeout >= 0) {
+        timer = setTimeout(() => cleanup(new Error('Timed out while following the computed path')), options.timeout)
+      }
+      bot.emit('goal_updated', endpointGoal, false)
+    })
+  }
+
+  bot.pathfinder.gotoBest = async (movements, goal, options = {}) => {
+    const result = await bot.pathfinder.planPathTo(movements, goal, options)
+    await bot.pathfinder.followPath(result.path, {
+      movements,
+      timeout: options.executionTimeout
+    })
+    return result
   }
 
   bot.pathfinder.stop = () => {

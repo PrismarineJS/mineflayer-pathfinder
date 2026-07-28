@@ -21,21 +21,27 @@ declare module 'mineflayer-pathfinder' {
 		getPathTo(
 			movements: Movements,
 			goal: goals.Goal,
-			timeout?: number
-		): ComputedPath;
+			timeoutOrOptions?: number | PathOptions
+		): PartiallyComputedPath;
 		getPathFromTo(
 			movements: Movements,
 			startPos: Vec3 | null, 
 			goal: goals.Goal, 
-			options?: {
-				optimizePath?: boolean,
-				resetEntityIntersects?: boolean,
-				timeout?: number,
-				tickTimeout?: number,
-				searchRadius?: number,
-				startMove?: Move
-			}
-		): IterableIterator<{ result: ComputedPath, astarContext: AStar }>
+			options?: PathOptions
+		): IterableIterator<{ result: PartiallyComputedPath, astarContext: AStar }>;
+		planPathFromTo(
+			movements: Movements,
+			startPos: Vec3 | null,
+			goal: goals.Goal,
+			options?: PathOptions
+		): Promise<ComputedPath>;
+		planPathTo(
+			movements: Movements,
+			goal: goals.Goal,
+			options?: PathOptions
+		): Promise<ComputedPath>;
+		followPath(path: Move[], options?: FollowPathOptions): Promise<void>;
+		gotoBest(movements: Movements, goal: goals.Goal, options?: BestPathOptions): Promise<ComputedPath>;
 
 		setGoal(goal: goals.Goal | null, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
@@ -327,20 +333,41 @@ declare module 'mineflayer-pathfinder' {
 
 	type Callback = (error?: Error) => void;
 
+	export interface PathOptions {
+		optimizePath?: boolean;
+		resetEntityIntersects?: boolean;
+		timeout?: number;
+		tickTimeout?: number;
+		searchRadius?: number;
+		startMove?: Move;
+		maxVisitedNodes?: number;
+		nodeEvaluator?: (node: Move, pathCost: number) => number;
+	}
+
+	export interface FollowPathOptions {
+		movements?: Movements;
+		timeout?: number;
+	}
+
+	export interface BestPathOptions extends PathOptions {
+		executionTimeout?: number;
+	}
+
 	interface PathBase {
 		cost: number;
 		time: number;
 		visitedNodes: number;
 		generatedNodes: number;
 		path: Move[];
+		objectiveScore: number | null;
 	}
 
 	export interface ComputedPath extends PathBase {
-		status: 'noPath' | 'timeout' | 'success';
+		status: 'noPath' | 'timeout' | 'budget' | 'success';
 	}
 
 	export interface PartiallyComputedPath extends PathBase {
-		status: 'noPath' | 'timeout' | 'success' | 'partial';
+		status: 'noPath' | 'timeout' | 'budget' | 'success' | 'partial';
 	}
 
 	export interface XZCoordinates {
