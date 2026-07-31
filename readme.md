@@ -129,9 +129,13 @@ Executes an already-computed reachable path without searching for it again.
  * `path` - An array of computed Move instances.
  * `options.movements` - Movements instance Optional. Defaults to the active movements.
  * `options.timeout` - Number Optional. Maximum execution time.
+ * `options.signal` - AbortSignal Optional. Cancellation stops controls immediately and resolves with the executed prefix.
+ * `options.onNodeCompleted` - Function Optional. Receives completed/remaining path snapshots plus successful block-break and support-placement evidence. It may return `true` or a stop-reason string to end after that node.
+ * `options.nodeHookTimeout` - Number Optional. Maximum time for each node-completion hook; defaults to 1000 ms.
+ * `Returns` - A Promise resolving to terminal `status` and `stopReason`, `completedPath`, `remainingPath`, `blocksBroken`, `supportsPlaced`, and `lastCompletedNode`.
 
 ### bot.pathfinder.gotoBest(movements, goal, options = {})
-Plans under the supplied budgets, follows the best discovered path, and returns the planning result. Unlike `goto`, terminal planning statuses with a non-empty best path are useful results rather than discarded timeout errors.
+Plans under the supplied budgets, follows the best discovered path, and returns the planning result with its observable follow result under `execution`. Unlike `goto`, terminal planning statuses with a non-empty best path are useful results rather than discarded timeout errors.
  * `options.executionTimeout` - Number Optional. Maximum time to follow the computed path.
 
 ### bot.pathfinder.setGoal(Goal, dynamic)
