@@ -521,6 +521,44 @@ describe('pathfinder util functions', function () {
       assert.strictEqual(result.stopReason, 'aborted')
     })
 
+    it('followPath does not reset for an expected placement at its destination cell', async function () {
+      const followTarget = spawnPos.floored().offset(3, 0, 0)
+      const goal = new goals.GoalBlock(followTarget.x, followTarget.y, followTarget.z)
+      const plan = await bot.pathfinder.planPathTo(bot.pathfinder.movements, goal, {
+        optimizePath: false
+      })
+      assert.strictEqual(plan.status, 'success')
+      const reference = new Vec3(130, 68, 54)
+      const destination = new Vec3(130, 68, 55)
+      plan.path[0].toPlace.push({
+        x: reference.x,
+        y: reference.y,
+        z: reference.z,
+        dx: 0,
+        dy: 0,
+        dz: 1
+      })
+
+      const cancellation = new AbortController()
+      const following = bot.pathfinder.followPath(plan.path, {
+        movements: bot.pathfinder.movements,
+        timeout: 3000,
+        signal: cancellation.signal
+      })
+      // Minecraft emits the update for the placed destination, rather than
+      // the reference face supplied to placeBlock.
+      bot.emit(
+        'blockUpdate',
+        { position: destination, type: 0, name: 'air', boundingBox: 'empty' },
+        { position: destination, type: 1, name: 'dirt', boundingBox: 'block' }
+      )
+      cancellation.abort()
+      const result = await following
+
+      assert.strictEqual(result.status, 'cancelled')
+      assert.strictEqual(result.stopReason, 'aborted')
+    })
+
     it('followPath cancellation settles with the executed prefix and clears controls', async function () {
       this.timeout(15000)
       const followTarget = spawnPos.floored().offset(3, 0, 0)

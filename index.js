@@ -193,6 +193,18 @@ function inject (bot) {
     return `${Math.floor(position.x)},${Math.floor(position.y)},${Math.floor(position.z)}`
   }
 
+  // A toPlace entry identifies the reference block used by placeBlock, not
+  // the cell which changes in the world. Keep expected world updates keyed by
+  // the destination so our own delayed placement acknowledgement does not
+  // invalidate the path that placed it.
+  function placementTargetKey (placement) {
+    return pathPositionKey({
+      x: placement.x + (placement.dx || 0),
+      y: placement.y + (placement.dy || 0),
+      z: placement.z + (placement.dz || 0)
+    })
+  }
+
   function pathFollowResult (follow, status, stopReason) {
     const completedPath = follow.completedPath.map(clonePathValue)
     const remainingPath = follow.originalPath
@@ -315,7 +327,9 @@ function inject (bot) {
         expectedBreakUpdates: new Set(nextPath.flatMap(node =>
           (node.toBreak || []).map(pathPositionKey))),
         expectedPlaceUpdates: new Set(nextPath.flatMap(node =>
-          (node.toPlace || []).map(pathPositionKey))),
+          (node.toPlace || [])
+            .filter(placement => !placement.useOne)
+            .map(placementTargetKey))),
         onNodeCompleted: options.onNodeCompleted,
         nodeHookTimeout: Number.isFinite(options.nodeHookTimeout) && options.nodeHookTimeout > 0
           ? options.nodeHookTimeout
