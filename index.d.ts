@@ -40,8 +40,8 @@ declare module 'mineflayer-pathfinder' {
 			goal: goals.Goal,
 			options?: PathOptions
 		): Promise<ComputedPath>;
-		followPath(path: Move[], options?: FollowPathOptions): Promise<void>;
-		gotoBest(movements: Movements, goal: goals.Goal, options?: BestPathOptions): Promise<ComputedPath>;
+		followPath(path: Move[], options?: FollowPathOptions): Promise<FollowPathResult>;
+		gotoBest(movements: Movements, goal: goals.Goal, options?: BestPathOptions): Promise<BestPathResult>;
 
 		setGoal(goal: goals.Goal | null, dynamic?: boolean): void;
 		setMovements(movements: Movements): void;
@@ -347,10 +347,38 @@ declare module 'mineflayer-pathfinder' {
 	export interface FollowPathOptions {
 		movements?: Movements;
 		timeout?: number;
+		signal?: AbortSignal;
+		onNodeCompleted?: (event: PathNodeCompletedEvent) => void | boolean | string | Promise<void | boolean | string>;
+		nodeHookTimeout?: number;
 	}
 
 	export interface BestPathOptions extends PathOptions {
 		executionTimeout?: number;
+		signal?: AbortSignal;
+		onNodeCompleted?: (event: PathNodeCompletedEvent) => void | boolean | string | Promise<void | boolean | string>;
+		nodeHookTimeout?: number;
+	}
+
+	export interface PathNodeCompletedEvent {
+		node: Move;
+		completedPath: Move[];
+		remainingPath: Move[];
+		blocksBroken: XYZCoordinates[];
+		supportsPlaced: XYZCoordinates[];
+	}
+
+	export interface FollowPathResult {
+		status: 'completed' | 'cancelled' | 'timeout' | 'stopped' | 'failed';
+		stopReason: string;
+		completedPath: Move[];
+		remainingPath: Move[];
+		blocksBroken: XYZCoordinates[];
+		supportsPlaced: XYZCoordinates[];
+		lastCompletedNode: Move | null;
+	}
+
+	export interface BestPathResult extends ComputedPath {
+		execution: FollowPathResult;
 	}
 
 	interface PathBase {

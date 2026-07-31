@@ -450,6 +450,99 @@ describe('pathfinder util functions', function () {
       assert.ok(bot.entity.position.distanceTo(origin) > 0.5)
     })
 
+    it('followPath executes the supplied path once and reports completed nodes', async function () {
+      this.timeout(15000)
+      const followTarget = spawnPos.floored().offset(3, 0, 0)
+      const goal = new goals.GoalBlock(followTarget.x, followTarget.y, followTarget.z)
+      const plan = await bot.pathfinder.planPathTo(bot.pathfinder.movements, goal, {
+        optimizePath: false
+      })
+      assert.strictEqual(plan.status, 'success')
+      assert.ok(plan.path.length > 0)
+
+      const originalGetPathTo = bot.pathfinder.getPathTo
+      let replans = 0
+      const hooks = []
+      bot.pathfinder.getPathTo = (...args) => {
+        replans++
+        return originalGetPathTo(...args)
+      }
+      const result = await bot.pathfinder.followPath(plan.path, {
+        movements: bot.pathfinder.movements,
+        timeout: 10000,
+        onNodeCompleted: event => hooks.push(event.node)
+      })
+      bot.pathfinder.getPathTo = originalGetPathTo
+
+      assert.strictEqual(
+        result.status,
+        'completed',
+        JSON.stringify({
+          stopReason: result.stopReason,
+          completed: result.completedPath.length,
+          remaining: result.remainingPath.length,
+          last: result.lastCompletedNode,
+          position: bot.entity.position
+        })
+      )
+      assert.strictEqual(result.stopReason, 'path_exhausted')
+      assert.strictEqual(result.completedPath.length, plan.path.length)
+      assert.strictEqual(result.remainingPath.length, 0)
+      assert.strictEqual(hooks.length, result.completedPath.length)
+      assert.deepStrictEqual(result.lastCompletedNode, result.completedPath.at(-1))
+      assert.strictEqual(replans, 0)
+    })
+
+    it('followPath cancellation settles with the executed prefix and clears controls', async function () {
+      this.timeout(15000)
+      const followTarget = spawnPos.floored().offset(3, 0, 0)
+      const goal = new goals.GoalBlock(followTarget.x, followTarget.y, followTarget.z)
+      const plan = await bot.pathfinder.planPathTo(bot.pathfinder.movements, goal, {
+        optimizePath: false
+      })
+      assert.strictEqual(plan.status, 'success')
+      assert.ok(plan.path.length > 1)
+
+      const cancellation = new AbortController()
+      const started = Date.now()
+      const result = await bot.pathfinder.followPath(plan.path, {
+        movements: bot.pathfinder.movements,
+        timeout: 10000,
+        signal: cancellation.signal,
+        onNodeCompleted: event => {
+          if (event.completedPath.length === 1) cancellation.abort()
+        }
+      })
+
+      assert.strictEqual(result.status, 'cancelled')
+      assert.strictEqual(result.stopReason, 'aborted')
+      assert.strictEqual(result.completedPath.length, 1)
+      assert.strictEqual(result.remainingPath.length, plan.path.length - 1)
+      assert.ok(Date.now() - started < 10000)
+      assert.strictEqual(bot.pathfinder.isMoving(), false)
+    })
+
+    it('followPath permits an observation hook to stop at a completed node', async function () {
+      this.timeout(5000)
+      const followTarget = spawnPos.floored().offset(3, 0, 0)
+      const goal = new goals.GoalBlock(followTarget.x, followTarget.y, followTarget.z)
+      const plan = await bot.pathfinder.planPathTo(bot.pathfinder.movements, goal, {
+        optimizePath: false
+      })
+
+      const result = await bot.pathfinder.followPath(plan.path, {
+        movements: bot.pathfinder.movements,
+        timeout: 3000,
+        onNodeCompleted: () => 'observed_open_sky'
+      })
+
+      assert.strictEqual(result.status, 'stopped')
+      assert.strictEqual(result.stopReason, 'observed_open_sky')
+      assert.strictEqual(result.completedPath.length, 1)
+      assert.strictEqual(result.remainingPath.length, plan.path.length - 1)
+      assert.strictEqual(bot.pathfinder.isMoving(), false)
+    })
+
     it('isMoving', function (done) {
       bot.pathfinder.setGoal(new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z))
       const foo = () => {

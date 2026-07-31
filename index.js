@@ -29,6 +29,7 @@ function inject (bot) {
   let lastNodeTime = performance.now()
   let returningPos = null
   let stopPathing = false
+  let activePathFollow = null
   const physics = new Physics(bot)
   const lockPlaceBlock = new Lock()
   const lockEquipItem = new Lock()
@@ -177,9 +178,100 @@ function inject (bot) {
     return gotoUtil(bot, goal)
   }
 
+  function clonePathValue (value) {
+    if (!value || typeof value !== 'object') return value
+    const clone = Object.assign(
+      Object.create(Object.getPrototypeOf(value)),
+      value
+    )
+    if (Array.isArray(value.toBreak)) clone.toBreak = value.toBreak.map(clonePathValue)
+    if (Array.isArray(value.toPlace)) clone.toPlace = value.toPlace.map(clonePathValue)
+    return clone
+  }
+
+  function pathFollowResult (follow, status, stopReason) {
+    const completedPath = follow.completedPath.map(clonePathValue)
+    const remainingPath = follow.originalPath
+      .slice(completedPath.length)
+      .map(clonePathValue)
+    return {
+      status,
+      stopReason,
+      completedPath,
+      remainingPath,
+      blocksBroken: follow.blocksBroken.map(clonePathValue),
+      supportsPlaced: follow.supportsPlaced.map(clonePathValue),
+      lastCompletedNode: completedPath.length > 0
+        ? clonePathValue(completedPath[completedPath.length - 1])
+        : null
+    }
+  }
+
+  function completeFollowNode (node) {
+    const follow = activePathFollow
+    if (!follow) return false
+    const completed = clonePathValue(node)
+    follow.completedPath.push(completed)
+    const pathExhausted = follow.completedPath.length >= follow.originalPath.length
+    if (typeof follow.onNodeCompleted !== 'function') {
+      if (pathExhausted) {
+        follow.complete()
+        return true
+      }
+      return false
+    }
+
+    follow.hookPending = true
+    const hookResult = {
+      node: clonePathValue(completed),
+      completedPath: follow.completedPath.map(clonePathValue),
+      remainingPath: follow.originalPath
+        .slice(follow.completedPath.length)
+        .map(clonePathValue),
+      blocksBroken: follow.blocksBroken.map(clonePathValue),
+      supportsPlaced: follow.supportsPlaced.map(clonePathValue)
+    }
+    let hookTimer = null
+    const timeout = new Promise((resolve, reject) => {
+      hookTimer = setTimeout(
+        () => reject(new Error('Path node completion hook timed out')),
+        follow.nodeHookTimeout
+      )
+    })
+    Promise.race([
+      Promise.resolve().then(() => follow.onNodeCompleted(hookResult)),
+      timeout
+    ]).then(stopReason => {
+      if (activePathFollow !== follow) return
+      follow.hookPending = false
+      if (typeof stopReason === 'string' || stopReason === true) {
+        follow.stopAtNode(typeof stopReason === 'string'
+          ? stopReason
+          : 'node_hook_stop')
+        return
+      }
+      if (pathExhausted) follow.complete()
+    }, error => {
+      if (activePathFollow === follow) follow.failHook(error)
+    }).finally(() => {
+      if (hookTimer) clearTimeout(hookTimer)
+    })
+    return true
+  }
+
   bot.pathfinder.followPath = (computedPath, options = {}) => {
-    if (!Array.isArray(computedPath) || computedPath.length === 0) return Promise.resolve()
-    const nextPath = computedPath.slice()
+    if (!Array.isArray(computedPath) || computedPath.length === 0) {
+      return Promise.resolve({
+        status: 'completed',
+        stopReason: 'empty_path',
+        completedPath: [],
+        remainingPath: [],
+        blocksBroken: [],
+        supportsPlaced: [],
+        lastCompletedNode: null
+      })
+    }
+    const nextPath = computedPath.map(clonePathValue)
     const endpoint = nextPath[nextPath.length - 1]
     const endpointGoal = {
       heuristic (node) {
@@ -207,35 +299,71 @@ function inject (bot) {
     pathUpdated = true
     lastNodeTime = performance.now()
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       let timer = null
-      const cleanup = (err) => {
+      let settled = false
+      let onAbort = null
+      const follow = {
+        originalPath: nextPath.map(clonePathValue),
+        completedPath: [],
+        blocksBroken: [],
+        supportsPlaced: [],
+        onNodeCompleted: options.onNodeCompleted,
+        nodeHookTimeout: Number.isFinite(options.nodeHookTimeout) && options.nodeHookTimeout > 0
+          ? options.nodeHookTimeout
+          : 1000,
+        hookPending: false,
+        complete: () => {},
+        stopAtNode: () => {},
+        failHook: error => finish('failed', error?.message || 'node_hook_failed', true)
+      }
+      const finish = (status, stopReason, shouldStop = false) => {
+        if (settled) return
+        settled = true
+        const result = pathFollowResult(follow, status, stopReason)
         bot.removeListener('goal_reached', onGoalReached)
         bot.removeListener('goal_updated', onGoalUpdated)
         bot.removeListener('path_reset', onPathReset)
         bot.removeListener('path_stop', onPathStop)
         if (timer) clearTimeout(timer)
-        if (err && stateGoal === endpointGoal) {
-          stateGoal = null
-          resetPath('follow_path_failed')
-        }
-        if (err) reject(err)
-        else resolve()
+        if (onAbort) options.signal?.removeEventListener('abort', onAbort)
+        if (activePathFollow === follow) activePathFollow = null
+        if (shouldStop && stateGoal === endpointGoal) stop()
+        resolve(result)
       }
       const onGoalReached = goal => {
-        if (goal === endpointGoal) cleanup()
+        if (goal === endpointGoal) finish('completed', 'goal_reached')
       }
       const onGoalUpdated = goal => {
-        if (goal !== endpointGoal) cleanup(new Error('The goal changed while following a computed path'))
+        if (goal !== endpointGoal) finish('stopped', 'goal_changed')
       }
-      const onPathReset = reason => cleanup(new Error(`The computed path was reset: ${reason || 'unknown'}`))
-      const onPathStop = () => cleanup(new Error('Path following stopped before reaching the computed endpoint'))
+      const onPathReset = reason => finish('stopped', reason || 'path_reset')
+      const onPathStop = () => finish('stopped', 'path_stopped')
+      follow.failHook = error => finish(
+        'failed',
+        error?.message || 'node_hook_failed',
+        true
+      )
+      follow.complete = () => finish('completed', 'path_exhausted', true)
+      follow.stopAtNode = stopReason => finish('stopped', stopReason, true)
+      activePathFollow = follow
       bot.on('goal_reached', onGoalReached)
       bot.on('goal_updated', onGoalUpdated)
       bot.on('path_reset', onPathReset)
       bot.on('path_stop', onPathStop)
       if (Number.isFinite(options.timeout) && options.timeout >= 0) {
-        timer = setTimeout(() => cleanup(new Error('Timed out while following the computed path')), options.timeout)
+        timer = setTimeout(
+          () => finish('timeout', 'execution_timeout', true),
+          options.timeout
+        )
+      }
+      if (options.signal) {
+        onAbort = () => finish('cancelled', 'aborted', true)
+        if (options.signal.aborted) {
+          onAbort()
+          return
+        }
+        options.signal.addEventListener('abort', onAbort, { once: true })
       }
       bot.emit('goal_updated', endpointGoal, false)
     })
@@ -243,11 +371,14 @@ function inject (bot) {
 
   bot.pathfinder.gotoBest = async (movements, goal, options = {}) => {
     const result = await bot.pathfinder.planPathTo(movements, goal, options)
-    await bot.pathfinder.followPath(result.path, {
+    const execution = await bot.pathfinder.followPath(result.path, {
       movements,
-      timeout: options.executionTimeout
+      timeout: options.executionTimeout,
+      signal: options.signal,
+      onNodeCompleted: options.onNodeCompleted,
+      nodeHookTimeout: options.nodeHookTimeout
     })
-    return result
+    return { ...result, execution }
   }
 
   bot.pathfinder.stop = () => {
@@ -530,6 +661,11 @@ function inject (bot) {
       }
     }
 
+    if (activePathFollow?.hookPending) {
+      fullStop()
+      return
+    }
+
     if (astarContext && astartTimedout) {
       const results = astarContext.compute()
       results.path = postProcessPath(results.path)
@@ -547,7 +683,9 @@ function inject (bot) {
     if (path.length === 0) {
       lastNodeTime = performance.now()
       if (stateGoal && stateMovements) {
-        if (stateGoal.isEnd(bot.entity.position.floored())) {
+        const flooredPosition = bot.entity.position.floored()
+        if (stateGoal.isEnd(flooredPosition) ||
+            stateGoal.isEnd(flooredPosition.offset(0, 1, 0))) {
           if (!dynamicGoal) {
             bot.emit('goal_reached', stateGoal)
             stateGoal = null
@@ -575,13 +713,16 @@ function inject (bot) {
       if (!digging && bot.entity.onGround) {
         digging = true
         const b = nextPoint.toBreak.shift()
+        const followedPath = activePathFollow
         const block = bot.blockAt(new Vec3(b.x, b.y, b.z), false)
         const tool = bot.pathfinder.bestHarvestTool(block)
         fullStop()
 
         const digBlock = () => {
           bot.dig(block, true)
-            .catch(_ignoreError => {
+            .then(() => {
+              followedPath?.blocksBroken.push(clonePathValue(b))
+            }, _ignoreError => {
               resetPath('dig_error')
             })
             .then(function () {
@@ -635,6 +776,8 @@ function inject (bot) {
         canPlace = placingBlock.y + 2.1 < bot.entity.position.y
       }
       if (canPlace) {
+        const followedPath = activePathFollow
+        const support = clonePathValue(placingBlock)
         if (!lockEquipItem.tryAcquire()) return
         bot.equip(block, 'hand')
           .then(function () {
@@ -646,6 +789,7 @@ function inject (bot) {
             }
             bot._placeBlockWithOptions(refBlock, new Vec3(placingBlock.dx, placingBlock.dy, placingBlock.dz), { swingArm: 'right', forceLook: true })
               .then(function () {
+                followedPath?.supportsPlaced.push(support)
                 // Dont release Sneak if the block placement was not successful
                 bot.setControlState('sneak', false)
                 if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
@@ -674,7 +818,11 @@ function inject (bot) {
         stop()
         return
       }
-      path.shift()
+      const completedNode = path.shift()
+      if (completeFollowNode(completedNode)) {
+        fullStop()
+        return
+      }
       if (path.length === 0) { // done
         // If the block the bot is standing on is not a full block only checking for the floored position can fail as
         // the distance to the goal can get greater then 0 when the vector is floored.
