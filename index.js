@@ -189,6 +189,10 @@ function inject (bot) {
     return clone
   }
 
+  function pathPositionKey (position) {
+    return `${Math.floor(position.x)},${Math.floor(position.y)},${Math.floor(position.z)}`
+  }
+
   function pathFollowResult (follow, status, stopReason) {
     const completedPath = follow.completedPath.map(clonePathValue)
     const remainingPath = follow.originalPath
@@ -308,6 +312,10 @@ function inject (bot) {
         completedPath: [],
         blocksBroken: [],
         supportsPlaced: [],
+        expectedBreakUpdates: new Set(nextPath.flatMap(node =>
+          (node.toBreak || []).map(pathPositionKey))),
+        expectedPlaceUpdates: new Set(nextPath.flatMap(node =>
+          (node.toPlace || []).map(pathPositionKey))),
         onNodeCompleted: options.onNodeCompleted,
         nodeHookTimeout: Number.isFinite(options.nodeHookTimeout) && options.nodeHookTimeout > 0
           ? options.nodeHookTimeout
@@ -620,6 +628,17 @@ function inject (bot) {
   bot.on('blockUpdate', (oldBlock, newBlock) => {
     if (!oldBlock || !newBlock) return
     if (isPositionNearPath(oldBlock.position, path) && oldBlock.type !== newBlock.type) {
+      const updateKey = pathPositionKey(oldBlock.position)
+      if (activePathFollow?.expectedBreakUpdates.has(updateKey) &&
+          ['air', 'cave_air', 'void_air'].includes(newBlock.name)) {
+        activePathFollow.expectedBreakUpdates.delete(updateKey)
+        return
+      }
+      if (activePathFollow?.expectedPlaceUpdates.has(updateKey) &&
+          newBlock.boundingBox === 'block') {
+        activePathFollow.expectedPlaceUpdates.delete(updateKey)
+        return
+      }
       resetPath('block_updated', false)
     }
   })

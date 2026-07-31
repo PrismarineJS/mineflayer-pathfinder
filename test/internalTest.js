@@ -493,6 +493,34 @@ describe('pathfinder util functions', function () {
       assert.strictEqual(replans, 0)
     })
 
+    it('followPath does not reset for an expected break update', async function () {
+      const followTarget = spawnPos.floored().offset(3, 0, 0)
+      const goal = new goals.GoalBlock(followTarget.x, followTarget.y, followTarget.z)
+      const plan = await bot.pathfinder.planPathTo(bot.pathfinder.movements, goal, {
+        optimizePath: false
+      })
+      assert.strictEqual(plan.status, 'success')
+      const expected = new Vec3(plan.path[0].x, plan.path[0].y, plan.path[0].z)
+      plan.path[0].toBreak.push(expected)
+
+      const cancellation = new AbortController()
+      const following = bot.pathfinder.followPath(plan.path, {
+        movements: bot.pathfinder.movements,
+        timeout: 3000,
+        signal: cancellation.signal
+      })
+      bot.emit(
+        'blockUpdate',
+        { position: expected, type: 1, name: 'stone', boundingBox: 'block' },
+        { position: expected, type: 0, name: 'air', boundingBox: 'empty' }
+      )
+      cancellation.abort()
+      const result = await following
+
+      assert.strictEqual(result.status, 'cancelled')
+      assert.strictEqual(result.stopReason, 'aborted')
+    })
+
     it('followPath cancellation settles with the executed prefix and clears controls', async function () {
       this.timeout(15000)
       const followTarget = spawnPos.floored().offset(3, 0, 0)
