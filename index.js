@@ -168,9 +168,16 @@ function inject (bot) {
   function postProcessPath (path) {
     for (let i = 0; i < path.length; i++) {
       const curPoint = path[i]
-      if (curPoint.toBreak.length > 0 || curPoint.toPlace.length > 0) break
+      // A useOne (open a gate/door on the way through) is a click, not a placement:
+      // it must not stop the pass, or this node and every one after it keep their
+      // raw corner coordinates and the executor steers into the frame
+      if (curPoint.toBreak.length > 0 || curPoint.toPlace.some(p => !p.useOne)) break
       const b = bot.blockAt(new Vec3(curPoint.x, curPoint.y, curPoint.z))
-      if (b && (b.type === waterType || ((b.type === ladderId || b.type === vineId) && i + 1 < path.length && path[i + 1].y < curPoint.y))) {
+      // An openable block is a doorway: its node is the floor centre. getPositionOnTopOf
+      // would put it on top of the swung-open leaf (offset ~0.9 and a block up), which
+      // the walk simulation can never reach — the bot stands in the open doorway until 'stuck'
+      const doorway = stateMovements && stateMovements.openable && b && stateMovements.openable.has(b.type)
+      if (b && (b.type === waterType || doorway || ((b.type === ladderId || b.type === vineId) && i + 1 < path.length && path[i + 1].y < curPoint.y))) {
         curPoint.x = Math.floor(curPoint.x) + 0.5
         curPoint.y = Math.floor(curPoint.y)
         curPoint.z = Math.floor(curPoint.z) + 0.5
