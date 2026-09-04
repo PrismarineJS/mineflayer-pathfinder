@@ -292,10 +292,8 @@ A dictionary of the number of entities intersecting each floored block coordinat
 * Dictionary of costs `{string: number}`
 
 ### canOpenDoors
-Enable feature to open Fence Gates. Unreliable and known to be buggy.
-* Default - `false`
 
-# Events:
+Boolean to open fence gates and wooden doors on the way through, instead of pathing around them or breaking them. Doors are two blocks tall and keep a collision shape when open; both are handled. Iron doors and trapdoors are still obstacles. Default `false`.
 
 ### goal_reached
 Called when the goal has been reached. Not called for dynamic goals.
