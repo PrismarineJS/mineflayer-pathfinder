@@ -1362,6 +1362,34 @@ describe('human walker', function () {
     await second
   })
 
+  it('walkTo reissued for the goal in flight joins that walk instead of superseding it', async function () {
+    this.timeout(15000)
+    this.slow(6000)
+    bot.entity.position = spawnPos.clone()
+    await once(bot, 'physicsTick')
+    const first = human.walkTo(goal)
+    // Reissued while the search is still slicing, then on a timer for the rest of the walk.
+    assert.strictEqual(human.walkTo(goal.offset(0.3, 0, -0.3)), first)
+    let calls = 0
+    const timer = setInterval(() => {
+      calls++
+      const again = human.walkTo(goal)
+      again.catch(() => {})
+      assert.strictEqual(again, first)
+    }, 100)
+    try {
+      await first
+    } finally {
+      clearInterval(timer)
+    }
+    assert.ok(calls >= 5, `walk ended after ${calls} reissues, too few to exercise the join`)
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - goal.x, p.z - goal.z) < 1, `stopped ${p} away from ${goal}`)
+    const next = human.walkTo(goal)
+    assert.notStrictEqual(next, first, 'a walk that finished was handed out again')
+    await next
+  })
+
   it('walkTo resolves when the bot already stands in the goal block', async function () {
     this.timeout(15000)
     bot.entity.position = spawnPos.clone()
