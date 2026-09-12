@@ -56,6 +56,17 @@ declare module 'mineflayer-pathfinder' {
 		faceAt?: Vec3;
 	}
 
+	export interface BridgeOptions {
+		/** stop this far from the goal; default 1 */
+		radius?: number;
+		/** give up after this many steps; default 256 */
+		blocks?: number;
+		/** name of the block to build with; default is the first full cube in the inventory */
+		item?: string;
+		/** how long one step onto the next block may take, ms; default 1600 */
+		stepMs?: number;
+	}
+
 	export interface Human {
 		personality: Personality;
 		/** waypoints of the walk in progress, or of the last one */
@@ -64,6 +75,10 @@ declare module 'mineflayer-pathfinder' {
 		active: boolean;
 		walkTo(goal: Vec3, options?: WalkOptions): Promise<void>;
 		lookAt(point: Vec3, options?: { settleMs?: number }): Promise<void>;
+		/** walk toward the goal a block at a time, building over anything that is not there yet */
+		bridgeTo(goal: Vec3, options?: BridgeOptions): Promise<void>;
+		/** lay one bridge block on the given horizontal face of the block under the bot */
+		placeAhead(direction: Vec3, options?: Pick<BridgeOptions, 'item'>): Promise<Vec3>;
 		stop(): void;
 	}
 
