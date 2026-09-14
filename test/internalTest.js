@@ -1404,6 +1404,19 @@ describe('human walker', function () {
     assert.ok(slices - atSupersede <= 1, `superseded search ran ${slices - atSupersede} more slices`)
   })
 
+  it('walkTo rejects with no path when the route ends under an unreachable goal', async function () {
+    this.timeout(20000)
+    this.slow(8000)
+    bot.entity.position = spawnPos.clone()
+    await once(bot, 'physicsTick')
+    // The goal's column is a short walk away, but its level is 20 blocks up in the air.
+    const above = goal.offset(0, 20, 0)
+    await assert.rejects(human.walkTo(above), /no path/)
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - above.x, p.z - above.z) < 1.5, `stopped at ${p}, did not walk under the goal`)
+    assert.ok(Math.hypot(bot.entity.velocity.x, bot.entity.velocity.z) < 0.02, 'still moving')
+  })
+
   it('walkTo walks to the closest reachable point before rejecting with no path', async function () {
     this.timeout(20000)
     this.slow(8000)
