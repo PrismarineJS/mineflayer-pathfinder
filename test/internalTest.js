@@ -1428,6 +1428,33 @@ describe('human walker', function () {
     assert.ok(p.z > spawnPos.z + 3, `stopped at ${p}, did not head for the goal`)
     assert.ok(human.route.length >= 2 && !human.route[human.route.length - 1].equals(spawnPos.offset(0, 0, 60)), 'route must end at the closest node, not the goal')
   })
+
+  it('walkTo and lookAt reject at once while physics is disabled', async function () {
+    this.timeout(20000)
+    this.slow(8000)
+    bot.entity.position = spawnPos.clone()
+    await once(bot, 'physicsTick')
+    const from = bot.entity.position.clone()
+    const yaw = bot.entity.yaw
+    bot.physicsEnabled = false
+    const t0 = Date.now()
+    try {
+      await assert.rejects(human.walkTo(goal, { timeout: 60000 }), /physicsEnabled is false/)
+      await assert.rejects(human.lookAt(faceAt), /physicsEnabled is false/)
+    } finally {
+      bot.physicsEnabled = true
+    }
+    // The point of the guard: the caller hears back now, not when the walk timeout expires.
+    assert.ok(Date.now() - t0 < 2000, `took ${Date.now() - t0} ms to report physics was off`)
+    assert.ok(bot.entity.position.distanceTo(from) < 0.01, `moved to ${bot.entity.position} with physics disabled`)
+    assert.strictEqual(bot.entity.yaw, yaw, 'turned the head with physics disabled')
+
+    // ...and the controller is still usable once physics comes back.
+    await once(bot, 'physicsTick')
+    await human.walkTo(goal)
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - goal.x, p.z - goal.z) < 1, `stopped ${p} away from ${goal}`)
+  })
 })
 
 describe('human walker on an island', function () {
