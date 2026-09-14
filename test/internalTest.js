@@ -422,6 +422,32 @@ describe('pathfinder util functions', function () {
       await bot.pathfinder.goto(new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z))
     })
 
+    it('Goto rejects when there is no path to the goal', async function () {
+      this.timeout(10000)
+      const strict = new Movements(bot, mcData)
+      strict.canDig = false
+      strict.allow1by1towers = false
+      strict.scafoldingBlocks = []
+      bot.pathfinder.setMovements(strict)
+      try {
+        // Five blocks straight up with nothing to build or climb on: every neighbour is further from
+        // the goal than the start, so A* gives back 'noPath' with an empty path.
+        await assert.rejects(
+          bot.pathfinder.goto(new goals.GoalBlock(Math.floor(spawnPos.x), spawnPos.y + 5, Math.floor(spawnPos.z))),
+          { name: 'NoPath' }
+        )
+      } finally {
+        bot.pathfinder.setMovements(new Movements(bot, mcData))
+      }
+    })
+
+    it('stop() while the bot is not pathing does not abort the next goal', async function () {
+      this.timeout(3000)
+      this.slow(1500)
+      bot.pathfinder.stop()
+      await bot.pathfinder.goto(new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z))
+    })
+
     it('isMoving', function (done) {
       bot.pathfinder.setGoal(new goals.GoalGetToBlock(targetBlock.x, targetBlock.y, targetBlock.z))
       const foo = () => {

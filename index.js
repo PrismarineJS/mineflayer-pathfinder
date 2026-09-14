@@ -160,6 +160,9 @@ function inject (bot) {
   }
 
   bot.pathfinder.stop = () => {
+    // Nothing is running, so there is nothing to stop; the flag would otherwise survive until the
+    // next goal and stop that one instead.
+    if (!stateGoal && path.length === 0) return
     stopPathing = true
   }
 
