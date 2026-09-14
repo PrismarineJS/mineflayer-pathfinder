@@ -145,7 +145,7 @@ The search limiting radius, in blocks, if `-1` the search is not limited by dist
 
 # Human-like walking
 
-`createHuman(bot, options)` returns a controller that walks routes the way a player does. The pathfinder only plans the route; the controller then follows it by pure pursuit (corners become curves, the bot never snaps to block centres), turns the head in discrete mouse-like gestures on the 0.15° sensitivity grid, starts sprinting and sprint-jumping with human delays and rates, and coasts to a stop at the goal instead of braking on it. Reaction time, base pitch, glances and strafing are per-bot personality traits drawn from a seed. It walks, steps up single blocks and drops down; it does not dig, place, swim or parkour.
+`createHuman(bot, options)` returns a controller that walks routes the way a player does. The pathfinder only plans the route; the controller then follows it by pure pursuit (corners become curves, the bot never snaps to block centres), turns the head in discrete mouse-like gestures on the 0.15° sensitivity grid, starts sprinting and sprint-jumping with human delays and rates, and coasts to a stop at the goal instead of braking on it. Reaction time, base pitch, glances and strafing are per-bot personality traits drawn from a seed. It walks, steps up single blocks, drops down and bridges over gaps; it does not dig, swim or parkour.
 
 ```js
 const { createHuman } = require('mineflayer-pathfinder')
@@ -173,6 +173,21 @@ Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once 
 ### human.lookAt(point, options)
 Turns the head to `point` after a reaction delay and resolves once it has settled.
  * `options.settleMs` - how long the head must be still (default `300`)
+
+### human.bridgeTo(goal, options)
+Walks toward `goal` a block at a time, laying a block under the bot wherever there is nothing to walk on, and resolves once the bot is within `radius` of it. Ground the bot can step or drop down onto is walked over; only a real gap is built across. The bot needs a full cube in its inventory, and it keeps its own feet level: the bridge is flat.
+
+A bridge is the one placement a bot cannot make by aiming alone. The block it extends from is the one under the bot's feet, and the face to click is one of its sides — which is not in view from on top of the block, because the ray from the eye to any point on a side face passes through that block's own top face first. The vanilla client can only ever report the face its crosshair hit, so a packet claiming the side face from up there is one no client can send, and a server that validates the hit drops it silently. Players get the face in view by sneaking, which lets the hitbox hang over the lip and puts the eye outside the block's column; that is what this does.
+
+ * `options` - optional:
+   * `radius` - stop this far from the goal (default `1`)
+   * `blocks` - give up after this many steps (default `256`)
+   * `item` - name of the block to build with (default: the first full cube in the inventory)
+   * `stepMs` - how long one step onto the next block may take (default `1600`)
+ * Rejects with `no block to build with`, `<pos> is in the way`, `stuck bridging at <pos>`, `nothing under the bot to build from`, `stopped`, or whatever `placeBlock` rejected with.
+
+### human.placeAhead(direction, options)
+One bridge block: sneak to the lip of the block under the bot, click its `direction` face, and return the position that was filled. `direction` is a horizontal unit Vec3. Takes the same `item` option.
 
 ### human.stop()
 Aborts the walk in progress (its Promise rejects with `stopped`) and releases the head.
