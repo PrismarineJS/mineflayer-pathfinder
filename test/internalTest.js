@@ -37,6 +37,25 @@ function flatMap (Version) {
 }
 
 /**
+ * A floating island: a platform, a three-deep trench across the whole chunk, two one-block steps
+ * out of it and the ground beyond. Solid below the surface, void underneath the island.
+ * @param {string} Version version
+ * @returns {import('prismarine-chunk').Chunk}
+ */
+function trenchMap (Version) {
+  const Block = require('prismarine-block')(Version)
+  const Chunk = require('prismarine-chunk')(Version)
+  const mcData = require('minecraft-data')(Version)
+  const top = (z) => z <= 5 ? 56 : z <= 7 ? 53 : z === 8 ? 54 : z === 9 ? 55 : 56
+  const chunk = new Chunk()
+  chunk.initialize((x, y, z) => {
+    if (y > top(z) || y < 40) return new Block(mcData.blocksByName.air.id, 1, 0)
+    return new Block(mcData.blocksByName[y === top(z) ? 'cyan_terracotta' : 'stone'].id, 1, 0)
+  })
+  return chunk
+}
+
+/**
  * Reads the schematic parkour1.schem and returns a chunk containing the schematic content.
  * @param {string} Version version to be used
  * @returns {Promise<import('prismarine-chunk').Chunk>}
@@ -1395,5 +1414,42 @@ describe('human walker', function () {
     const p = bot.entity.position
     assert.ok(p.z > spawnPos.z + 3, `stopped at ${p}, did not head for the goal`)
     assert.ok(human.route.length >= 2 && !human.route[human.route.length - 1].equals(spawnPos.offset(0, 0, 60)), 'route must end at the closest node, not the goal')
+  })
+})
+
+describe('human walker on an island', function () {
+  const spawnPos = new Vec3(8.5, 57, 2.5)
+  const goal = new Vec3(8.5, 57, 12.5)
+
+  let bot
+  let server
+  let human
+
+  before(async () => {
+    server = await newServer(server, trenchMap(Version), spawnPos, Version, true)
+    bot = mineflayer.createBot({
+      username: 'player',
+      version: Version,
+      port: ServerPort
+    })
+    await once(bot, 'chunkColumnLoad')
+    bot.loadPlugin(pathfinder)
+    human = createHuman(bot, { seed: 7 })
+  })
+  after(() => {
+    human.active = false
+    server.close()
+  })
+
+  it('walkTo drops three blocks into a trench and climbs the steps out', async function () {
+    this.timeout(20000)
+    this.slow(8000)
+    await once(bot, 'physicsTick')
+    await human.walkTo(goal, { timeout: 15000 })
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - goal.x, p.z - goal.z) < 1, `stopped ${p} away from ${goal}`)
+    assert.strictEqual(p.y, goal.y)
+    assert.ok(human.route.some(w => w.y === 54), `route ${human.route} did not go through the trench floor`)
+    assert.ok(human.route[human.route.length - 1].equals(goal), 'route must end at the goal')
   })
 })
