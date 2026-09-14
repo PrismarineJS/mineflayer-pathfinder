@@ -164,7 +164,7 @@ await human.walkTo(new Vec3(10.5, 64, -20.5), { faceAt: npc.position.offset(0, 1
  * `Returns` - a `Human`
 
 ### human.walkTo(goal, options)
-Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `superseded` (a newer `walkTo` was issued) or `stopped`.
+Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `superseded` (a newer `walkTo` was issued) or `stopped`. A `walkTo` for the goal already in flight (within half a block) returns that walk's Promise instead of superseding it, so re-issuing a goal on a timer keeps the walk going.
  * `options` - optional:
    * `radius` - stop within this distance of the goal (default: the personality's `stopRadius`)
    * `timeout` - ms (default `60000`)
