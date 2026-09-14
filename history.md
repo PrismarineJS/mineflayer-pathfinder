@@ -1,5 +1,13 @@
 # History
 
+## 2.5.0
+* [Add repo commands workflow (#360)](https://github.com/PrismarineJS/mineflayer-pathfinder/commit/8b75088fcdf8d8ecbaf581265bac3bd3e5b9fd17) (thanks @rom1504)
+* [Update CI to Node 24 (#359)](https://github.com/PrismarineJS/mineflayer-pathfinder/commit/ec8b26f77a5302402f8a37f5f874708754b3c582) (thanks @rom1504)
+* [fix(movements): use blockD instead of blockC in exclusionPlace calculation (#351)](https://github.com/PrismarineJS/mineflayer-pathfinder/commit/874949196ac15a7bca23ac54b403b7a8c8bc71be) (thanks @kcinzgg)
+* [node 22 (#345)](https://github.com/PrismarineJS/mineflayer-pathfinder/commit/c9a75911f5f8f2b9aeaff19c3c685b9882747a74) (thanks @rom1504)
+* [Bump mocha from 10.8.2 to 11.0.1 (#342)](https://github.com/PrismarineJS/mineflayer-pathfinder/commit/3989979a4bb213407071e28a05e3062634accdbe) (thanks @dependabot[bot])
+* [Fix isEnd crashing](https://github.com/PrismarineJS/mineflayer-pathfinder/commit/d69a02904bc83f4c36598ae90d470a009a130105) (thanks @IceTank)
+
 # 2.4.5
 * [Fix block update resets for optimized paths (@m000z0rz)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/330)
 * [reword .stop() for more clarity (@Jovan-04)](https://github.com/PrismarineJS/mineflayer-pathfinder/pull/327)
