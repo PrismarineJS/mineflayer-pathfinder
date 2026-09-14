@@ -534,6 +534,12 @@ function inject (bot) {
         bot.activateBlock(bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z))).then(() => {
           lockUseBlock.release()
           placingBlock = nextPoint.toPlace.shift()
+          if (!placingBlock) {
+            // A useOne is the whole of this node's work — without this the next tick
+            // falls through to the scaffolding branch with nothing to place
+            placing = false
+            lastNodeTime = performance.now()
+          }
         }, err => {
           console.error(err)
           lockUseBlock.release()
