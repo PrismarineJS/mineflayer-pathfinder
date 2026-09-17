@@ -1362,6 +1362,72 @@ describe('human walker', function () {
     await second
   })
 
+  it('walkTo reissued for the goal in flight joins that walk instead of superseding it', async function () {
+    this.timeout(15000)
+    this.slow(6000)
+    bot.entity.position = spawnPos.clone()
+    await once(bot, 'physicsTick')
+    const first = human.walkTo(goal)
+    // Reissued while the search is still slicing, then on a timer for the rest of the walk.
+    assert.strictEqual(human.walkTo(goal.offset(0.3, 0, -0.3)), first)
+    let calls = 0
+    const timer = setInterval(() => {
+      calls++
+      const again = human.walkTo(goal)
+      again.catch(() => {})
+      assert.strictEqual(again, first)
+    }, 100)
+    try {
+      await first
+    } finally {
+      clearInterval(timer)
+    }
+    assert.ok(calls >= 5, `walk ended after ${calls} reissues, too few to exercise the join`)
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - goal.x, p.z - goal.z) < 1, `stopped ${p} away from ${goal}`)
+    const next = human.walkTo(goal)
+    assert.notStrictEqual(next, first, 'a walk that finished was handed out again')
+    await next
+  })
+
+  it('walkTo reissued for the goal in flight with different options supersedes it', async function () {
+    this.timeout(15000)
+    this.slow(6000)
+    bot.entity.position = spawnPos.clone()
+    await once(bot, 'physicsTick')
+    const first = human.walkTo(goal, { radius: 5 })
+    const second = human.walkTo(goal, { radius: 0.1, faceAt })
+    assert.notStrictEqual(second, first, 'a tighter radius joined the loose walk')
+    await assert.rejects(first, { message: 'superseded' })
+    assert.strictEqual(human.walkTo(goal, { radius: 0.1, faceAt: faceAt.clone() }), second)
+    const dropped = human.walkTo(goal, { radius: 0.1 })
+    assert.notStrictEqual(dropped, second, 'dropping faceAt joined the walk')
+    await assert.rejects(second, { message: 'superseded' })
+    const third = human.walkTo(goal, { radius: 0.1, faceAt })
+    await assert.rejects(dropped, { message: 'superseded' })
+    await third
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - goal.x, p.z - goal.z) < 1, `stopped ${p} away from ${goal}`)
+  })
+
+  it('walkTo issued in the same turn as stop starts a fresh walk', async function () {
+    this.timeout(15000)
+    this.slow(6000)
+    bot.entity.position = spawnPos.clone()
+    await once(bot, 'physicsTick')
+    const before = human.route
+    const first = human.walkTo(goal)
+    // Stop once this walk is under way rather than still planning.
+    while (human.route === before) await once(bot, 'physicsTick')
+    human.stop()
+    const next = human.walkTo(goal)
+    assert.notStrictEqual(next, first, 'the stopped walk was handed out again')
+    await assert.rejects(first, { message: 'stopped' })
+    await next
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - goal.x, p.z - goal.z) < 1, `stopped ${p} away from ${goal}`)
+  })
+
   it('walkTo resolves when the bot already stands in the goal block', async function () {
     this.timeout(15000)
     bot.entity.position = spawnPos.clone()
