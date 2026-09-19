@@ -1559,3 +1559,233 @@ describe('human walker on an island', function () {
     assert.ok(human.route[human.route.length - 1].equals(goal), 'route must end at the goal')
   })
 })
+
+describe('human bridging', function () {
+  // A server that answers a placement only when the face the packet reports is the one the bot's own
+  // crosshair ray reaches first. That is all a vanilla client can ever send — the face and the cursor
+  // come out of Minecraft.pick, never chosen alongside the look — and it is what a server that
+  // validates the hit checks. Claiming a side face from on top of the block fails it every time: the
+  // ray meets that block's top face first.
+  const DEG = Math.PI / 180
+  const spawnPos = new Vec3(8.5, 1, 8.5)
+  const edge = new Vec3(8, 0, 8) // the last floor block; everything at z > 8 is void
+
+  /** @type { import('mineflayer').Bot & { pathfinder: import('mineflayer-pathfinder').Pathfinder }} */
+  let bot
+  /** @type { import('minecraft-protocol').Server } */
+  let server
+  /** @type { import('mineflayer-pathfinder').Human } */
+  let human
+  let accepted
+  let refused
+  // Every block laid so far, so each test starts from the bare ledge.
+  const built = []
+
+  // The floor stops at z = 8, so a bridge is the only way past it.
+  function ledgeMap () {
+    const Block = require('prismarine-block')(Version)
+    const Chunk = require('prismarine-chunk')(Version)
+    const mcData = require('minecraft-data')(Version)
+    const chunk = new Chunk()
+    chunk.initialize((x, y, z) => (y === 0 && z <= 8) ? new Block(mcData.blocksByName.bedrock.id, 1, 0) : new Block(mcData.blocksByName.air.id, 1, 0))
+    return chunk
+  }
+
+  // The face of the block at `pos` that a ray from `eye` along `dir` enters through, or null when it
+  // misses. Slab method: the box is the intersection of three intervals and the ray enters at the
+  // latest interval start.
+  function entryFace (eye, dir, pos) {
+    let tNear = -Infinity
+    let tFar = Infinity
+    let face = null
+    for (const k of ['x', 'y', 'z']) {
+      if (Math.abs(dir[k]) < 1e-9) {
+        if (eye[k] < pos[k] || eye[k] > pos[k] + 1) return null
+        continue
+      }
+      let t1 = (pos[k] - eye[k]) / dir[k]
+      let t2 = (pos[k] + 1 - eye[k]) / dir[k]
+      let sign = -1
+      if (t1 > t2) { const t = t1; t1 = t2; t2 = t; sign = 1 }
+      if (t1 > tNear) { tNear = t1; face = { axis: k, sign } }
+      if (t2 < tFar) tFar = t2
+      if (tNear > tFar) return null
+    }
+    return tFar < 0 ? null : face
+  }
+
+  const FACE_INDEX = { 'y-1': 0, y1: 1, 'z-1': 2, z1: 3, 'x-1': 4, x1: 5 }
+
+  before(async () => {
+    const mcData = require('minecraft-data')(Version)
+    const chunk = ledgeMap()
+    server = mc.createServer({ 'online-mode': false, version: Version, port: ServerPort })
+    server.on('login', (client) => {
+      client.write('login', mcData.loginPacket)
+      client.write('map_chunk', generateChunkPacket(chunk))
+      client.write('position', { x: spawnPos.x, y: spawnPos.y, z: spawnPos.z, yaw: 0, pitch: 0, flags: 0x00 })
+      let pos = spawnPos.clone()
+      let yaw = 0
+      let pitch = 0
+      client.on('packet', (data, meta) => {
+        if (data.x !== undefined && data.y !== undefined && data.z !== undefined && meta.name !== 'block_place') pos = new Vec3(data.x, data.y, data.z)
+        if (data.yaw !== undefined && meta.name !== 'block_place') { yaw = (180 - data.yaw) * DEG; pitch = -data.pitch * DEG }
+        if (meta.name !== 'block_place') return
+        const eye = pos.offset(0, 1.62, 0)
+        const dir = new Vec3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch))
+        const face = entryFace(eye, dir, data.location)
+        const hit = face === null ? null : FACE_INDEX[face.axis + face.sign]
+        if (hit !== data.direction) { refused.push({ claimed: data.direction, hit, at: data.location }); return }
+        const dest = new Vec3(data.location.x, data.location.y, data.location.z).plus(faceVector(data.direction))
+        accepted.push(dest)
+        built.push(dest)
+        client.write('block_change', { location: dest, type: mcData.blocksByName.dirt.defaultState ?? (mcData.blocksByName.dirt.id << 4) })
+      })
+    })
+
+    function faceVector (i) {
+      return [new Vec3(0, -1, 0), new Vec3(0, 1, 0), new Vec3(0, 0, -1), new Vec3(0, 0, 1), new Vec3(-1, 0, 0), new Vec3(1, 0, 0)][i]
+    }
+
+    await once(server, 'listening')
+    bot = mineflayer.createBot({ username: 'bridger', version: Version, port: ServerPort })
+    await once(bot, 'chunkColumnLoad')
+    bot.loadPlugin(pathfinder)
+    human = createHuman(bot, { seed: 11 })
+  })
+
+  after(() => {
+    human.active = false
+    server.close()
+  })
+
+  beforeEach(async () => {
+    accepted = []
+    refused = []
+    const Item = require('prismarine-item')(Version)
+    const mcData = require('minecraft-data')(Version)
+    for (const p of built.splice(0)) bot.world.setBlockStateId(p, mcData.blocksByName.air.defaultState ?? 0)
+    bot.physicsEnabled = true
+    bot.entity.position = spawnPos.clone()
+    bot.entity.velocity = new Vec3(0, 0, 0)
+    bot.quickBarSlot = 0
+    bot.inventory.updateSlot(bot.QUICK_BAR_START, new Item(mcData.itemsByName.dirt.id, 64))
+    await once(bot, 'physicsTick')
+  })
+
+  it('claiming a side face from on top of the block is a hit the crosshair never makes', async function () {
+    this.timeout(15000)
+    this.slow(6000)
+    // Aimed at the middle of the south face, which is where placeBlock points the head, and with the
+    // rotation already on the wire so only the face is under test.
+    await human.lookAt(edge.offset(0.5, 0.5, 1))
+    await assert.rejects(
+      bot._placeBlockWithOptions(bot.blockAt(edge), new Vec3(0, 0, 1), { forceLook: 'ignore', swingArm: 'right' }),
+      /refused|did not answer/)
+    assert.strictEqual(accepted.length, 0)
+    assert.ok(refused.length >= 1, 'the server saw no placement')
+    assert.strictEqual(refused[0].claimed, 3, 'the packet claims the south face')
+    assert.strictEqual(refused[0].hit, 1, 'the crosshair is on the top face')
+  })
+
+  it('bridging sneaks to the lip, so the face is the one the crosshair hits', async function () {
+    this.timeout(30000)
+    this.slow(12000)
+    await human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8 })
+    assert.deepStrictEqual(refused, [], 'every placement must be one a vanilla client could send')
+    assert.ok(accepted.length >= 3, `only ${accepted.length} blocks placed`)
+    for (const p of accepted) assert.strictEqual(p.y, 0, `${p} is not at floor level`)
+    const p = bot.entity.position
+    assert.ok(p.z > spawnPos.z + 2.5, `bridged to ${p}, barely past the ledge`)
+    assert.ok(p.y > 0.9, `fell to ${p}`)
+  })
+
+  // Resolves on the first physics tick where `test` holds.
+  function tickWhen (test) {
+    return new Promise(resolve => {
+      const check = () => {
+        if (!test()) return
+        bot.off('physicsTick', check)
+        resolve()
+      }
+      bot.on('physicsTick', check)
+    })
+  }
+
+  const held = (c) => bot.getControlState(c)
+
+  it('stop mid-step ends the bridge and releases its controls', async function () {
+    this.timeout(15000)
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8 })
+    // Stepping onto the first block laid: forward is held and sneak is not.
+    await tickWhen(() => accepted.length === 1 && held('forward') && !held('sneak'))
+    human.stop()
+    await assert.rejects(bridge, /stopped/)
+    await bot.waitForTicks(10)
+    assert.strictEqual(held('forward'), false, 'forward still held after stop')
+    assert.strictEqual(held('sneak'), false, 'sneak still held after stop')
+  })
+
+  it('stop while sneaking at the lip releases sneak', async function () {
+    this.timeout(15000)
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8 })
+    await tickWhen(() => held('sneak') && held('forward'))
+    human.stop()
+    await assert.rejects(bridge, /stopped/)
+    await bot.waitForTicks(10)
+    assert.strictEqual(held('forward'), false, 'forward still held after stop')
+    assert.strictEqual(held('sneak'), false, 'sneak still held after stop')
+  })
+
+  it('a walk supersedes a bridge, and the bridge leaves the walk alone', async function () {
+    this.timeout(20000)
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8 })
+    await tickWhen(() => held('sneak') && held('forward'))
+    let sneaked = false
+    const onTick = () => { if (held('sneak')) sneaked = true }
+    const walk = human.walkTo(spawnPos.offset(0, 0, -3), { radius: 0.5 })
+    bot.on('physicsTick', onTick)
+    await assert.rejects(bridge, /superseded/)
+    await walk
+    bot.off('physicsTick', onTick)
+    assert.strictEqual(sneaked, false, 'the superseded bridge kept sneak held during the walk')
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - spawnPos.x, p.z - (spawnPos.z - 3)) < 1, `walked to ${p}`)
+  })
+
+  it('a bridge supersedes a walk that is still planning', async function () {
+    this.timeout(20000)
+    const walk = human.walkTo(spawnPos.offset(0, 0, -4))
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 3), { radius: 0.6, blocks: 6 })
+    await assert.rejects(walk, /superseded/)
+    await bridge
+    assert.deepStrictEqual(refused, [])
+    const p = bot.entity.position
+    assert.ok(p.z > spawnPos.z + 1.5, `the planned walk pulled the bot back to ${p}`)
+  })
+
+  it('a bridge ends within its step bound when physics ticks stop', async function () {
+    this.timeout(15000)
+    const stepMs = 300
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8, stepMs })
+    await tickWhen(() => accepted.length === 1 && held('forward') && !held('sneak'))
+    bot.physicsEnabled = false
+    const t0 = Date.now()
+    await assert.rejects(bridge, /did not settle|stuck bridging/)
+    const took = Date.now() - t0
+    bot.physicsEnabled = true
+    // One step that runs out its stepMs, then a head that cannot settle without ticks (its limit is 2 s
+    // past the settle time).
+    assert.ok(took < stepMs + 2120 + 500, `took ${took} ms to give up`)
+    assert.strictEqual(held('forward'), false, 'forward still held')
+  })
+
+  it('a bridge that arrives on its last allowed step resolves', async function () {
+    this.timeout(15000)
+    // Back onto the floor: one step, no placement.
+    await human.bridgeTo(spawnPos.offset(0, 0, -1), { radius: 0.6, blocks: 1 })
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - spawnPos.x, p.z - (spawnPos.z - 1)) <= 0.6, `ended at ${p}`)
+    await assert.rejects(human.bridgeTo(spawnPos.offset(0, 0, -4), { radius: 0.6, blocks: 1 }), /1 blocks was not enough/)
+  })
+})
