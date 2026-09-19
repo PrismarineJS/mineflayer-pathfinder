@@ -1526,6 +1526,28 @@ describe('human walker', function () {
     }
   })
 
+  it('a look begun before a setback storm rejects without rotating the head', async function () {
+    this.timeout(15000)
+    human.active = false
+    const guarded = createHuman(bot, { seed: 7, setback: { hold: 300, quiet: 100 } })
+    const look = bot.look
+    let looks = 0
+    try {
+      bot.entity.position = spawnPos.clone()
+      await once(bot, 'physicsTick')
+      const pending = guarded.lookAt(faceAt)
+      for (let i = 0; i < 3; i++) bot.emit('forcedMove')
+      bot.look = (...args) => { looks++; return look.apply(bot, args) }
+      await assert.rejects(pending, /setback/)
+      for (let i = 0; i < 10; i++) await once(bot, 'physicsTick')
+      assert.strictEqual(looks, 0, 'the head turned during the hold')
+    } finally {
+      bot.look = look
+      guarded.active = false
+      human.active = true
+    }
+  })
+
   it('walkTo walks to the closest reachable point before rejecting with no path', async function () {
     this.timeout(20000)
     this.slow(8000)
