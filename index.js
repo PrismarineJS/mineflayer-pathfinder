@@ -9,7 +9,6 @@ const Lock = require('./lib/lock')
 const Vec3 = require('vec3').Vec3
 
 const Physics = require('./lib/physics')
-const nbt = require('prismarine-nbt')
 const interactableBlocks = require('./lib/interactable.json')
 
 function inject (bot) {
@@ -49,7 +48,7 @@ function inject (bot) {
     let fastest = Number.MAX_VALUE
     let bestTool = null
     for (const tool of availableTools) {
-      const enchants = (tool && tool.nbt) ? nbt.simplify(tool.nbt).Enchantments : []
+      const enchants = tool?.enchants ?? []
       const digTime = block.digTime(tool ? tool.type : null, false, false, false, enchants, effects)
       if (digTime < fastest) {
         fastest = digTime
