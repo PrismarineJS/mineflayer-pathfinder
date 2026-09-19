@@ -22,6 +22,7 @@ function inject (bot) {
   let astartTimedout = false
   let dynamicGoal = false
   let path = []
+  let pathRevision = 0
   let pathUpdated = false
   let digging = false
   let placing = false
@@ -121,6 +122,7 @@ function inject (bot) {
   }
 
   function resetPath (reason, clearStates = true) {
+    pathRevision++
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
     path = []
     if (digging) {
@@ -398,6 +400,7 @@ function inject (bot) {
   }
 
   function stop () {
+    pathRevision++
     stopPathing = false
     stateGoal = null
     path = []
@@ -453,7 +456,9 @@ function inject (bot) {
       const results = astarContext.compute()
       results.path = postProcessPath(results.path)
       pathFromPlayer(results.path)
+      const revision = pathRevision
       bot.emit('path_update', results)
+      if (revision !== pathRevision) return
       path = results.path
       astartTimedout = results.status === 'partial'
     }
@@ -474,7 +479,9 @@ function inject (bot) {
           }
         } else if (!pathUpdated) {
           const results = bot.pathfinder.getPathTo(stateMovements, stateGoal)
+          const revision = pathRevision
           bot.emit('path_update', results)
+          if (revision !== pathRevision) return
           path = results.path
           astartTimedout = results.status === 'partial'
           pathUpdated = true
