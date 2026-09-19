@@ -290,7 +290,7 @@ Set of block id's to avoid.
 * instance of `Set`
 
 ### liquids
-Set of liquid block id's.
+Set of liquid block id's, including water-containing plants and bubble columns when supported by the Minecraft version. Waterlogged blocks are additionally classified as liquid from their block state.
 * instance of `Set`
 
 ### climbables
