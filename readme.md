@@ -161,17 +161,18 @@ await human.walkTo(new Vec3(10.5, 64, -20.5), { faceAt: npc.position.offset(0, 1
    * `personality` - overrides for any trait listed under `human.personality`
    * `movements` - Movements instance used for planning (default: a walking-only instance that does not dig, place, tower or parkour)
    * `thinkTimeout` - planning timeout in ms (default: `bot.pathfinder.thinkTimeout`)
+   * `setback` - `false` to disable the setback guard, or overrides for `{ trip: 3, window: 2500, hold: 8000, quiet: 3000 }`: `trip` forced moves (server teleports, see mineflayer's `forcedMove`) within `window` ms end the walk in progress with `setback`, release the controls and hold the controller for `hold` ms; the hold ends only after `quiet` ms without a forced move and with the bot on the ground
  * `Returns` - a `Human`
 
 ### human.walkTo(goal, options)
-Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `superseded` (a newer `walkTo` was issued) or `stopped`. The controller drives the bot from physics ticks, so with `bot.physicsEnabled` set to `false` it cannot move it at all and rejects straight away instead of standing still until the timeout. A `walkTo` for the goal already in flight (within half a block) with the same options returns that walk's Promise instead of superseding it, so re-issuing a goal on a timer keeps the walk going; different options supersede it. `stop()` ends the walk in flight, so a `walkTo` issued right after it starts fresh.
+Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `superseded` (a newer `walkTo` was issued), `stopped` or `setback` (the setback guard holds the controller; see `human.held`). The controller drives the bot from physics ticks, so with `bot.physicsEnabled` set to `false` it cannot move it at all and rejects straight away instead of standing still until the timeout. A `walkTo` for the goal already in flight (within half a block) with the same options returns that walk's Promise instead of superseding it, so re-issuing a goal on a timer keeps the walk going; different options supersede it. `stop()` ends the walk in flight, so a `walkTo` issued right after it starts fresh.
  * `options` - optional:
    * `radius` - stop within this distance of the goal (default: the personality's `stopRadius`)
    * `timeout` - ms (default `60000`)
    * `faceAt` - Vec3 to look at once arrived (an entity's eyes, a block); the Promise resolves after the look settles
 
 ### human.lookAt(point, options)
-Turns the head to `point` after a reaction delay and resolves once it has settled. Rejects straight away when `bot.physicsEnabled` is `false`, because the head only moves on a physics tick.
+Turns the head to `point` after a reaction delay and resolves once it has settled. Rejects straight away when `bot.physicsEnabled` is `false`, because the head only moves on a physics tick. Rejects with `setback` while `human.held` is true.
  * `options.settleMs` - how long the head must be still (default `300`)
 
 ### human.stop()
@@ -179,6 +180,9 @@ Aborts the walk in progress (its Promise rejects with `stopped`) and releases th
 
 ### human.active
 Set to `false` to suspend the controller without dropping its state.
+
+### human.held
+`true` while the setback guard holds the controller: `walkTo` and `lookAt` reject with `setback` until the server has stopped forcing the bot's position. A server that keeps teleporting a player counts every answer against it, so the controller stands still instead of walking through the corrections.
 
 ### human.route
 Waypoints of the walk in progress, or of the last one.
