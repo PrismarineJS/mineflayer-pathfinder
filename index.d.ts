@@ -52,7 +52,7 @@ declare module 'mineflayer-pathfinder' {
 		radius?: number;
 		/** ms; default 60000 */
 		timeout?: number;
-		/** look at this point once arrived; the walk resolves after the look settles */
+		/** look at this point once arrived; the walk resolves after the look settles, or rejects with `head did not settle` if physics ticks stop first */
 		faceAt?: Vec3;
 	}
 

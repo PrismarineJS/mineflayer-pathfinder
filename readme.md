@@ -164,14 +164,14 @@ await human.walkTo(new Vec3(10.5, 64, -20.5), { faceAt: npc.position.offset(0, 1
  * `Returns` - a `Human`
 
 ### human.walkTo(goal, options)
-Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `superseded` (a newer `walkTo` was issued) or `stopped`.
+Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `head did not settle` (see `faceAt`), `superseded` (a newer `walkTo` was issued) or `stopped`.
  * `options` - optional:
    * `radius` - stop within this distance of the goal (default: the personality's `stopRadius`)
    * `timeout` - ms (default `60000`)
-   * `faceAt` - Vec3 to look at once arrived (an entity's eyes, a block); the Promise resolves after the look settles
+   * `faceAt` - Vec3 to look at once arrived (an entity's eyes, a block); the Promise resolves after the look settles, and rejects with `head did not settle` if physics ticks stop before it does (a kick, an unloaded chunk, `bot.physicsEnabled = false`)
 
 ### human.lookAt(point, options)
-Turns the head to `point` after a reaction delay and resolves once it has settled.
+Turns the head to `point` after a reaction delay and resolves once it has settled. Rejects with `head did not settle` if physics ticks stop before it does (a kick, an unloaded chunk, `bot.physicsEnabled = false`): the wait is capped at `settleMs + 2000` ms.
  * `options.settleMs` - how long the head must be still (default `300`)
 
 ### human.stop()

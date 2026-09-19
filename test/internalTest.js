@@ -1308,15 +1308,40 @@ describe('human walker', function () {
     assert.strictEqual(bot.entity.pitch, 0.25, 'pitch was pulled back after lookAt')
   })
 
-  it('lookAt settles when the ticks that move the head stop', async function () {
+  it('lookAt rejects when the ticks that move the head stop', async function () {
     this.timeout(10000)
     bot.entity.position = spawnPos.clone()
+    bot.entity.yaw = 0
+    bot.entity.pitch = 0
     const pending = human.lookAt(faceAt)
     await bot.waitForTicks(2)
     // A kick, an unloaded chunk or physicsEnabled = false all end the tick stream mid-gesture.
     bot.physicsEnabled = false
     try {
-      await pending
+      await assert.rejects(pending, /head did not settle/)
+    } finally {
+      bot.physicsEnabled = true
+    }
+  })
+
+  it('a faceAt walk rejects when the ticks that move the head stop', async function () {
+    this.timeout(15000)
+    bot.entity.position = spawnPos.clone()
+    bot.entity.yaw = 0
+    bot.entity.pitch = 0
+    // Already at the goal: the walk goes straight to aiming at faceAt, which then loses its ticks.
+    const pending = human.walkTo(spawnPos, { faceAt })
+    await new Promise(resolve => {
+      const check = () => {
+        if (bot.entity.yaw === 0 && bot.entity.pitch === 0) return
+        bot.off('move', check)
+        resolve()
+      }
+      bot.on('move', check)
+    })
+    bot.physicsEnabled = false
+    try {
+      await assert.rejects(pending, /head did not settle/)
     } finally {
       bot.physicsEnabled = true
     }
