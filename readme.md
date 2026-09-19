@@ -164,7 +164,7 @@ await human.walkTo(new Vec3(10.5, 64, -20.5), { faceAt: npc.position.offset(0, 1
  * `Returns` - a `Human`
 
 ### human.walkTo(goal, options)
-Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `superseded` (a newer `walkTo` was issued) or `stopped`. The controller drives the bot from physics ticks, so with `bot.physicsEnabled` set to `false` it cannot move it at all and rejects straight away instead of standing still until the timeout. A `walkTo` for the goal already in flight (within half a block) with the same options returns that walk's Promise instead of superseding it, so re-issuing a goal on a timer keeps the walk going; different options supersede it. `stop()` ends the walk in flight, so a `walkTo` issued right after it starts fresh.
+Walks to `goal` (a Vec3 at feet level) and returns a Promise that resolves once the bot has come to a stop there. The goal is `goal`'s block column within a block of its level. Planning runs in tick-sized slices and never blocks the event loop for longer than one. A goal the search cannot reach is walked as far as the closest reachable point before the Promise rejects with `no path`. Also rejects with `stuck`, `walk timed out`, `superseded` (a newer `walkTo`, `bridgeTo` or `placeAhead` was issued) or `stopped`. The controller drives the bot from physics ticks, so with `bot.physicsEnabled` set to `false` it cannot move it at all and rejects straight away instead of standing still until the timeout. A `walkTo` for the goal already in flight (within half a block) with the same options returns that walk's Promise instead of superseding it, so re-issuing a goal on a timer keeps the walk going; different options supersede it. `stop()` ends the walk in flight, so a `walkTo` issued right after it starts fresh.
  * `options` - optional:
    * `radius` - stop within this distance of the goal (default: the personality's `stopRadius`)
    * `timeout` - ms (default `60000`)
@@ -184,13 +184,13 @@ A bridge is the one placement a bot cannot make by aiming alone. The block it ex
    * `blocks` - give up after this many steps (default `256`)
    * `item` - name of the block to build with (default: the first full cube in the inventory)
    * `stepMs` - how long one step onto the next block may take (default `1600`)
- * Rejects with `no block to build with`, `<pos> is in the way`, `stuck bridging at <pos>`, `nothing under the bot to build from`, `stopped`, or whatever `placeBlock` rejected with.
+ * Rejects with `no block to build with`, `<pos> is in the way`, `stuck bridging at <pos>`, `nothing under the bot to build from`, `the head did not settle` (physics ticks stopped mid-bridge), `bridgeTo needs physics: bot.physicsEnabled is false`, `<n> blocks was not enough to reach <goal>`, `superseded` (a newer `walkTo`, `bridgeTo` or `placeAhead` was issued), `stopped`, or whatever `placeBlock` rejected with.
 
 ### human.placeAhead(direction, options)
 One bridge block: sneak to the lip of the block under the bot, click its `direction` face, and return the position that was filled. `direction` is a horizontal unit Vec3. Takes the same `item` option.
 
 ### human.stop()
-Aborts the walk in progress (its Promise rejects with `stopped`) and releases the head.
+Aborts the walk, bridge or placement in progress (its Promise rejects with `stopped`) and releases the controls and head it held.
 
 ### human.active
 Set to `false` to suspend the controller without dropping its state.

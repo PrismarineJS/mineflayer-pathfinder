@@ -1578,6 +1578,8 @@ describe('human bridging', function () {
   let human
   let accepted
   let refused
+  // Every block laid so far, so each test starts from the bare ledge.
+  const built = []
 
   // The floor stops at z = 8, so a bridge is the only way past it.
   function ledgeMap () {
@@ -1636,6 +1638,7 @@ describe('human bridging', function () {
         if (hit !== data.direction) { refused.push({ claimed: data.direction, hit, at: data.location }); return }
         const dest = new Vec3(data.location.x, data.location.y, data.location.z).plus(faceVector(data.direction))
         accepted.push(dest)
+        built.push(dest)
         client.write('block_change', { location: dest, type: mcData.blocksByName.dirt.defaultState ?? (mcData.blocksByName.dirt.id << 4) })
       })
     })
@@ -1661,7 +1664,10 @@ describe('human bridging', function () {
     refused = []
     const Item = require('prismarine-item')(Version)
     const mcData = require('minecraft-data')(Version)
+    for (const p of built.splice(0)) bot.world.setBlockStateId(p, mcData.blocksByName.air.defaultState ?? 0)
+    bot.physicsEnabled = true
     bot.entity.position = spawnPos.clone()
+    bot.entity.velocity = new Vec3(0, 0, 0)
     bot.quickBarSlot = 0
     bot.inventory.updateSlot(bot.QUICK_BAR_START, new Item(mcData.itemsByName.dirt.id, 64))
     await once(bot, 'physicsTick')
@@ -1692,5 +1698,94 @@ describe('human bridging', function () {
     const p = bot.entity.position
     assert.ok(p.z > spawnPos.z + 2.5, `bridged to ${p}, barely past the ledge`)
     assert.ok(p.y > 0.9, `fell to ${p}`)
+  })
+
+  // Resolves on the first physics tick where `test` holds.
+  function tickWhen (test) {
+    return new Promise(resolve => {
+      const check = () => {
+        if (!test()) return
+        bot.off('physicsTick', check)
+        resolve()
+      }
+      bot.on('physicsTick', check)
+    })
+  }
+
+  const held = (c) => bot.getControlState(c)
+
+  it('stop mid-step ends the bridge and releases its controls', async function () {
+    this.timeout(15000)
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8 })
+    // Stepping onto the first block laid: forward is held and sneak is not.
+    await tickWhen(() => accepted.length === 1 && held('forward') && !held('sneak'))
+    human.stop()
+    await assert.rejects(bridge, /stopped/)
+    await bot.waitForTicks(10)
+    assert.strictEqual(held('forward'), false, 'forward still held after stop')
+    assert.strictEqual(held('sneak'), false, 'sneak still held after stop')
+  })
+
+  it('stop while sneaking at the lip releases sneak', async function () {
+    this.timeout(15000)
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8 })
+    await tickWhen(() => held('sneak') && held('forward'))
+    human.stop()
+    await assert.rejects(bridge, /stopped/)
+    await bot.waitForTicks(10)
+    assert.strictEqual(held('forward'), false, 'forward still held after stop')
+    assert.strictEqual(held('sneak'), false, 'sneak still held after stop')
+  })
+
+  it('a walk supersedes a bridge, and the bridge leaves the walk alone', async function () {
+    this.timeout(20000)
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8 })
+    await tickWhen(() => held('sneak') && held('forward'))
+    let sneaked = false
+    const onTick = () => { if (held('sneak')) sneaked = true }
+    const walk = human.walkTo(spawnPos.offset(0, 0, -3), { radius: 0.5 })
+    bot.on('physicsTick', onTick)
+    await assert.rejects(bridge, /superseded/)
+    await walk
+    bot.off('physicsTick', onTick)
+    assert.strictEqual(sneaked, false, 'the superseded bridge kept sneak held during the walk')
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - spawnPos.x, p.z - (spawnPos.z - 3)) < 1, `walked to ${p}`)
+  })
+
+  it('a bridge supersedes a walk that is still planning', async function () {
+    this.timeout(20000)
+    const walk = human.walkTo(spawnPos.offset(0, 0, -4))
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 3), { radius: 0.6, blocks: 6 })
+    await assert.rejects(walk, /superseded/)
+    await bridge
+    assert.deepStrictEqual(refused, [])
+    const p = bot.entity.position
+    assert.ok(p.z > spawnPos.z + 1.5, `the planned walk pulled the bot back to ${p}`)
+  })
+
+  it('a bridge ends within its step bound when physics ticks stop', async function () {
+    this.timeout(15000)
+    const stepMs = 300
+    const bridge = human.bridgeTo(spawnPos.offset(0, 0, 4), { radius: 0.6, blocks: 8, stepMs })
+    await tickWhen(() => accepted.length === 1 && held('forward') && !held('sneak'))
+    bot.physicsEnabled = false
+    const t0 = Date.now()
+    await assert.rejects(bridge, /did not settle|stuck bridging/)
+    const took = Date.now() - t0
+    bot.physicsEnabled = true
+    // One step that runs out its stepMs, then a head that cannot settle without ticks (its limit is 2 s
+    // past the settle time).
+    assert.ok(took < stepMs + 2120 + 500, `took ${took} ms to give up`)
+    assert.strictEqual(held('forward'), false, 'forward still held')
+  })
+
+  it('a bridge that arrives on its last allowed step resolves', async function () {
+    this.timeout(15000)
+    // Back onto the floor: one step, no placement.
+    await human.bridgeTo(spawnPos.offset(0, 0, -1), { radius: 0.6, blocks: 1 })
+    const p = bot.entity.position
+    assert.ok(Math.hypot(p.x - spawnPos.x, p.z - (spawnPos.z - 1)) <= 0.6, `ended at ${p}`)
+    await assert.rejects(human.bridgeTo(spawnPos.offset(0, 0, -4), { radius: 0.6, blocks: 1 }), /1 blocks was not enough/)
   })
 })

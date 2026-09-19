@@ -79,6 +79,7 @@ declare module 'mineflayer-pathfinder' {
 		bridgeTo(goal: Vec3, options?: BridgeOptions): Promise<void>;
 		/** lay one bridge block on the given horizontal face of the block under the bot */
 		placeAhead(direction: Vec3, options?: Pick<BridgeOptions, 'item'>): Promise<Vec3>;
+		/** abort the walk, bridge or placement in progress and release what it held */
 		stop(): void;
 	}
 
