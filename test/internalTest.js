@@ -1268,7 +1268,8 @@ describe('pathfinder entity avoidance test', function () {
 describe('human walker', function () {
   const spawnPos = new Vec3(8.5, 1, 8.5) // Center of the chunk & center of the block
   const goal = new Vec3(3.5, 1, 12.5)
-  const faceAt = new Vec3(3.5, 2.6, 2.5)
+  // Clearly above eye height for every valid arrival position.
+  const faceAt = new Vec3(3.5, 3.2, 2.5)
 
   /** @type { import('mineflayer').Bot & { pathfinder: import('mineflayer-pathfinder').Pathfinder }} */
   let bot
