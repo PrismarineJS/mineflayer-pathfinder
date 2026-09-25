@@ -883,7 +883,7 @@ describe('pathfinder entity avoidance test', function () {
     })
 
     /**
-     * By default, algorithm will favor the Left Path
+     * Without entity weights, either equally short branch is valid.
      * [X] = Ent, [O] = Open, [W] = Wall
      *   O O O
      *   O W O
@@ -902,7 +902,7 @@ describe('pathfinder entity avoidance test', function () {
       assert.strictEqual(result.status, 'success')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
       assert.ok([3, 5].includes(path.length), `Generated path length wrong (${path.length} is neither 3 nor 5)`)
-      assert.ok(leftBranch === true, `Generated path did not follow Left Branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
+      assert.ok(leftBranch !== rightBranch, `Generated path did not follow exactly one branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
     })
 
     /**
