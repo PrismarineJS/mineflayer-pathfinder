@@ -901,6 +901,7 @@ describe('pathfinder entity avoidance test', function () {
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
       assert.ok(result.time < maxPathTime, `Generated path took too long (${result.time} < ${maxPathTime})`)
+      // The world can yield a clear diagonal or a five-node cardinal detour.
       assert.ok([3, 5].includes(path.length), `Generated path length wrong (${path.length} is neither 3 nor 5)`)
       assert.ok(leftBranch !== rightBranch, `Generated path did not follow exactly one branch [Left Branch: ${leftBranch}, Right Branch: ${rightBranch}]`)
     })
