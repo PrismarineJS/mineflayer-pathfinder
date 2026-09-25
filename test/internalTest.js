@@ -894,9 +894,9 @@ describe('pathfinder entity avoidance test', function () {
       const { value: { result } } = generator.next()
       const path = result.path
 
-      // Look at first and second nodes incase diagonal movements are used
-      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
-      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      // A safe cardinal detour may reach the branch on the third node.
+      const leftBranch = path.some(node => node.equals(firstLeftNode))
+      const rightBranch = path.some(node => node.equals(firstRightNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
@@ -919,9 +919,8 @@ describe('pathfinder entity avoidance test', function () {
       const { value: { result } } = generator.next()
       const path = result.path
 
-      // Look at first and second nodes incase diagonal movements are used
-      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
-      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const leftBranch = path.some(node => node.equals(firstLeftNode))
+      const rightBranch = path.some(node => node.equals(firstRightNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
@@ -946,9 +945,8 @@ describe('pathfinder entity avoidance test', function () {
       const { value: { result } } = generator.next()
       const path = result.path
 
-      // Look at first and second nodes incase diagonal movements are used
-      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
-      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const leftBranch = path.some(node => node.equals(firstLeftNode))
+      const rightBranch = path.some(node => node.equals(firstRightNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
@@ -973,9 +971,8 @@ describe('pathfinder entity avoidance test', function () {
       const { value: { result } } = generator.next()
       const path = result.path
 
-      // Look at first and second nodes incase diagonal movements are used
-      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
-      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const leftBranch = path.some(node => node.equals(firstLeftNode))
+      const rightBranch = path.some(node => node.equals(firstRightNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
@@ -1000,9 +997,8 @@ describe('pathfinder entity avoidance test', function () {
       const { value: { result } } = generator.next()
       const path = result.path
 
-      // Look at first and second nodes incase diagonal movements are used
-      const leftBranch = (path[0].equals(firstLeftNode) || path[1].equals(firstLeftNode))
-      const rightBranch = (path[0].equals(firstRightNode) || path[1].equals(firstRightNode))
+      const leftBranch = path.some(node => node.equals(firstLeftNode))
+      const rightBranch = path.some(node => node.equals(firstRightNode))
 
       // All depends on the actually path that gets generated. If target block is moved some were else these values have to change.
       assert.strictEqual(result.status, 'success')
