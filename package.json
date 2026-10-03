@@ -1,7 +1,7 @@
 {
-  "name": "mineflayer-pathfinder",
-  "version": "2.4.5",
-  "description": "",
+  "name": "notaina-pathfinder",
+  "version": "1.0.0",
+  "description": "Custom pathfinder patch for Mineflayer matching Minecraft version 1.21.11",
   "main": "index.js",
   "scripts": {
     "mocha_test": "mocha --reporter spec --exit",
@@ -10,8 +10,16 @@
     "fix": "standard --fix",
     "test": "npm run lint && npm run mocha_test"
   },
-  "author": "Karang",
+  "author": "invisbleia",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com"
+  },
+  "bugs": {
+    "url": "https://github.com"
+  },
+  "homepage": "https://github.com",
   "dependencies": {
     "minecraft-data": "^3.5.1",
     "prismarine-block": "^1.16.3",
