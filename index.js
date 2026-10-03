@@ -13,7 +13,6 @@ const nbt = require('prismarine-nbt')
 const interactableBlocks = require('./lib/interactable.json')
 
 function inject (bot) {
-  const waterType = bot.registry.blocksByName.water.id
   const ladderId = bot.registry.blocksByName.ladder.id
   const vineId = bot.registry.blocksByName.vine.id
   let stateMovements = new Movements(bot)
@@ -180,7 +179,8 @@ function inject (bot) {
       // would put it on top of the swung-open leaf (offset ~0.9 and a block up), which
       // the walk simulation can never reach — the bot stands in the open doorway until 'stuck'
       const doorway = stateMovements && stateMovements.openable && b && stateMovements.openable.has(b.type)
-      if (b && (b.type === waterType || doorway || ((b.type === ladderId || b.type === vineId) && i + 1 < path.length && path[i + 1].y < curPoint.y))) {
+      const liquid = b && b.boundingBox === 'empty' && (stateMovements.liquids.has(b.type) || b.isWaterlogged === true)
+      if (b && (liquid || doorway || ((b.type === ladderId || b.type === vineId) && i + 1 < path.length && path[i + 1].y < curPoint.y))) {
         curPoint.x = Math.floor(curPoint.x) + 0.5
         curPoint.y = Math.floor(curPoint.y)
         curPoint.z = Math.floor(curPoint.z) + 0.5
