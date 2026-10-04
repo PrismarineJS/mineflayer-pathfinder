@@ -93,6 +93,29 @@ describe('canOpenDoors', function () {
     assert.strictEqual(open.toBreak.length, 0)
   })
 
+  it('keeps step exclusions and blocksToAvoid on doorways it would open', () => {
+    const at = (x, y) => (b) => (b.position.x === x && (y === undefined || b.position.y === y)) ? 100 : 0
+    door(world, 5, 64, 0, false); door(world, 5, 65, 0, false, 'upper')
+    gate(world, 8, 64, 0, false)
+    gate(world, 9, 64, 0, true)
+    assert(forward(4, 0) && forward(7, 0) && forward(8, 0), 'controls: each doorway is a move with no policy set')
+
+    m.exclusionAreasStep.push(at(5))
+    assert.strictEqual(forward(4, 0), null, 'door inside a step exclusion area')
+    m.exclusionAreasStep = [at(5, 65)]
+    assert.strictEqual(forward(4, 0), null, 'exclusion covering only the upper half')
+    m.exclusionAreasStep = [at(8), at(9)]
+    assert.strictEqual(forward(7, 0), null, 'closed gate inside a step exclusion area')
+    assert.strictEqual(forward(8, 0), null, 'open gate inside a step exclusion area')
+    m.exclusionAreasStep = []
+
+    m.blocksToAvoid.add(registry.blocksByName.oak_door.id)
+    m.blocksToAvoid.add(registry.blocksByName.oak_fence_gate.id)
+    assert.strictEqual(forward(4, 0), null, 'door in blocksToAvoid')
+    assert.strictEqual(forward(7, 0), null, 'closed gate in blocksToAvoid')
+    assert.strictEqual(forward(8, 0), null, 'open gate in blocksToAvoid')
+  })
+
   it('leaves plain walls alone', () => {
     world.set(12, 64, 0, 'oak_planks'); world.set(12, 65, 0, 'oak_planks')
     const dig = forward(11, 0)
