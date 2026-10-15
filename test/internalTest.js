@@ -395,6 +395,72 @@ describe('pathfinder events', function () {
   })
 })
 
+describe('path_update invalidation', function () {
+  const spawnPos = new Vec3(8.5, 1, 6.5)
+  let bot
+  let server
+
+  before(async () => {
+    server = await newServer(server, flatMap(Version), spawnPos, Version, true)
+    bot = mineflayer.createBot({ username: 'player', version: Version, port: ServerPort })
+    await once(bot, 'chunkColumnLoad')
+    bot.loadPlugin(pathfinder)
+    await once(bot, 'physicsTick')
+  })
+
+  beforeEach(() => {
+    bot.entity.position = spawnPos.clone()
+    bot.entity.velocity = new Vec3(0, 0, 0)
+    bot.clearControlStates()
+    const movements = new Movements(bot)
+    movements.canDig = false
+    movements.allowParkour = false
+    bot.pathfinder.setMovements(movements)
+    bot.pathfinder.tickTimeout = 1000
+  })
+
+  after(() => {
+    if (bot) bot.end()
+    if (server) server.close()
+  })
+
+  for (const continuation of [false, true]) {
+    for (const change of ['cancel', 'replace goal', 'same goal', 'same movements']) {
+      it(`${change} in a ${continuation ? 'continued' : 'fresh'} search callback invalidates the result`, async () => {
+        let updates = 0
+        if (continuation) bot.pathfinder.tickTimeout = -1
+        const onUpdate = result => {
+          updates++
+          if (continuation && updates === 1) {
+            assert.strictEqual(result.status, 'partial')
+            // Resume the actual A* context next tick with enough time to finish.
+            result.context.tickTimeout = 1000
+            return
+          }
+          assert.strictEqual(result.status, 'success')
+          assert.ok(result.path.length > 0)
+          if (change === 'cancel') bot.pathfinder.setGoal(null)
+          if (change === 'replace goal') bot.pathfinder.setGoal(new goals.GoalBlock(4, 1, 6))
+          if (change === 'same goal') bot.pathfinder.setGoal(bot.pathfinder.goal)
+          if (change === 'same movements') bot.pathfinder.setMovements(bot.pathfinder.movements)
+        }
+        bot.on('path_update', onUpdate)
+        bot.pathfinder.setGoal(new goals.GoalBlock(12, 1, 6))
+        try {
+          await once(bot, 'physicsTick')
+          if (continuation) await once(bot, 'physicsTick')
+          assert.strictEqual(updates, continuation ? 2 : 1)
+          assert.strictEqual(bot.pathfinder.isMoving(), false, 'callback reset was overwritten by the old path')
+          assert.ok(!bot.getControlState('forward'), 'old path issued forward movement after reset')
+        } finally {
+          bot.off('path_update', onUpdate)
+          bot.pathfinder.setGoal(null)
+        }
+      })
+    }
+  }
+})
+
 describe('pathfinder util functions', function () {
   const mcData = require('minecraft-data')(Version)
   const Item = require('prismarine-item')(Version)
