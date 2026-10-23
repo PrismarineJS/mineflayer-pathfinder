@@ -456,6 +456,7 @@ function inject (bot) {
       bot.emit('path_update', results)
       path = results.path
       astartTimedout = results.status === 'partial'
+      if (results.status === 'timeout') pathUpdated = false
     }
 
     if (bot.pathfinder.LOSWhenPlacingBlocks && returningPos) {
@@ -477,7 +478,8 @@ function inject (bot) {
           bot.emit('path_update', results)
           path = results.path
           astartTimedout = results.status === 'partial'
-          pathUpdated = true
+          // out of time: search again once its partial path is walked
+          pathUpdated = results.status !== 'timeout'
         }
       }
     }
