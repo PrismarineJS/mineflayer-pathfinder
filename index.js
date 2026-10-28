@@ -551,7 +551,12 @@ function inject (bot) {
       let canPlace = true
       if (placingBlock.jump) {
         bot.setControlState('jump', true)
-        canPlace = placingBlock.y + 1 < bot.entity.position.y
+        // the server refuses a block inside the player: wait for the feet to be above its top (under a low
+        // ceiling that lasts a few ticks only, so equip while rising)
+        canPlace = placingBlock.y + 1.95 < bot.entity.position.y
+        if (!canPlace && bot.heldItem?.name !== block.name && lockEquipItem.tryAcquire()) {
+          bot.equip(block, 'hand').catch(() => {}).then(() => lockEquipItem.release())
+        }
       }
       if (canPlace) {
         if (!lockEquipItem.tryAcquire()) return
