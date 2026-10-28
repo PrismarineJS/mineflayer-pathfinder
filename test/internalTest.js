@@ -395,6 +395,43 @@ describe('pathfinder events', function () {
   })
 })
 
+describe('search out of time', function () {
+  const mcData = require('minecraft-data')(Version)
+  const spawnPos = new Vec3(1.5, 1, 1.5)
+  const AStar = require('../lib/astar')
+  const { performance } = require('perf_hooks')
+  const compute = AStar.prototype.compute
+  let bot
+  let server
+
+  before(async () => {
+    server = await newServer(server, flatMap(Version), spawnPos, Version, true)
+    bot = mineflayer.createBot({ username: 'player', version: Version, port: ServerPort })
+    await once(bot, 'chunkColumnLoad')
+    bot.loadPlugin(pathfinder)
+    bot.pathfinder.setMovements(new Movements(bot, mcData))
+    // every step of a search takes 1 ms: with a 20 ms budget each search runs out of time a few blocks ahead
+    AStar.prototype.compute = function () {
+      const now = performance.now
+      let t = now.call(performance)
+      performance.now = () => (t += 1)
+      try { return compute.call(this) } finally { performance.now = now }
+    }
+    bot.pathfinder.thinkTimeout = 20
+  })
+  after(() => {
+    AStar.prototype.compute = compute
+    bot.end()
+    server.close()
+  })
+
+  it('walks the partial path and searches again until the goal', async function () {
+    this.timeout(15000)
+    await bot.pathfinder.goto(new goals.GoalBlock(14, 1, 14))
+    assert.ok(bot.entity.position.distanceTo(new Vec3(14.5, 1, 14.5)) < 1)
+  })
+})
+
 describe('pathfinder util functions', function () {
   const mcData = require('minecraft-data')(Version)
   const Item = require('prismarine-item')(Version)
