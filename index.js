@@ -115,14 +115,17 @@ function inject (bot) {
 
   function detectDiggingStopped () {
     digging = false
-    bot.removeAllListeners('diggingAborted', detectDiggingStopped)
-    bot.removeAllListeners('diggingCompleted', detectDiggingStopped)
+    bot.removeListener('diggingAborted', detectDiggingStopped)
+    bot.removeListener('diggingCompleted', detectDiggingStopped)
   }
 
   function resetPath (reason, clearStates = true) {
     if (!stopPathing && path.length > 0) bot.emit('path_reset', reason)
     path = []
     if (digging) {
+      // Listen once, however many resets happen while this dig is stopping
+      detectDiggingStopped()
+      digging = true
       bot.on('diggingAborted', detectDiggingStopped)
       bot.on('diggingCompleted', detectDiggingStopped)
       bot.stopDigging()
@@ -505,7 +508,7 @@ function inject (bot) {
             })
             .then(function () {
               lastNodeTime = performance.now()
-              digging = false
+              detectDiggingStopped()
             })
         }
 
