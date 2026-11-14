@@ -395,6 +395,47 @@ describe('pathfinder events', function () {
   })
 })
 
+describe('pillaring up', function () {
+  const mcData = require('minecraft-data')(Version)
+  const Item = require('prismarine-item')(Version)
+  const spawnPos = new Vec3(8.5, 1, 8.5)
+  const faces = [[0, -1, 0], [0, 1, 0], [0, 0, -1], [0, 0, 1], [-1, 0, 0], [1, 0, 0]]
+  let bot
+  let server
+  // where the player's feet were (as the server knows them) each time it placed a block, and the block
+  const placements = []
+
+  before(async () => {
+    server = await newServer(server, flatMap(Version), spawnPos, Version, true)
+    server.on('login', client => {
+      let feet = spawnPos.clone()
+      client.on('position', p => { feet = new Vec3(p.x, p.y, p.z) })
+      client.on('position_look', p => { feet = new Vec3(p.x, p.y, p.z) })
+      client.on('block_place', p => {
+        const at = new Vec3(p.location.x, p.location.y, p.location.z).offset(...faces[p.direction])
+        // as a vanilla server: a block inside the player is refused
+        const inside = feet.y < at.y + 1 && feet.y + 1.8 > at.y
+        placements.push({ feet, at, inside })
+        client.write('block_change', { location: at, type: mcData.blocksByName[inside ? 'air' : 'dirt'].defaultState })
+      })
+    })
+    bot = mineflayer.createBot({ username: 'player', version: Version, port: ServerPort })
+    await once(bot, 'chunkColumnLoad')
+    bot.loadPlugin(pathfinder)
+    bot.pathfinder.setMovements(new Movements(bot, mcData))
+    bot.inventory.updateSlot(36, new Item(mcData.itemsByName.dirt.id, 64))
+  })
+  after(() => server.close())
+
+  it('places each block once the feet are above it', async function () {
+    this.timeout(15000)
+    await Promise.race([bot.pathfinder.goto(new goals.GoalBlock(8, 4, 8)), new Promise(resolve => setTimeout(resolve, 10000))])
+    bot.pathfinder.stop()
+    assert.deepStrictEqual(placements.filter(p => p.inside).map(p => `feet at ${p.feet.y} placing ${p.at}`), [])
+    assert.strictEqual(bot.entity.position.floored().y, 4)
+  })
+})
+
 describe('pathfinder util functions', function () {
   const mcData = require('minecraft-data')(Version)
   const Item = require('prismarine-item')(Version)
