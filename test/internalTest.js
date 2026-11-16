@@ -645,6 +645,43 @@ describe('pathfinder Movement', function () {
     assert.ok(neighbors.length === 1, `getMoveDown neighbors not right length (${neighbors.length} === 1)`)
   })
 
+  describe('floor on the lowest layer of the world', function () {
+    const above = new Vec3(2, 3, 2) // feet three blocks above the bedrock floor at y 0
+    const dir = new Vec3(1, 0, 0)
+    const hole = new Vec3(3, 0, 2)
+
+    it('getLandingBlock lands on it', function () {
+      assert.strictEqual(bot.game.minY, 0)
+      const block = defaultMovement.getLandingBlock(above, dir)
+      assert.ok(block != null, 'Landing block is null')
+      assert.deepStrictEqual(block.position, new Vec3(3, 1, 2))
+    })
+
+    it('getMoveDropDown steps down onto it', function () {
+      const neighbors = []
+      defaultMovement.getMoveDropDown(above.offset(0, -1, 0), dir, neighbors)
+      assert.deepStrictEqual(neighbors.map(n => [n.x, n.y, n.z]), [[3, 1, 2]])
+    })
+
+    it('getMoveDown lands on it', function () {
+      const neighbors = []
+      defaultMovement.getMoveDown(above.offset(0, -1, 0), neighbors)
+      assert.deepStrictEqual(neighbors.map(n => [n.x, n.y, n.z]), [[2, 1, 2]])
+    })
+
+    it('getLandingBlock finds nothing where the floor is missing', async function () {
+      await bot.world.setBlock(hole, new Block(mcData.blocksByName.air.id, 0))
+      try {
+        assert.strictEqual(defaultMovement.getLandingBlock(above, dir), null)
+        const neighbors = []
+        defaultMovement.getMoveDropDown(above, dir, neighbors)
+        assert.strictEqual(neighbors.length, 0)
+      } finally {
+        await bot.world.setBlock(hole, new Block(mcData.blocksByName.bedrock.id, 0))
+      }
+    })
+  })
+
   it('getMoveUp', function () {
     const neighbors = []
     defaultMovement.getMoveUp(targetBlock.offset(0, 1, 0), neighbors)
