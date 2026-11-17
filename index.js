@@ -530,8 +530,22 @@ function inject (bot) {
 
       // Open gates or doors
       if (placingBlock?.useOne) {
+        const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z))
+        // A useOne only means "make this door/gate open". Another player may open it while the
+        // bot walks up, so re-read the block: clicking an already-open door toggles it shut in
+        // the bot's face (a replan at best, a stall in the doorway at worst). Mark the node done.
+        const props = refBlock && refBlock.getProperties ? refBlock.getProperties() : null
+        const alreadyOpen = props && (props.open === true || props.open === 'true')
+        if (alreadyOpen && stateMovements.openable.has(refBlock.type)) {
+          placingBlock = nextPoint.toPlace.shift()
+          if (!placingBlock) {
+            placing = false
+            lastNodeTime = performance.now()
+          }
+          return
+        }
         if (!lockUseBlock.tryAcquire()) return
-        bot.activateBlock(bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z))).then(() => {
+        bot.activateBlock(refBlock).then(() => {
           lockUseBlock.release()
           placingBlock = nextPoint.toPlace.shift()
         }, err => {
