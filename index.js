@@ -345,6 +345,10 @@ function inject (bot) {
     bot.entity.velocity.x = 0
     bot.entity.velocity.z = 0
 
+    // A Bedrock server does tell the difference: it checks every move the client reports, refuses a jump like this
+    // one and sends the player back. So on Bedrock the bot stays where it stopped.
+    if (bot.registry.type === 'bedrock') return
+
     const blockX = Math.floor(bot.entity.position.x) + 0.5
     const blockZ = Math.floor(bot.entity.position.z) + 0.5
 
