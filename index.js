@@ -27,6 +27,7 @@ function inject (bot) {
   let placingBlock = null
   let lastNodeTime = performance.now()
   let returningPos = null
+  let backingToEdge = false // moveToEdge is holding back and sneak
   let stopPathing = false
   const physics = new Physics(bot)
   const lockPlaceBlock = new Lock()
@@ -134,7 +135,14 @@ function inject (bot) {
     lockPlaceBlock.release()
     lockUseBlock.release()
     stateMovements.clearCollisionIndex()
-    if (clearStates) bot.clearControlStates()
+    if (clearStates) {
+      bot.clearControlStates()
+    } else if (backingToEdge) {
+      // The next path may only walk, and back held under it would take the bot over the edge
+      bot.setControlState('back', false)
+      bot.setControlState('sneak', false)
+    }
+    backingToEdge = false
     if (stopPathing) return stop()
   }
 
@@ -339,6 +347,7 @@ function inject (bot) {
    */
   function fullStop () {
     bot.clearControlStates()
+    backingToEdge = false
 
     // Force horizontal velocity to 0 (otherwise inertia can move us too far)
     // Kind of cheaty, but the server will not tell the difference
@@ -378,9 +387,11 @@ function inject (bot) {
       bot.lookAt(bot.entity.position.offset(viewVector.x, viewVector.y, viewVector.z), allowInstantTurn)
       bot.setControlState('sneak', true)
       bot.setControlState('back', true)
+      backingToEdge = true
       return false
     }
     bot.setControlState('back', false)
+    backingToEdge = false
     return true
   }
 
