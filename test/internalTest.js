@@ -1661,3 +1661,117 @@ describe('human walker on an island', function () {
     assert.ok(human.route[human.route.length - 1].equals(goal), 'route must end at the goal')
   })
 })
+
+/**
+ * A ledge over the void: farmland on x 8 to 15, z 6 to 9, stone on x 8 to 15, z 2 to 4, and stone
+ * on x 8 to 15, z 11 to 13 with a bottom slab beside it at x 7, with nothing anywhere below them.
+ * Farmland is 15/16 of a block high.
+ * @param {string} Version version
+ * @returns {import('prismarine-chunk').Chunk}
+ */
+function ledgeMap (Version) {
+  const Block = require('prismarine-block')(Version)
+  const Chunk = require('prismarine-chunk')(Version)
+  const mcData = require('minecraft-data')(Version)
+  const chunk = new Chunk()
+  chunk.initialize((x, y, z) => {
+    if (y === 50 && x >= 8 && z >= 6 && z <= 9) return new Block(mcData.blocksByName.farmland.id, 1, 0)
+    if (y === 50 && x >= 8 && z >= 2 && z <= 4) return new Block(mcData.blocksByName.stone.id, 1, 0)
+    if (y === 50 && x >= 8 && z >= 11 && z <= 13) return new Block(mcData.blocksByName.stone.id, 1, 0)
+    if (y === 50 && x === 7 && z >= 11 && z <= 13) return Block.fromProperties('oak_slab', { type: 'bottom', waterlogged: false }, 1)
+    return new Block(mcData.blocksByName.air.id, 1, 0)
+  })
+  return chunk
+}
+
+describe('path start for a bot on the edge of a block', function () {
+  const mcData = require('minecraft-data')(Version)
+  // The bot's box is 0.6 wide: at x 7.8 it rests 0.1 on the block at x 8, with its centre over the
+  // air at x 7. The game keeps it there.
+  const onFarmland = new Vec3(7.8, 50.9375, 7.5)
+  const onStone = new Vec3(7.8, 51, 3.5)
+  const onFarmlandCorner = new Vec3(7.8, 50.9375, 5.8)
+
+  let bot
+  let server
+
+  before(async () => {
+    server = await newServer(server, ledgeMap(Version), onFarmland, Version, true)
+    bot = mineflayer.createBot({
+      username: 'player',
+      version: Version,
+      port: ServerPort
+    })
+    await once(bot, 'chunkColumnLoad')
+    bot.loadPlugin(pathfinder)
+    bot.pathfinder.setMovements(new Movements(bot, mcData))
+  })
+  after(() => {
+    bot.end()
+    server.close()
+  })
+
+  function pathFrom (pos, goal) {
+    bot.entity.position = pos.clone()
+    bot.entity.onGround = true
+    return bot.pathfinder.getPathTo(bot.pathfinder.movements, goal)
+  }
+
+  it('finds a path from the edge of farmland', function () {
+    const path = pathFrom(onFarmland, new goals.GoalBlock(12, 51, 7))
+    assert.strictEqual(path.status, 'success')
+    assert.ok(path.path[0].x >= 8, `first step ${path.path[0]} is off the ledge`)
+  })
+
+  it('finds a path from the edge of a full block', function () {
+    const path = pathFrom(onStone, new goals.GoalBlock(12, 51, 3))
+    assert.strictEqual(path.status, 'success')
+    assert.ok(path.path[0].x >= 8, `first step ${path.path[0]} is off the ledge`)
+  })
+
+  it('finds a path from a corner, resting on one block only', function () {
+    const path = pathFrom(onFarmlandCorner, new goals.GoalBlock(12, 51, 7))
+    assert.strictEqual(path.status, 'success')
+    assert.ok(path.path[0].x >= 8 && path.path[0].z >= 6, `first step ${path.path[0]} is off the ledge`)
+  })
+
+  it('is already at the block it stands on', function () {
+    const path = pathFrom(onFarmland, new goals.GoalBlock(8, 51, 7))
+    assert.strictEqual(path.status, 'success')
+    assert.strictEqual(path.path.length, 0)
+  })
+
+  it('still starts from its own column when that column holds it', function () {
+    const path = pathFrom(new Vec3(8.3, 50.9375, 7.5), new goals.GoalBlock(12, 51, 7))
+    assert.strictEqual(path.status, 'success')
+    assert.strictEqual(path.path.length, 4)
+  })
+
+  it('goto to the block it stands on resolves', async function () {
+    this.timeout(5000)
+    bot.entity.position = onFarmland.clone()
+    bot.entity.velocity.set(0, 0, 0)
+    await once(bot, 'physicsTick')
+    await bot.pathfinder.goto(new goals.GoalBlock(8, 51, 7))
+  })
+
+  it('keeps its own column when the start node there has a floor, though another block holds the bot', function () {
+    // Over the slab, resting on the stone beside it: the slab is the floor of the node at x 7
+    const path = pathFrom(new Vec3(7.8, 51, 12.5), new goals.GoalBlock(7, 51, 12))
+    assert.strictEqual(path.status, 'success')
+    assert.strictEqual(path.path.length, 0)
+  })
+
+  it('walks off the edge to a goal along the ledge', async function () {
+    this.timeout(10000)
+    this.slow(3000)
+    bot.entity.position = onFarmland.clone()
+    bot.entity.velocity.set(0, 0, 0)
+    await once(bot, 'physicsTick')
+    await bot.pathfinder.goto(new goals.GoalBlock(12, 51, 7))
+    const p = bot.entity.position
+    assert.strictEqual(Math.floor(p.x), 12)
+    assert.strictEqual(Math.floor(p.z), 7)
+    assert.ok(Math.abs(p.y - 50.9375) < 0.001, `the bot is at ${p}`)
+  })
+})

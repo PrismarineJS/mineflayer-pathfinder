@@ -77,10 +77,17 @@ function inject (bot) {
       start = options.startMove
     } else {
       const p = startPos.floored()
-      const dy = startPos.y - p.y
-      const b = bot.blockAt(p) // The block we are standing in
-      // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
-      const offset = (b && dy > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
+      let offset = startOffset(p, startPos)
+      // On the edge of a block the centre can be over air, and the start node then has no floor:
+      // start from the block that holds the bot instead
+      if (bot.entity.onGround && !movements.getBlock(p, 0, offset - 1, 0).physical) {
+        const under = supportingBlock(startPos)
+        if (under) {
+          p.x = under.x
+          p.z = under.z
+          offset = startOffset(p, startPos)
+        }
+      }
       start = new Move(p.x, p.y + offset, p.z, movements.countScaffoldingItems(), 0)
     }
     if (movements.allowEntityDetection) {
@@ -112,6 +119,52 @@ function inject (bot) {
       }
     }
   })
+
+  // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
+  function startOffset (p, pos) {
+    const b = bot.blockAt(p) // The block we are standing in
+    return (b && pos.y - p.y > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
+  }
+
+  // The block a bot standing at pos rests on, picked as the game does since 1.20: of the blocks
+  // under its box whose collision boxes meet its feet, the one whose centre is closest to pos.
+  // Null when a block in the column under pos holds the bot, or when nothing does.
+  function supportingBlock (pos) {
+    const minX = pos.x - 0.3
+    const maxX = pos.x + 0.3
+    const minZ = pos.z - 0.3
+    const maxZ = pos.z + 0.3
+    const feet = pos.y
+    const px = Math.floor(pos.x)
+    const pz = Math.floor(pos.z)
+    let best = null
+    let bestDist = Infinity
+    // Two layers: a fence or a wall reaches up to half a block into the layer above it
+    const top = Math.floor(feet - 0.001)
+    for (let y = top - 1; y <= top; y++) {
+      for (let x = Math.floor(minX); x <= Math.floor(maxX); x++) {
+        for (let z = Math.floor(minZ); z <= Math.floor(maxZ); z++) {
+          const block = bot.blockAt(new Vec3(x, y, z), false)
+          if (!block || !holds(block, x, y, z, minX, maxX, minZ, maxZ, feet)) continue
+          if (x === px && z === pz) return null
+          const d = (x + 0.5 - pos.x) ** 2 + (y + 0.5 - pos.y) ** 2 + (z + 0.5 - pos.z) ** 2
+          if (d < bestDist) {
+            best = block.position
+            bestDist = d
+          }
+        }
+      }
+    }
+    return best
+  }
+
+  function holds (block, x, y, z, minX, maxX, minZ, maxZ, feet) {
+    for (const s of block.shapes) {
+      if (x + s[0] < maxX && x + s[3] > minX && z + s[2] < maxZ && z + s[5] > minZ &&
+        y + s[1] < feet && y + s[4] > feet - 0.001) return true
+    }
+    return false
+  }
 
   function detectDiggingStopped () {
     digging = false
