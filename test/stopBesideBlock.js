@@ -112,13 +112,21 @@ function oldStopHits (blockAt, from) {
   return collides(blockAt, x, from.y, z)
 }
 
-// Blocks whose collision boxes are smaller than their block, or off its middle, every state of each.
-const BLOCKS = [
-  'cocoa', 'lantern', 'soul_lantern', 'candle', 'chain', 'iron_chain', 'end_rod', 'lightning_rod', 'flower_pot',
-  'sea_pickle', 'turtle_egg', 'pointed_dripstone', 'bell', 'campfire', 'cake', 'daylight_detector', 'oak_slab',
-  'oak_stairs', 'oak_trapdoor', 'oak_door', 'oak_fence', 'cobblestone_wall', 'iron_bars', 'glass_pane',
-  'white_carpet', 'snow', 'scaffolding', 'hopper', 'brewing_stand', 'anvil', 'enchanting_table', 'lectern'
-]
+// Every kind of block with a state whose collision box is not empty and not a full cube, from the
+// registry of each version.
+function partialBlocks (registry, Block) {
+  const out = []
+  for (const block of registry.blocksArray) {
+    for (let id = block.minStateId; id <= block.maxStateId; id++) {
+      const shapes = Block.fromStateId(id, 0).shapes
+      if (shapes.length > 0 && !(shapes.length === 1 && shapes[0].join() === '0,0,0,1,1,1')) {
+        out.push(block.name)
+        break
+      }
+    }
+  }
+  return out
+}
 const VERSIONS = ['1.16.5', '1.20.4', '1.21.4', '26.1']
 
 describe('fullStop beside blocks smaller than their block', function () {
@@ -146,9 +154,8 @@ describe('fullStop beside blocks smaller than their block', function () {
   for (const version of VERSIONS) {
     const registry = require('minecraft-data')(version)
     const Block = require('prismarine-block')(registry)
-    for (const name of BLOCKS) {
+    for (const name of partialBlocks(registry, Block)) {
       const block = registry.blocksByName[name]
-      if (!block) continue
       it(`${version} ${name}: every state, from every clear spot in its block`, function () {
         const failures = []
         let spots = 0
