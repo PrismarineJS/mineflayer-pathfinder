@@ -350,38 +350,52 @@ function inject (bot) {
     const blockZ = Math.floor(pos.z) + 0.5
 
     // Make sure our bounding box don't collide with neighboring blocks
-    // otherwise recenter the position. The block we stand in may itself be in the way of the middle: a cocoa pod,
-    // a lantern or a candle is smaller than its block, so the bot can stand in its block beside it. Moving it to
-    // the middle would put it inside, and the server sends it back.
-    if (Math.abs(pos.x - blockX) > 0.2 && !collidesAt(blockX, pos.y, pos.z)) { pos.x = blockX }
-    if (Math.abs(pos.z - blockZ) > 0.2 && !collidesAt(pos.x, pos.y, blockZ)) { pos.z = blockZ }
+    // otherwise recenter the position. The bot goes toward the middle only as far as its box stays clear of the
+    // collision boxes around it: a fence post, a lantern, a cocoa pod or the high half of a stair can stand
+    // between the bot and the middle, and the server sends back a bot moved into one.
+    if (Math.abs(pos.x - blockX) > 0.2) pos.x += clearMove(pos, 0, blockX - pos.x)
+    if (Math.abs(pos.z - blockZ) > 0.2) pos.z += clearMove(pos, 2, blockZ - pos.z)
   }
 
   /**
-   * Whether the bot's bounding box, with its feet at x, y, z, overlaps the collision shape of a block.
-   * Boxes that only touch do not count.
+   * How far the bot's bounding box can move along x (axis 0) or z (axis 2), up to `move`, before it meets the
+   * collision box of a block. As in the game's own collisions, boxes that only touch, and boxes the bot is already
+   * inside, do not stop it.
    */
-  function collidesAt (x, y, z) {
-    const half = 0.3
+  function clearMove (pos, axis, move) {
+    const half = (bot.entity.width ?? 0.6) / 2
     const height = bot.entity.height ?? 1.8
     const eps = 1e-7
+    const other = 2 - axis
+    const at = [pos.x, pos.y, pos.z]
+    const minA = at[axis] - half
+    const maxA = at[axis] + half
+    const minO = at[other] - half
+    const maxO = at[other] + half
+    const minY = pos.y
+    const maxY = pos.y + height
     const cell = new Vec3(0, 0, 0)
-    for (let bx = Math.floor(x - half); bx <= Math.floor(x + half); bx++) {
-      for (let bz = Math.floor(z - half); bz <= Math.floor(z + half); bz++) {
+    const c = [0, 0, 0]
+    for (let a = Math.floor(Math.min(minA, minA + move)); a <= Math.floor(Math.max(maxA, maxA + move)); a++) {
+      for (let o = Math.floor(minO); o <= Math.floor(maxO); o++) {
         // One layer below the feet too: a fence or a wall reaches half a block above its own block
-        for (let by = Math.floor(y) - 1; by <= Math.floor(y + height); by++) {
-          cell.set(bx, by, bz)
+        for (let y = Math.floor(minY) - 1; y <= Math.floor(maxY); y++) {
+          c[axis] = a
+          c[other] = o
+          c[1] = y
+          cell.set(c[0], c[1], c[2])
           const block = bot.blockAt(cell, false)
           if (!block || !block.shapes) continue
           for (const s of block.shapes) {
-            if (x + half > bx + s[0] + eps && x - half < bx + s[3] - eps &&
-              y + height > by + s[1] + eps && y < by + s[4] - eps &&
-              z + half > bz + s[2] + eps && z - half < bz + s[5] - eps) return true
+            if (y + s[4] <= minY + eps || y + s[1] >= maxY - eps) continue
+            if (o + s[other + 3] <= minO + eps || o + s[other] >= maxO - eps) continue
+            if (move > 0 && a + s[axis] >= maxA - eps) move = Math.min(move, Math.max(0, a + s[axis] - maxA))
+            else if (move < 0 && a + s[axis + 3] <= minA + eps) move = Math.max(move, Math.min(0, a + s[axis + 3] - minA))
           }
         }
       }
     }
-    return false
+    return move
   }
 
   function moveToEdge (refBlock, edge) {
