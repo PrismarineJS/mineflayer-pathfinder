@@ -77,18 +77,17 @@ function inject (bot) {
       start = options.startMove
     } else {
       const p = startPos.floored()
-      if (bot.entity.onGround) {
-        // On the edge of a block the centre can be over air: start from the block that holds the bot
+      let offset = startOffset(p, startPos)
+      // On the edge of a block the centre can be over air, and the start node then has no floor:
+      // start from the block that holds the bot instead
+      if (bot.entity.onGround && !movements.getBlock(p, 0, offset - 1, 0).physical) {
         const under = supportingBlock(startPos)
         if (under) {
           p.x = under.x
           p.z = under.z
+          offset = startOffset(p, startPos)
         }
       }
-      const dy = startPos.y - p.y
-      const b = bot.blockAt(p) // The block we are standing in
-      // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
-      const offset = (b && dy > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
       start = new Move(p.x, p.y + offset, p.z, movements.countScaffoldingItems(), 0)
     }
     if (movements.allowEntityDetection) {
@@ -120,6 +119,12 @@ function inject (bot) {
       }
     }
   })
+
+  // Offset the floored bot position by one if we are standing on a block that has not the full height but is solid
+  function startOffset (p, pos) {
+    const b = bot.blockAt(p) // The block we are standing in
+    return (b && pos.y - p.y > 0.001 && bot.entity.onGround && !stateMovements.emptyBlocks.has(b.type)) ? 1 : 0
+  }
 
   // The block a bot standing at pos rests on, picked as the game does since 1.20: of the blocks
   // under its box whose collision boxes meet its feet, the one whose centre is closest to pos.

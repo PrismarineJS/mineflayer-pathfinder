@@ -1663,8 +1663,9 @@ describe('human walker on an island', function () {
 })
 
 /**
- * A ledge over the void: farmland on x 8 to 15, z 6 to 9, and stone on x 8 to 15, z 2 to 4, with
- * nothing anywhere below them. Farmland is 15/16 of a block high.
+ * A ledge over the void: farmland on x 8 to 15, z 6 to 9, stone on x 8 to 15, z 2 to 4, and stone
+ * on x 8 to 15, z 11 to 13 with a bottom slab beside it at x 7, with nothing anywhere below them.
+ * Farmland is 15/16 of a block high.
  * @param {string} Version version
  * @returns {import('prismarine-chunk').Chunk}
  */
@@ -1676,6 +1677,8 @@ function ledgeMap (Version) {
   chunk.initialize((x, y, z) => {
     if (y === 50 && x >= 8 && z >= 6 && z <= 9) return new Block(mcData.blocksByName.farmland.id, 1, 0)
     if (y === 50 && x >= 8 && z >= 2 && z <= 4) return new Block(mcData.blocksByName.stone.id, 1, 0)
+    if (y === 50 && x >= 8 && z >= 11 && z <= 13) return new Block(mcData.blocksByName.stone.id, 1, 0)
+    if (y === 50 && x === 7 && z >= 11 && z <= 13) return Block.fromProperties('oak_slab', { type: 'bottom', waterlogged: false }, 1)
     return new Block(mcData.blocksByName.air.id, 1, 0)
   })
   return chunk
@@ -1750,6 +1753,13 @@ describe('path start for a bot on the edge of a block', function () {
     bot.entity.velocity.set(0, 0, 0)
     await once(bot, 'physicsTick')
     await bot.pathfinder.goto(new goals.GoalBlock(8, 51, 7))
+  })
+
+  it('keeps its own column when the start node there has a floor, though another block holds the bot', function () {
+    // Over the slab, resting on the stone beside it: the slab is the floor of the node at x 7
+    const path = pathFrom(new Vec3(7.8, 51, 12.5), new goals.GoalBlock(7, 51, 12))
+    assert.strictEqual(path.status, 'success')
+    assert.strictEqual(path.path.length, 0)
   })
 
   it('walks off the edge to a goal along the ledge', async function () {
